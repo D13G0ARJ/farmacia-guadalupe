@@ -1,0 +1,322 @@
+{
+  "period": "2025-09",
+  "legal_name": "FARMACIA GUADALUPE, C.A.",
+  "source": "CUADRO DE INDICADORES MES SEPTIEMBRE GUADALUPE.xlsx",
+  "rows": [
+    {
+      "date": "2025-09-01",
+      "sales_bs": "91154.02",
+      "exchange_rate": "148.4400",
+      "transactions": 119,
+      "units": 300,
+      "inventory_units": 9029,
+      "inventory_value_usd": "21848.73",
+      "shifts": 4
+    },
+    {
+      "date": "2025-09-02",
+      "sales_bs": "97779.71",
+      "exchange_rate": "149.4600",
+      "transactions": 138,
+      "units": 257,
+      "inventory_units": 9848,
+      "inventory_value_usd": "22358.31",
+      "shifts": 4
+    },
+    {
+      "date": "2025-09-03",
+      "sales_bs": "102970.43",
+      "exchange_rate": "150.7900",
+      "transactions": 132,
+      "units": 303,
+      "inventory_units": 9914,
+      "inventory_value_usd": "22631.16",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-04",
+      "sales_bs": "88017.34",
+      "exchange_rate": "151.7600",
+      "transactions": 121,
+      "units": 225,
+      "inventory_units": 9672,
+      "inventory_value_usd": "22221.96",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-05",
+      "sales_bs": "80420.47",
+      "exchange_rate": "152.8200",
+      "transactions": 119,
+      "units": 244,
+      "inventory_units": 9424,
+      "inventory_value_usd": "21956.23",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-06",
+      "sales_bs": "95981.70",
+      "exchange_rate": "152.8200",
+      "transactions": 124,
+      "units": 261,
+      "inventory_units": null,
+      "inventory_value_usd": null,
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-07",
+      "sales_bs": "109025.52",
+      "exchange_rate": "152.8200",
+      "transactions": 163,
+      "units": 339,
+      "inventory_units": 8936,
+      "inventory_value_usd": "21268.00",
+      "shifts": 4
+    },
+    {
+      "date": "2025-09-08",
+      "sales_bs": "84722.76",
+      "exchange_rate": "154.0100",
+      "transactions": 117,
+      "units": 234,
+      "inventory_units": 9383,
+      "inventory_value_usd": "22195.53",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-09",
+      "sales_bs": "101300.35",
+      "exchange_rate": "154.9800",
+      "transactions": 138,
+      "units": 295,
+      "inventory_units": 9231,
+      "inventory_value_usd": "22179.96",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-10",
+      "sales_bs": "116407.39",
+      "exchange_rate": "156.3700",
+      "transactions": 129,
+      "units": 251,
+      "inventory_units": 9598,
+      "inventory_value_usd": "22714.05",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-11",
+      "sales_bs": "77039.25",
+      "exchange_rate": "157.7200",
+      "transactions": 117,
+      "units": 234,
+      "inventory_units": 9581,
+      "inventory_value_usd": "22981.42",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-12",
+      "sales_bs": "88858.98",
+      "exchange_rate": "158.9200",
+      "transactions": 125,
+      "units": 242,
+      "inventory_units": 10445,
+      "inventory_value_usd": "23092.74",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-13",
+      "sales_bs": "92708.68",
+      "exchange_rate": "158.9200",
+      "transactions": 120,
+      "units": 233,
+      "inventory_units": null,
+      "inventory_value_usd": null,
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-14",
+      "sales_bs": "110970.24",
+      "exchange_rate": "158.9200",
+      "transactions": 145,
+      "units": 260,
+      "inventory_units": 10166,
+      "inventory_value_usd": "22892.74",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-15",
+      "sales_bs": "86873.43",
+      "exchange_rate": "158.9200",
+      "transactions": 130,
+      "units": 237,
+      "inventory_units": 10166,
+      "inventory_value_usd": "23005.49",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-16",
+      "sales_bs": "28594.37",
+      "exchange_rate": "160.4400",
+      "transactions": 32,
+      "units": 71,
+      "inventory_units": null,
+      "inventory_value_usd": null,
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-17",
+      "sales_bs": "112854.65",
+      "exchange_rate": "161.4400",
+      "transactions": 163,
+      "units": 308,
+      "inventory_units": 10125,
+      "inventory_value_usd": "23248.01",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-18",
+      "sales_bs": "117239.45",
+      "exchange_rate": "163.6400",
+      "transactions": 137,
+      "units": 234,
+      "inventory_units": 10004,
+      "inventory_value_usd": "23077.46",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-19",
+      "sales_bs": "105269.81",
+      "exchange_rate": "165.4000",
+      "transactions": 126,
+      "units": 217,
+      "inventory_units": 10080,
+      "inventory_value_usd": "23324.91",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-20",
+      "sales_bs": "88959.53",
+      "exchange_rate": "165.4000",
+      "transactions": 126,
+      "units": 242,
+      "inventory_units": null,
+      "inventory_value_usd": null,
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-21",
+      "sales_bs": "102839.62",
+      "exchange_rate": "165.4000",
+      "transactions": 127,
+      "units": 235,
+      "inventory_units": 9622,
+      "inventory_value_usd": "22529.66",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-22",
+      "sales_bs": "105406.76",
+      "exchange_rate": "166.5800",
+      "transactions": 145,
+      "units": 279,
+      "inventory_units": 9798,
+      "inventory_value_usd": "22656.49",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-23",
+      "sales_bs": "110012.02",
+      "exchange_rate": "168.4800",
+      "transactions": 127,
+      "units": 249,
+      "inventory_units": 9667,
+      "inventory_value_usd": "22487.23",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-24",
+      "sales_bs": "144905.79",
+      "exchange_rate": "169.7700",
+      "transactions": 161,
+      "units": 334,
+      "inventory_units": 9666,
+      "inventory_value_usd": "22846.86",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-25",
+      "sales_bs": "145423.22",
+      "exchange_rate": "171.8400",
+      "transactions": 155,
+      "units": 264,
+      "inventory_units": 9764,
+      "inventory_value_usd": "22936.01",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-26",
+      "sales_bs": "110300.94",
+      "exchange_rate": "173.7300",
+      "transactions": 126,
+      "units": 238,
+      "inventory_units": 10098,
+      "inventory_value_usd": "23791.00",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-27",
+      "sales_bs": "88069.67",
+      "exchange_rate": "173.7300",
+      "transactions": 106,
+      "units": 191,
+      "inventory_units": null,
+      "inventory_value_usd": null,
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-28",
+      "sales_bs": "107548.12",
+      "exchange_rate": "173.7300",
+      "transactions": 121,
+      "units": 226,
+      "inventory_units": 9788,
+      "inventory_value_usd": "23130.00",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-29",
+      "sales_bs": "103502.12",
+      "exchange_rate": "175.6400",
+      "transactions": 118,
+      "units": 218,
+      "inventory_units": 9609,
+      "inventory_value_usd": "22991.70",
+      "shifts": 3
+    },
+    {
+      "date": "2025-09-30",
+      "sales_bs": "117614.52",
+      "exchange_rate": "177.6100",
+      "transactions": 146,
+      "units": 322,
+      "inventory_units": 9831,
+      "inventory_value_usd": "23545.31",
+      "shifts": 3
+    }
+  ],
+  "golden": {
+    "sales_bs": "3012770.86",
+    "sales_usd": "18610.68",
+    "transactions": 3853,
+    "units": 7543,
+    "shifts": 93,
+    "avg_ticket_bs": "781.93",
+    "units_per_transaction": "1.9577",
+    "avg_ticket_usd": "4.8302",
+    "transactions_per_shift": "41.43",
+    "days_with_inventory": 25,
+    "rate_first": "148.4400",
+    "rate_last": "177.6100",
+    "atypical_date": "2025-09-16"
+  }
+}

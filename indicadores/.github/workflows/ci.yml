@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: intl, bcmath, gd, zip, pdo_sqlite, sqlite3, mbstring, fileinfo
+          coverage: none
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Composer
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Entorno
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          touch database/database.sqlite
+
+      - name: Front
+        run: |
+          npm ci
+          npm run build
+
+      - name: Estilo (Pint)
+        run: vendor/bin/pint --test
+
+      - name: Análisis estático (Larastan)
+        run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress
+
+      - name: Pruebas (Pest)
+        run: vendor/bin/pest --ci

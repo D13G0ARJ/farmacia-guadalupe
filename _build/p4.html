@@ -1,0 +1,193 @@
+<!-- ============ 4. MODULO A ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">4</div><div class="tt"><h2>Módulo A &mdash; Indicadores y Metas</h2><div class="dk">Reemplazo integral del cuadro en Excel</div></div></div>
+
+  <p class="lead">Este módulo sustituye el archivo actual por completo: captura, calcula, valida, grafica, compara contra objetivos y genera el reporte que hoy se arma a mano. Es el único de los tres cuyo alcance está cerrado, porque el Excel auditado funciona como especificación exhaustiva.</p>
+
+  <h3 class="first">4.1 &nbsp;Captura de datos</h3>
+  <p>La carga admite tres vías, que conviven:</p>
+
+  <table>
+    <thead><tr><th style="width:24%">Vía</th><th>Descripción</th><th style="width:20%">Disponibilidad</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Formulario diario</strong></td><td>Pantalla de siete campos con validación en vivo, teclado numérico, cálculo de derivados en pantalla y confirmación antes de guardar</td><td><span class="pill p-ok">Fase 1</span></td></tr>
+      <tr><td><strong>Importador de archivos</strong></td><td>Carga de los <code>.xlsx</code> existentes con la plantilla actual, para migrar el histórico completo</td><td><span class="pill p-ok">Fase 1</span></td></tr>
+      <tr><td><strong>Alimentación desde el Módulo C</strong></td><td>Los pedidos digitales cerrados se contabilizan automáticamente como venta del canal</td><td><span class="pill p-acc">Fase 3</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="box">
+    <div class="bt">La carga diaria es manual por definición del alcance</div>
+    <p style="margin-bottom:0">El sistema <strong>no se conecta al sistema administrativo ni al punto de venta</strong>. El registro diario lo hace una persona, igual que hoy, y por eso el formulario está diseñado para uso intensivo y sostenido: siete campos en lugar de catorce, valores por defecto, validación en vivo y cálculo de los derivados en pantalla. El objetivo es que cargar un día tome menos de un minuto y que el error de captura sea difícil de cometer, no que la captura desaparezca.</p>
+  </div>
+
+  <h4>Campos del formulario diario</h4>
+  <table>
+    <thead><tr><th style="width:26%">Campo</th><th style="width:14%">Tipo</th><th style="width:14%">Requerido</th><th>Regla</th></tr></thead>
+    <tbody>
+      <tr><td>Fecha</td><td>Fecha</td><td>Sí</td><td>Única por sucursal. El día de la semana se deriva automáticamente</td></tr>
+      <tr><td>Venta en Bs</td><td>Decimal</td><td>Sí</td><td>Mayor o igual a cero. Alerta si se desvía más de un umbral respecto a la media móvil</td></tr>
+      <tr><td>Tasa de cambio</td><td>Decimal</td><td>Sí</td><td>Precargada automáticamente si la fuente está disponible; editable con registro de quién la cambió</td></tr>
+      <tr><td>Transacciones (TRN)</td><td>Entero</td><td>Sí</td><td>Mayor o igual a cero</td></tr>
+      <tr><td>Unidades vendidas</td><td>Entero</td><td>Sí</td><td>Debe ser mayor o igual a las transacciones en condiciones normales; si no, advierte</td></tr>
+      <tr><td>Unidades en inventario</td><td>Entero</td><td>Condicional</td><td>No se solicita los sábados. Configurable por sucursal</td></tr>
+      <tr><td>Valuación de inventario</td><td>Decimal</td><td>Condicional</td><td>Misma periodicidad que el campo anterior. Se indica si es a costo o a precio de venta</td></tr>
+      <tr><td>Jornadas</td><td>Entero</td><td>Sí</td><td>Valor por defecto configurable; el histórico muestra tres como norma y cuatro ocasional</td></tr>
+      <tr><td>Observación del día</td><td>Texto</td><td>No</td><td><strong>Campo nuevo.</strong> Permite marcar el día como atípico y excluirlo de los promedios</td></tr>
+    </tbody>
+  </table>
+  <p class="tnote">Los campos de inventario se ocultan automáticamente en los días sin conteo según la periodicidad configurada, en lugar de quedar marcados como incompletos.</p>
+
+  <h3>4.2 &nbsp;Motor de cálculo</h3>
+  <p>Los indicadores derivados <strong>no se almacenan</strong>: se calculan en el momento de consultar. Esto elimina la posibilidad de que un valor guardado quede desincronizado de sus componentes, que es lo que hoy ocurre cuando se rompe una fórmula del Excel.</p>
+
+  <table>
+    <thead><tr><th style="width:30%">Indicador derivado</th><th style="width:26%">Cálculo diario</th><th>Cálculo del período (corregido)</th></tr></thead>
+    <tbody>
+      <tr><td>Venta en divisa</td><td class="mono">venta_bs / tasa</td><td class="mono">suma de los valores diarios</td></tr>
+      <tr><td>Ticket promedio Bs</td><td class="mono">venta_bs / trn</td><td class="mono">suma(venta_bs) / suma(trn)</td></tr>
+      <tr><td>Unidades por compra</td><td class="mono">unidades / trn</td><td class="mono">suma(unidades) / suma(trn)</td></tr>
+      <tr><td>Ticket promedio en divisa</td><td class="mono">ticket_bs / tasa</td><td class="mono">suma(venta_div) / suma(trn)</td></tr>
+      <tr><td>Transacciones por jornada</td><td class="mono">trn / jornadas</td><td class="mono">suma(trn) / suma(jornadas)</td></tr>
+      <tr><td>Tasa promedio</td><td>&mdash;</td><td class="mono">ponderada por venta del día</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box o">
+    <div class="bt">Corrección metodológica</div>
+    <p style="margin-bottom:0">La columna derecha es la diferencia esencial con el archivo actual, que promedia los ratios diarios en lugar de dividir los totales. El sistema calcula siempre <strong>ratios ponderados</strong>. La venta en divisa del período se obtiene sumando la conversión de cada día a su propia tasa, nunca dividiendo el total en bolívares entre una tasa promedio.</p>
+  </div>
+
+  <h3>4.3 &nbsp;Catálogo de indicadores</h3>
+  <p>El sistema expone los doce indicadores del archivo actual más los que la auditoría identificó como faltantes.</p>
+
+  <table>
+    <thead><tr><th style="width:5%">#</th><th style="width:32%">Indicador</th><th style="width:14%">Unidad</th><th>Origen</th></tr></thead>
+    <tbody>
+      <tr><td class="c">1</td><td>Venta total</td><td>Bs y divisa</td><td>Existente</td></tr>
+      <tr><td class="c">2</td><td>Transacciones</td><td>Cantidad</td><td>Existente</td></tr>
+      <tr><td class="c">3</td><td>Unidades vendidas</td><td>Cantidad</td><td>Existente</td></tr>
+      <tr><td class="c">4</td><td>Ticket promedio</td><td>Bs y divisa</td><td>Existente</td></tr>
+      <tr><td class="c">5</td><td>Unidades por compra</td><td>Ratio</td><td>Existente</td></tr>
+      <tr><td class="c">6</td><td>Tasa de cambio promedio</td><td>Bs por divisa</td><td>Existente</td></tr>
+      <tr><td class="c">7</td><td>Transacciones por jornada</td><td>Ratio</td><td>Existente</td></tr>
+      <tr><td class="c">8</td><td>Jornadas trabajadas</td><td>Cantidad</td><td>Existente</td></tr>
+      <tr><td class="c">9</td><td>Unidades en inventario</td><td>Cantidad</td><td>Existente</td></tr>
+      <tr><td class="c">10</td><td>Valuación de inventario</td><td>Divisa</td><td>Existente</td></tr>
+      <tr><td class="c">11</td><td><strong>Venta por jornada</strong></td><td>Bs y divisa</td><td><span class="pill p-acc">Nuevo</span> Productividad real del turno</td></tr>
+      <tr><td class="c">12</td><td><strong>Rotación de inventario</strong></td><td>Veces</td><td><span class="pill p-acc">Nuevo</span> Requiere costo de ventas</td></tr>
+      <tr><td class="c">13</td><td><strong>Días de inventario</strong></td><td>Días</td><td><span class="pill p-acc">Nuevo</span> Cuánto dura el stock actual</td></tr>
+      <tr><td class="c">14</td><td><strong>Variación de la tasa en el período</strong></td><td>Porcentaje</td><td><span class="pill p-acc">Nuevo</span> Contexto obligado de toda comparación</td></tr>
+      <tr><td class="c">15</td><td><strong>Venta real deflactada</strong></td><td>Divisa</td><td><span class="pill p-acc">Nuevo</span> Crecimiento sin efecto cambiario</td></tr>
+      <tr><td class="c">16</td><td><strong>Participación del canal digital</strong></td><td>Porcentaje</td><td><span class="pill p-acc">Nuevo</span> Se habilita con el Módulo C</td></tr>
+    </tbody>
+  </table>
+
+  <p>Cada indicador se muestra con su valor del período, su variación contra el período anterior, su variación contra el mismo período del año anterior cuando hay histórico, y su porcentaje de cumplimiento de meta.</p>
+
+  <h3>4.4 &nbsp;Sistema de metas</h3>
+  <p>El archivo actual <strong>no contiene ninguna meta</strong>. Este es el componente que el cliente pidió explícitamente y que hoy no existe en ninguna forma.</p>
+
+  <h4>Definición de objetivos</h4>
+  <ul class="cl">
+    <li>Meta por indicador, por período y por sucursal, con vigencia y versión histórica</li>
+    <li>Carga manual del valor, o generación asistida a partir del histórico &mdash;por ejemplo, el promedio de los últimos tres meses más un porcentaje de crecimiento&mdash;</li>
+    <li>Distribución de la meta mensual entre los días según el patrón semanal detectado, en lugar de un simple prorrateo lineal</li>
+    <li>Metas expresadas en divisa para los indicadores monetarios, evitando que la devaluación las cumpla sola</li>
+  </ul>
+
+  <h4>Seguimiento</h4>
+  <ul class="cl">
+    <li><strong>Semáforo de cumplimiento</strong> con umbrales configurables por indicador</li>
+    <li><strong>Avance acumulado</strong> del período contra la meta a la fecha, no solo contra la meta total</li>
+    <li><strong>Proyección de cierre</strong> calculada sobre el ritmo real y el patrón semanal de los días restantes</li>
+    <li><strong>Brecha en valor absoluto</strong>: cuánto falta en dinero, transacciones o unidades para alcanzar el objetivo</li>
+    <li><strong>Alertas</strong> cuando la proyección cae por debajo de un umbral, con envío configurable</li>
+  </ul>
+
+  <div class="box">
+    <div class="bt">Ejemplo del comportamiento esperado</div>
+    <p style="margin-bottom:0">Al día 20 del mes, el sistema informa: <em>avance del 68&#37; de la meta mensual, proyección de cierre del 94&#37;, brecha estimada de X en divisa; los días de mayor venta que restan son dos, y concentran históricamente el 21&#37; de la venta semanal.</em> Ese nivel de lectura es imposible en el archivo actual.</p>
+  </div>
+
+  <h3>4.5 &nbsp;Gráficas y visualizaciones</h3>
+  <p>Se reconstruyen las siete gráficas existentes, corrigiendo los defectos documentados en la sección 2, y se agregan las que el análisis identificó como necesarias.</p>
+
+  <table>
+    <thead><tr><th style="width:34%">Gráfica</th><th style="width:16%">Tipo</th><th>Corrección o aporte</th></tr></thead>
+    <tbody>
+      <tr><td>Venta en Bs</td><td>Barras</td><td>Se elimina la serie de ceros y se agrega eje de fechas</td></tr>
+      <tr><td>Venta en divisa</td><td>Barras</td><td>Eje de fechas, título y línea de meta superpuesta</td></tr>
+      <tr><td>Transacciones y unidades</td><td>Combinada</td><td>Eje secundario para la serie de unidades</td></tr>
+      <tr><td>Ticket promedio en Bs</td><td>Barras y línea</td><td>Eje secundario: hoy la segunda serie es invisible</td></tr>
+      <tr><td>Unidades por compra y ticket en divisa</td><td>Líneas</td><td>Eje de fechas</td></tr>
+      <tr><td>Transacciones por jornada</td><td>Línea</td><td>Se corrige el rango: sin encabezado ni fila de totales</td></tr>
+      <tr><td>Inventario: unidades y valuación</td><td>Combinada</td><td>Eje secundario y manejo correcto de los días sin conteo</td></tr>
+      <tr><td><strong>Mapa de calor por día de semana</strong></td><td>Matriz</td><td><span class="pill p-acc">Nueva</span> Revela el patrón semanal hoy invisible</td></tr>
+      <tr><td><strong>Venta acumulada contra meta</strong></td><td>Área y línea</td><td><span class="pill p-acc">Nueva</span> Avance del mes en curso</td></tr>
+      <tr><td><strong>Evolución de la tasa contra venta en divisa</strong></td><td>Doble eje</td><td><span class="pill p-acc">Nueva</span> Separa crecimiento real de efecto cambiario</td></tr>
+      <tr><td><strong>Comparativa interanual</strong></td><td>Barras agrupadas</td><td><span class="pill p-acc">Nueva</span> Mes contra mismo mes del año anterior</td></tr>
+    </tbody>
+  </table>
+
+  <p>Todas las gráficas comparten filtros de período, sucursal y moneda, y son exportables como imagen para incorporarlas a presentaciones.</p>
+
+  <h3>4.6 &nbsp;Comparativa anual</h3>
+  <p>Reproduce la tabla de doce meses por doce indicadores que existe en el archivo y que nunca se ha llenado, con la diferencia de que <strong>se completa automáticamente</strong> a partir de los datos cargados.</p>
+  <ul class="cl">
+    <li>Matriz de indicadores por mes, con totales y promedios de año</li>
+    <li>Variación mes a mes y contra el mismo mes del año anterior</li>
+    <li>Vista en bolívares o en divisa, con la advertencia explícita de que la comparación en bolívares está afectada por la variación cambiaria</li>
+    <li>Exportación a Excel con el mismo formato que hoy circula, para no romper hábitos de quienes reciben el reporte</li>
+  </ul>
+
+  <h3>4.7 &nbsp;Importador de histórico</h3>
+  <p>Componente que permite cargar los archivos de meses anteriores. Su valor depende de cuántas carpetas conserve el cliente, lo que constituye una de las preguntas críticas de la sección 10.</p>
+
+  <ul class="pl">
+    <li><strong>Lectura tolerante.</strong> Normaliza espacios sobrantes y saltos de línea en los encabezados, presentes en el archivo auditado, para que variaciones menores entre meses no rompan la importación.</li>
+    <li><strong>Detección de la plantilla.</strong> Reconoce la estructura de columnas y advierte si un archivo no coincide con el formato esperado.</li>
+    <li><strong>Vista previa antes de confirmar.</strong> Muestra qué se va a importar, cuántos días trae y qué anomalías se detectaron.</li>
+    <li><strong>Reporte de anomalías.</strong> Señala días faltantes, duplicados, valores fuera de rango, tasas incoherentes y saltos bruscos. Dado que el archivo actual no tiene ninguna validación, es previsible que el histórico contenga errores de captura.</li>
+    <li><strong>Decisión por anomalía.</strong> Cada caso se corrige, se acepta o se marca como día atípico, quedando registrado quién lo hizo.</li>
+    <li><strong>Idempotencia.</strong> Reimportar el mismo archivo no duplica registros.</li>
+  </ul>
+
+  <h3>4.8 &nbsp;Validaciones y reglas de negocio</h3>
+  <table>
+    <thead><tr><th style="width:30%">Regla</th><th>Comportamiento</th></tr></thead>
+    <tbody>
+      <tr><td>Unicidad</td><td>Un solo registro por fecha y sucursal</td></tr>
+      <tr><td>Rangos válidos</td><td>Sin valores negativos; tasa dentro de una banda razonable respecto al día anterior</td></tr>
+      <tr><td>Coherencia</td><td>Unidades no inferiores a transacciones; advertencia si el ticket se aparta de la media móvil más allá de un umbral</td></tr>
+      <tr><td>Periodicidad del inventario</td><td>Los días sin conteo configurados no se consideran incompletos</td></tr>
+      <tr><td>Días atípicos</td><td>Marcables con motivo, excluibles de promedios y proyecciones sin borrarlos del histórico</td></tr>
+      <tr><td>Cierre de período</td><td>Un mes cerrado queda bloqueado; reabrirlo exige permiso y deja rastro</td></tr>
+      <tr><td>Auditoría</td><td>Todo cambio guarda usuario, fecha, valor anterior y valor nuevo</td></tr>
+      <tr><td>Separación de agregados</td><td>Los totales se calculan en la presentación y nunca se almacenan junto a los datos diarios</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.9 &nbsp;Reportes y exportación</h3>
+  <ul class="cl">
+    <li><strong>Reporte mensual en PDF</strong> con la portada, el cuadro de indicadores, las gráficas y el cumplimiento de metas: sustituye el envío del archivo Excel</li>
+    <li><strong>Exportación a Excel</strong> respetando el formato actual, para quienes prefieran seguir trabajando en hoja de cálculo</li>
+    <li><strong>Envío programado</strong> del reporte por correo a una lista de destinatarios en una fecha fija del mes</li>
+    <li><strong>Resumen diario</strong> opcional con el cierre del día y el avance de la meta</li>
+  </ul>
+
+  <h3>4.10 &nbsp;Pantallas</h3>
+  <table>
+    <thead><tr><th style="width:28%">Pantalla</th><th>Contenido</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Panel ejecutivo</strong></td><td>Tarjetas de KPI con variación y cumplimiento, gráfica de avance contra meta, comparativa del período y alertas activas</td></tr>
+      <tr><td><strong>Carga diaria</strong></td><td>Formulario de siete campos con validación en vivo y cálculo de derivados en pantalla</td></tr>
+      <tr><td><strong>Cuadro de indicadores</strong></td><td>Tabla equivalente a la hoja actual, con día de la semana correcto, filtros, ordenamiento y totales calculados aparte</td></tr>
+      <tr><td><strong>Gráficas</strong></td><td>Las once visualizaciones con filtros compartidos y exportación</td></tr>
+      <tr><td><strong>Metas</strong></td><td>Definición por indicador y período, seguimiento, proyección y configuración de alertas</td></tr>
+      <tr><td><strong>Comparativa anual</strong></td><td>Matriz de doce meses por indicador con variaciones</td></tr>
+      <tr><td><strong>Importación</strong></td><td>Carga de archivos, vista previa, reporte de anomalías y confirmación</td></tr>
+      <tr><td><strong>Administración</strong></td><td>Usuarios, roles, sucursales, parámetros de validación, periodicidad de inventario y fuente de la tasa</td></tr>
+    </tbody>
+  </table>
+</div>

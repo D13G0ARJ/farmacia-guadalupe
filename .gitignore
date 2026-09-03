@@ -1,0 +1,14 @@
+# Herramientas de agentes y editores (locales, no del proyecto)
+.claude/
+.codex/
+.cursor/
+.idea/
+.vscode/
+
+# Python (generador de PDF y recorrido Playwright)
+__pycache__/
+*.pyc
+
+# Sistema
+.DS_Store
+Thumbs.db

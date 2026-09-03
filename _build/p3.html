@@ -1,0 +1,203 @@
+<!-- ============ 2. DIAGNOSTICO ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">2</div><div class="tt"><h2>Diagnóstico de la situación actual</h2><div class="dk">Auditoría técnica del archivo vigente</div></div></div>
+
+  <p class="lead">Antes de especificar el sistema se auditó el archivo que la farmacia usa hoy. No se revisaron solo los valores visibles: se analizó la estructura interna del archivo &mdash;fórmulas, definiciones de gráficos, rangos, metadatos y cadena de cálculo&mdash; para entender el modelo real y detectar defectos que a simple vista no se ven.</p>
+
+  <h3 class="first">2.1 &nbsp;Estructura del cuadro de indicadores</h3>
+  <p>El archivo contiene ocho hojas: una con los datos y siete que únicamente alojan un gráfico cada una. La hoja de datos registra un mes completo, un renglón por día, con catorce columnas.</p>
+
+  <table>
+    <thead><tr><th style="width:7%">Col.</th><th style="width:31%">Concepto</th><th style="width:15%">Origen</th><th>Fórmula / observación</th></tr></thead>
+    <tbody>
+      <tr><td class="mono c">A</td><td>Día de la semana</td><td><span class="pill p-crit">Manual</span></td><td>Letra escrita a mano. <strong>Defecto crítico detectado</strong> (ver 2.2)</td></tr>
+      <tr><td class="mono c">B</td><td>Fecha</td><td><span class="pill p-acc">Manual</span></td><td>Dato primario</td></tr>
+      <tr><td class="mono c">C</td><td>Venta en Bs</td><td><span class="pill p-acc">Manual</span></td><td>Dato primario</td></tr>
+      <tr><td class="mono c">D</td><td>Venta en $</td><td><span class="pill p-neu">Calculada</span></td><td class="mono">C / E</td></tr>
+      <tr><td class="mono c">E</td><td>Tasa $</td><td><span class="pill p-acc">Manual</span></td><td>Dato primario</td></tr>
+      <tr><td class="mono c">F</td><td>TRN &mdash; transacciones</td><td><span class="pill p-acc">Manual</span></td><td>Dato primario</td></tr>
+      <tr><td class="mono c">G</td><td>Unidades</td><td><span class="pill p-acc">Manual</span></td><td>Dato primario</td></tr>
+      <tr><td class="mono c">H</td><td>Ticket promedio Bs</td><td><span class="pill p-neu">Calculada</span></td><td class="mono">C / F</td></tr>
+      <tr><td class="mono c">I</td><td>Unidades promedio por compra</td><td><span class="pill p-neu">Calculada</span></td><td class="mono">G / F</td></tr>
+      <tr><td class="mono c">J</td><td>Ticket promedio $</td><td><span class="pill p-neu">Calculada</span></td><td class="mono">H / E</td></tr>
+      <tr><td class="mono c">K</td><td>Unidades cargadas (inventario)</td><td><span class="pill p-acc">Manual</span></td><td>Dato primario. No se registra los sábados</td></tr>
+      <tr><td class="mono c">L</td><td>Valuación de inventario a costo</td><td><span class="pill p-acc">Manual</span></td><td>Dato primario. No se registra los sábados</td></tr>
+      <tr><td class="mono c">M</td><td>Transacciones por jornada</td><td><span class="pill p-neu">Calculada</span></td><td class="mono">F / N</td></tr>
+      <tr><td class="mono c">N</td><td>Jornada &mdash; turnos del día</td><td><span class="pill p-acc">Manual</span></td><td>Dato primario</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box o">
+    <div class="bt">Hallazgo estructural clave</div>
+    <p style="margin-bottom:0">De las catorce columnas, <strong>solo siete se escriben a mano</strong>. Las otras cinco son fórmulas y una es derivable de la fecha. Esto se verificó contra la cadena de cálculo interna del archivo, que declara exactamente 163 celdas con fórmula: 30&nbsp;días &times; 5&nbsp;columnas calculadas, más 12&nbsp;totales, más una celda residual. <strong>El formulario de carga diaria del sistema tendrá siete campos, no catorce</strong> &mdash;y dos de ellos no se piden los sábados.</p>
+  </div>
+
+  <p>Adicionalmente el archivo contiene, en las filas 41 a 53, una <strong>tabla de consolidado anual</strong> (doce meses por doce indicadores) que está <strong>completamente vacía</strong>. La estructura existe desde que se creó la plantilla, pero nunca se ha llenado.</p>
+
+  <h3>2.2 &nbsp;Hallazgos de la auditoría</h3>
+  <p>Los defectos encontrados no son atribuibles a descuido de las personas: son las fallas típicas e inevitables de un proceso manual sostenido durante años sobre una plantilla que se copia mes a mes. Se documentan porque <strong>cada uno se traduce en un requerimiento concreto del sistema</strong>.</p>
+
+  <table>
+    <thead><tr><th style="width:5%">#</th><th style="width:27%">Hallazgo</th><th style="width:33%">Evidencia</th><th>Requerimiento que genera</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="c"><span class="pill p-crit">01</span></td>
+        <td><strong>La columna de día de la semana está desfasada cuatro días en los treinta registros</strong></td>
+        <td>Verificación fecha por fecha: 30 de 30 incorrectos. La prueba de desfase da coincidencia exacta con un corrimiento de +4 días, consistente con haber copiado la plantilla del mes anterior sin actualizar esa columna</td>
+        <td>El día de la semana debe <strong>derivarse de la fecha</strong>, nunca capturarse. Error estructuralmente imposible en el sistema</td>
+      </tr>
+      <tr>
+        <td class="c"><span class="pill p-crit">02</span></td>
+        <td>Los siete gráficos carecen de eje de categorías</td>
+        <td>Seis de los siete no tienen rango de categorías definido: el eje horizontal muestra 1, 2, 3&hellip;30 en lugar de las fechas</td>
+        <td>Gráficas con eje temporal real, con fecha y día de la semana</td>
+      </tr>
+      <tr>
+        <td class="c"><span class="pill p-crit">03</span></td>
+        <td>Un gráfico grafica una columna de texto como serie numérica</td>
+        <td>El gráfico de Venta en Bs incluye la columna A como serie; sus treinta valores son cero. Los índices de serie además revelan una serie eliminada previamente</td>
+        <td>Series definidas por configuración, no por rangos manuales</td>
+      </tr>
+      <tr>
+        <td class="c"><span class="pill p-crit">04</span></td>
+        <td>Un gráfico incluye el encabezado y la fila de totales como si fueran días</td>
+        <td>El gráfico de transacciones por jornada toma el rango desde la fila del encabezado hasta la de totales: dibuja un cero inicial y grafica el promedio del mes como si fuera un día adicional</td>
+        <td>Separación estricta entre datos y agregados</td>
+      </tr>
+      <tr>
+        <td class="c"><span class="pill p-warn">05</span></td>
+        <td>Un gráfico muestra dos series en escalas incompatibles</td>
+        <td>Ticket promedio (valores cercanos a 766) y unidades por compra (cercanos a 2,5) comparten un único eje: la segunda serie queda plana contra el eje y es invisible</td>
+        <td>Eje secundario automático cuando las magnitudes difieren en órdenes</td>
+      </tr>
+      <tr>
+        <td class="c"><span class="pill p-warn">06</span></td>
+        <td>Los totales usan promedio de promedios</td>
+        <td>La fila de totales promedia los ratios diarios en lugar de calcular el ratio de los totales. El desvío en el mes auditado va de 0,35&#37; a 0,52&#37;, y se origina casi por completo en un único día atípico</td>
+        <td>Ratios siempre ponderados. El desvío es pequeño en meses normales pero <strong>no tiene cota superior</strong></td>
+      </tr>
+      <tr>
+        <td class="c"><span class="pill p-warn">07</span></td>
+        <td>El filtro automático abarca la fila de totales</td>
+        <td>El rango de filtro definido llega hasta la fila de totales: al ordenar o filtrar, esa fila se mezcla entre los días</td>
+        <td>Totales calculados en presentación, nunca almacenados junto a los datos</td>
+      </tr>
+      <tr>
+        <td class="c"><span class="pill p-warn">08</span></td>
+        <td>Ausencia total de validación de datos</td>
+        <td>Ninguna de las ocho hojas tiene validación, formato condicional ni protección. Nada impide capturar una tasa de 15 en lugar de 150, o una venta negativa</td>
+        <td>Validación por rango y coherencia, con alertas de desviación</td>
+      </tr>
+      <tr>
+        <td class="c"><span class="pill p-neu">09</span></td>
+        <td>No existe registro de incidencias</td>
+        <td>El día atípico del mes vendió el 28&#37; de un día normal con la jornada completa registrada, y el archivo no tiene dónde anotar la causa</td>
+        <td>Campo de observación por día y opción de excluir días marcados de los promedios</td>
+      </tr>
+      <tr>
+        <td class="c"><span class="pill p-neu">10</span></td>
+        <td>Contenido ajeno incrustado en el reporte</td>
+        <td>Una de las hojas contiene un anuncio publicitario pegado desde el navegador: dos imágenes y cuatro hipervínculos. Es contenido legítimo de Microsoft, sin riesgo de seguridad, pero representa más de la mitad del peso del archivo</td>
+        <td>Higiene documental: el reporte se genera, no se edita</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>2.3 &nbsp;Dos hallazgos que cambian el diseño</h3>
+
+  <div class="box o">
+    <div class="bt">El histórico completo existe y es migrable</div>
+    <p>Los metadatos del archivo conservan su ruta original de guardado, que sigue una <strong>estructura de una carpeta por mes</strong> (<code>...\guadalupe indicadores\09-SEPTIEMBRE\</code>). Si existe la carpeta de septiembre, existen las de los meses anteriores; la plantilla además data de 2021.</p>
+    <p style="margin-bottom:0">La consecuencia es directa: <strong>la tabla de consolidado anual que lleva años vacía se llena automáticamente</strong> en cuanto se importen esas carpetas. Como todos los archivos comparten la misma plantilla, un único importador los lee todos. Esto convierte un dashboard del mes en curso en una herramienta de análisis de tendencia plurianual, con el mismo esfuerzo de desarrollo.</p>
+  </div>
+
+  <div class="box">
+    <div class="bt">El inventario no se cuenta los sábados: es una regla, no un error</div>
+    <p>Las columnas de inventario están vacías en cinco días del mes, siempre las dos juntas. Cuatro de esos cinco días son sábado &mdash;y son <strong>los cuatro sábados del mes, el 100&#37;</strong>. El quinto es el día atípico.</p>
+    <p style="margin-bottom:0">Esto no es dato faltante sino <strong>frecuencia de proceso</strong>. El sistema no debe marcar el sábado en rojo como incompleto: debe entender que el inventario tiene periodicidad de seis días. Tratarlo como error generaría más de cincuenta alertas falsas al año.</p>
+  </div>
+
+  <h3>2.4 &nbsp;Lecturas de negocio del mes auditado</h3>
+  <p>El mes analizado permite validar qué indicadores son relevantes y cómo debe comportarse el sistema.</p>
+
+  <div class="stats">
+    <div class="stat"><div class="v">3.853</div><div class="l">Transacciones<br>en el mes</div></div>
+    <div class="stat"><div class="v">7.543</div><div class="l">Unidades<br>vendidas</div></div>
+    <div class="stat"><div class="v">1,96</div><div class="l">Unidades<br>por compra</div></div>
+    <div class="stat warn"><div class="v">+19,7&#37;</div><div class="l">Variación de la tasa<br>en treinta días</div></div>
+  </div>
+
+  <h4>La moneda es el eje de todo el sistema</h4>
+  <p>La tasa pasó de 148,44 a 177,61 en un solo mes, de forma <strong>estrictamente creciente</strong>: nunca bajó. Eso significa que <strong>en bolívares las ventas siempre parecen crecer</strong>, aunque el volumen real caiga. Solo la columna en divisa refleja el desempeño verdadero.</p>
+  <p>De ahí que el sistema deba ser <strong>bimoneda nativo</strong>: cada indicador se almacena en ambas monedas, convertido con la tasa del día de la transacción y nunca con la de cierre, que distorsionaría el histórico.</p>
+
+  <h4>La tasa utilizada se comporta como la oficial</h4>
+  <p>De nueve repeticiones de tasa en días consecutivos, ocho caen en sábado o domingo: el ente emisor no publica los fines de semana y se arrastra la del viernes. Sumado a que la serie nunca decrece, todo indica que se usa la <strong>tasa oficial</strong>. Es una inferencia sólida pero <strong>no confirmada</strong>, y define si el sistema la consulta automáticamente o la carga un usuario.</p>
+
+  <h4>Existe un patrón semanal aprovechable</h4>
+  <p>Calculado sobre las fechas reales &mdash;no sobre la columna defectuosa&mdash; hay un mejor y un peor día claros, con una diferencia cercana al 33&#37;. Es accionable para programar personal y reposición, y hoy <strong>es invisible</strong>.</p>
+
+  <h4>La rotación de inventario no es calculable con los datos actuales</h4>
+  <p>El inventario se registra <strong>a costo</strong> y las ventas <strong>a precio de venta</strong>: dividir una entre otra no da una rotación válida. El indicador &mdash;y los días de inventario&mdash; exige el margen bruto o el costo de ventas, <strong>un dato que hoy no se captura</strong>.</p>
+</div>
+
+<!-- ============ 3. VISION GENERAL ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">3</div><div class="tt"><h2>Visión general del sistema</h2><div class="dk">Los tres módulos y el circuito de datos</div></div></div>
+
+  <p class="lead">El sistema es una aplicación web única, con una sola base de datos y un solo control de acceso, organizada en tres módulos funcionales. Dos de ellos se alimentan de Chatwoot; el tercero consolida toda la operación.</p>
+
+  <h3 class="first">3.1 &nbsp;Arquitectura funcional</h3>
+
+  <div class="flow">
+    <div class="fnode ink"><div class="ft">CHATWOOT</div><div class="fd">WhatsApp &middot; Instagram &middot; Facebook &middot; Widget web</div></div>
+    <div class="farrow">&darr; &nbsp;&nbsp; webhooks y API &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iframe embebido &nbsp;&nbsp; &darr;</div>
+    <div class="frow">
+      <div class="fnode acc"><div class="ft">MÓDULO B &mdash; Analítica</div><div class="fd">Tiempo de primera respuesta, tiempo de resolución, volumen y productividad por agente, canal y equipo</div></div>
+      <div class="fnode acc"><div class="ft">MÓDULO C &mdash; Pipeline</div><div class="fd">Armado de pedidos desde la conversación y gestión por etapas configurables en tablero</div></div>
+    </div>
+    <div class="farrow">&darr; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &darr;</div>
+    <div class="fnode" style="border-color:var(--ink2);border-width:1.5pt"><div class="ft">BASE DE DATOS ÚNICA</div><div class="fd">Conversaciones, pedidos, ventas, inventario, metas y usuarios en un mismo modelo relacional</div></div>
+    <div class="farrow">&darr;</div>
+    <div class="fnode ink"><div class="ft">MÓDULO A &mdash; Indicadores y Metas</div><div class="fd">KPIs bimoneda &middot; gráficas &middot; metas y proyección &middot; comparativa anual &middot; reporte exportable</div></div>
+  </div>
+
+  <h3>3.2 &nbsp;El circuito de datos</h3>
+  <p>El valor del sistema está en las flechas descendentes del diagrama: cada módulo entrega datos al siguiente.</p>
+
+  <ul class="pl">
+    <li><strong>Un cliente escribe</strong> por cualquiera de los canales conectados a Chatwoot.</li>
+    <li><strong>El Módulo B registra la conversación</strong> y empieza a medir tiempos de respuesta y atención.</li>
+    <li><strong>El agente abre el panel lateral</strong> dentro de Chatwoot, que es la aplicación del Módulo C, y arma el pedido sin salir de la herramienta que ya usa.</li>
+    <li><strong>El pedido avanza por el embudo</strong>, dejando registro de tiempo en cada etapa.</li>
+    <li><strong>El pedido cerrado alimenta al Módulo A</strong> como venta del canal digital, con su ticket, sus unidades y su atribución de origen.</li>
+    <li><strong>El Módulo A consolida</strong> la venta digital con la del mostrador y contrasta el total contra las metas del mes.</li>
+  </ul>
+
+  <div class="box">
+    <div class="bt">Resultado</div>
+    <p style="margin-bottom:0">Una conversación de WhatsApp queda conectada, de extremo a extremo, con la línea de venta del reporte mensual. Esa trazabilidad es la que hoy no existe y la que ninguna herramienta de mercado provee sin integración a medida.</p>
+  </div>
+
+  <h3>3.3 &nbsp;Alcance resumido por módulo</h3>
+  <table>
+    <thead><tr><th style="width:22%">Módulo</th><th>Incluye</th><th style="width:24%">No incluye</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>A &mdash; Indicadores<br>y Metas</strong></td>
+        <td>Carga diaria, motor de cálculo bimoneda, catálogo de KPIs, metas con proyección, gráficas corregidas, comparativa anual, importador de histórico, validaciones, reportes exportables y multisucursal</td>
+        <td>Contabilidad, facturación fiscal, nómina</td>
+      </tr>
+      <tr>
+        <td><strong>B &mdash; Analítica<br>de Chatwoot</strong></td>
+        <td>Espejado de eventos, métricas de tiempo y volumen por agente, canal, equipo y etiqueta, histórico ilimitado y tablero de productividad</td>
+        <td>Modificar la operación de Chatwoot o sustituir su bandeja</td>
+      </tr>
+      <tr>
+        <td><strong>C &mdash; Pipeline<br>de Pedidos</strong></td>
+        <td>Aplicación embebida en Chatwoot, armado de pedidos, etapas configurables, tablero, escritura de estado de vuelta a Chatwoot y métricas del embudo</td>
+        <td>Pasarela de pago en línea, tienda pública, logística de terceros <span class="pill p-warn">Por confirmar</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>

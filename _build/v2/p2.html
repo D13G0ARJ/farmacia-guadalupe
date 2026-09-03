@@ -1,0 +1,113 @@
+<!-- ============ 1. RESUMEN ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">1</div><div class="tt"><h2>Resumen y alcance</h2><div class="dk">Qué se propone y en qué orden</div></div></div>
+
+  <p class="lead">Farmacia Guadalupe registra a mano, todos los días, un cuadro de indicadores en Excel que luego circula como reporte mensual. En paralelo atiende clientes por canales digitales a través de Chatwoot, cuyas estadísticas viven en otra herramienta y no se cruzan con nada. Se propone un tablero único que reemplaza el archivo y que además muestra las métricas de atención junto a los indicadores del negocio.</p>
+
+  <h3 class="first">Las dos etapas</h3>
+  <table>
+    <thead><tr><th style="width:8%">Etapa</th><th style="width:32%">Qué resuelve</th><th>Qué incluye</th><th style="width:18%">Estado</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="c"><strong>1</strong></td>
+        <td>Digitalizar el cuadro de indicadores y obtener estadística, gráficas y KPIs con metas</td>
+        <td>Captura diaria, cálculo corregido, gráficas, metas con proyección, comparativa anual e importación del histórico</td>
+        <td><span class="pill p-ok">Definida</span><br><span style="font-size:7.4pt;color:var(--ink3)">Puede arrancar ya</span></td>
+      </tr>
+      <tr>
+        <td class="c"><strong>2</strong></td>
+        <td>Incorporar las métricas de Chatwoot al mismo tablero</td>
+        <td>Carga de los reportes que Chatwoot genera al descargarlos, con su panel de tiempos de atención y productividad</td>
+        <td><span class="pill p-warn">Viable</span><br><span style="font-size:7.4pt;color:var(--ink3)">Requiere archivos reales</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="box w">
+    <div class="bt">Fuera de alcance</div>
+    <p style="margin-bottom:0">Esta propuesta <strong>no contempla la gestión de pedidos</strong>: ni embudo por etapas, ni aplicación embebida dentro de Chatwoot, ni catálogo de productos. Si más adelante se decide incorporarlo, lo aquí construido lo admite sin rehacerse, pero es un alcance y una cotización aparte.</p>
+  </div>
+
+  <h3>Viabilidad de la Etapa 2: confirmada</h3>
+  <p>Se analizaron dos reportes de muestra exportados desde Chatwoot. Aunque venían sin datos, <strong>fueron suficientes para confirmar que la etapa es realizable</strong>: el formato es fijo y predecible, y todas las columnas resultaron identificables, incluidas dos que Chatwoot exporta sin encabezado. Las dificultades detectadas son trabajo rutinario de importación, no impedimentos.</p>
+  <p>Además, la cuenta opera en la modalidad en la nube de Chatwoot, que dispone de una interfaz de datos propia. Eso garantiza una vía alterna si los reportes descargados resultaran insuficientes. <strong>No existe un escenario en el que esta etapa no pueda realizarse.</strong></p>
+
+  <h3>Contenido de este documento</h3>
+  <div class="toc" style="margin-top:1mm">
+    <a><span class="n">2</span><span class="t">El problema</span><span class="d">Qué encontramos en el archivo actual</span></a>
+    <a><span class="n">3</span><span class="t">Etapa 1 &mdash; Dashboard de indicadores y metas</span><span class="d">Qué se hará y cómo queda</span></a>
+    <a><span class="n">4</span><span class="t">Etapa 2 &mdash; Métricas de Chatwoot</span><span class="d">Qué se hará y cómo queda</span></a>
+    <a><span class="n">5</span><span class="t">Lo que necesitamos</span><span class="d">Archivos, accesos y definiciones</span></a>
+    <a><span class="n">6</span><span class="t">Plan de trabajo</span><span class="d">Secuencia y entregables</span></a>
+  </div>
+</div>
+
+<!-- ============ 2. EL PROBLEMA ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">2</div><div class="tt"><h2>El problema</h2><div class="dk">Qué encontramos al auditar el archivo actual</div></div></div>
+
+  <p class="lead">Antes de proponer nada se auditó el archivo que la farmacia usa hoy, analizando su estructura interna &mdash;fórmulas, gráficos, rangos y metadatos&mdash; y no solo sus valores visibles. Los defectos encontrados no son descuido de nadie: son las fallas previsibles de un proceso manual sostenido durante años sobre una plantilla que se copia mes a mes.</p>
+
+  <h3 class="first">Cómo está armado hoy</h3>
+  <p>El archivo tiene ocho hojas: una con los datos, un renglón por día y catorce columnas, y siete hojas que solo alojan un gráfico. De esas catorce columnas, <strong>solo siete se escriben a mano</strong>; cinco son fórmulas y una es derivable de la fecha.</p>
+
+  <h3>Lo que encontramos</h3>
+  <table>
+    <thead><tr><th style="width:32%">Hallazgo</th><th style="width:34%">Evidencia</th><th>Qué implica</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="pill p-crit">Crítico</span> <strong>La columna del día de la semana está corrida cuatro días</strong></td>
+        <td>Verificación fecha por fecha: <strong>30 de 30 incorrectos</strong>. Viene copiada de la plantilla del mes anterior y no se actualizó</td>
+        <td>Cualquier lectura por día de la semana &mdash;personal, reposición&mdash; se hizo sobre el día equivocado</td>
+      </tr>
+      <tr>
+        <td><span class="pill p-crit">Crítico</span> Los gráficos no muestran fechas</td>
+        <td>Seis de los siete no tienen eje de categorías: el eje horizontal numera 1, 2, 3&hellip;30 en lugar de los días</td>
+        <td>No se puede señalar un pico y saber qué día fue</td>
+      </tr>
+      <tr>
+        <td><span class="pill p-crit">Crítico</span> Un gráfico dibuja una columna de texto</td>
+        <td>El de venta en bolívares incluye la columna de letras como serie: treinta barras en cero</td>
+        <td>Un gráfico del reporte mensual está roto</td>
+      </tr>
+      <tr>
+        <td><span class="pill p-warn">Medio</span> Dos series en escalas incompatibles</td>
+        <td>Ticket promedio (cientos) y unidades por compra (unidades) comparten eje: la segunda queda plana e invisible</td>
+        <td>El gráfico dice mostrar dos indicadores y muestra uno</td>
+      </tr>
+      <tr>
+        <td><span class="pill p-warn">Medio</span> Los totales promedian promedios</td>
+        <td>La fila de totales promedia los ratios diarios en vez de dividir los totales</td>
+        <td>Pequeño en un mes normal, pero <strong>sin cota superior</strong> cuando hay días atípicos</td>
+      </tr>
+      <tr>
+        <td><span class="pill p-warn">Medio</span> Cero validación de datos</td>
+        <td>Ninguna de las ocho hojas tiene validación ni protección. Nada impide capturar una tasa de 15 en lugar de 150</td>
+        <td>Los errores de captura entran sin aviso y quedan en el histórico</td>
+      </tr>
+      <tr>
+        <td><span class="pill p-neu">Menor</span> No hay dónde anotar una incidencia</td>
+        <td>Un día del mes vendió el 28&#37; de lo normal con la jornada completa registrada, sin explicación posible</td>
+        <td>Ese día contamina los promedios sin que nadie sepa por qué</td>
+      </tr>
+      <tr>
+        <td><span class="pill p-neu">Menor</span> La comparativa anual nunca se llenó</td>
+        <td>El archivo tiene una tabla de doce meses por doce indicadores, <strong>completamente vacía</strong></td>
+        <td>No existe comparación entre meses ni contra el año anterior</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Dos hallazgos que definen el diseño</h3>
+  <div class="box o">
+    <div class="bt">El histórico existe y se puede recuperar</div>
+    <p style="margin-bottom:0">Los metadatos conservan la ruta original de guardado, que sigue una <strong>estructura de una carpeta por mes</strong>, y la plantilla data de 2021. Si esas carpetas se conservan, <strong>la comparativa anual que lleva años vacía se llena automáticamente</strong> al importarlas: años de tendencia disponibles desde el primer día, sin cargar un dato a mano.</p>
+  </div>
+  <div class="box">
+    <div class="bt">No se cuenta inventario los sábados, y es una regla, no un error</div>
+    <p style="margin-bottom:0">Las columnas de inventario están vacías en cinco días, siempre las dos juntas, y cuatro de ellos son <strong>los cuatro sábados del mes</strong>. Es frecuencia de proceso, no dato faltante: el sistema debe entenderlo así en lugar de marcarlo en rojo, o generaría más de cincuenta alertas falsas al año.</p>
+  </div>
+
+  <h3>El contexto que atraviesa todo: la moneda</h3>
+  <p>En el mes auditado la tasa pasó de 148,44 a 177,61 de forma <strong>estrictamente creciente</strong>: nunca bajó. Eso significa que <strong>en bolívares las ventas siempre parecen crecer</strong>, aunque el volumen real caiga. Por eso el sistema es bimoneda nativo: cada monto se conserva en ambas monedas, convertido con la tasa del día de la operación y nunca con la de cierre.</p>
+</div>

@@ -1,0 +1,96 @@
+<!-- ============ 5. LO QUE NECESITAMOS ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">5</div><div class="tt"><h2>Lo que necesitamos</h2><div class="dk">Archivos, accesos y definiciones para ejecutar</div></div></div>
+
+  <p class="lead">Esta sección reúne todo lo que hace falta de parte del cliente. Se distingue entre lo que <strong>bloquea</strong> el arranque de cada etapa y lo que solo afina el comportamiento del sistema. La Etapa 1 puede comenzar con muy poco; la Etapa 2 requiere archivos que hoy no tenemos.</p>
+
+  <h3 class="first">5.1 &nbsp;Archivos de Chatwoot <span class="pill p-crit">Bloquea la Etapa 2</span></h3>
+  <p>Los reportes analizados provienen de una cuenta de demostración <strong>sin datos</strong>: cero conversaciones y todas las métricas de tiempo en blanco. Sirvieron para confirmar la viabilidad, pero <strong>no para dimensionar el trabajo con exactitud</strong>. Se requieren reportes descargados de la cuenta real, de un período con actividad.</p>
+
+  <table>
+    <thead><tr><th style="width:34%">Qué se necesita</th><th>Para qué</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Reporte de conversaciones con datos reales</strong></td>
+        <td>Determina si con actividad aparece desglose por día o solo el total del período. De eso depende que el panel muestre una curva de tendencia o una comparación entre períodos</td>
+      </tr>
+      <tr>
+        <td><strong>Reporte de agentes con datos reales</strong></td>
+        <td>Es la fuente del <strong>tiempo de atención por usuario</strong>, la métrica de mayor interés. Su estructura todavía no ha sido verificada</td>
+      </tr>
+      <tr>
+        <td><strong>Muestra de los demás reportes que se decida incluir</strong></td>
+        <td>Bandejas de entrada, equipos o etiquetas: cada uno tiene columnas distintas y requiere su propio lector</td>
+      </tr>
+      <tr>
+        <td><strong>Los archivos tal como los descarga Chatwoot</strong></td>
+        <td>Sin abrirlos ni guardarlos desde Excel: esa conversión destruye los acentos de forma irrecuperable, como se comprobó en la muestra</td>
+      </tr>
+      <tr>
+        <td><strong>Un período con movimiento normal</strong></td>
+        <td>Una semana o un mes representativo. Un período vacío no permite conocer el formato de los tiempos ni la presencia de fechas</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>5.2 &nbsp;Archivos del cuadro de indicadores <span class="pill p-warn">Amplía la Etapa 1</span></h3>
+  <table>
+    <thead><tr><th style="width:34%">Qué se necesita</th><th>Para qué</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Los Excel de los meses anteriores</strong>, tal como están guardados por carpeta</td>
+        <td>Con ellos <strong>la comparativa anual se llena desde el primer día</strong> y las metas pueden calcularse sobre datos reales. Sin ellos el sistema arranca vacío y las comparaciones interanuales tardan un año en existir</td>
+      </tr>
+      <tr>
+        <td><strong>Confirmación de desde qué año se conservan</strong></td>
+        <td>Define cuánto histórico se puede recuperar</td>
+      </tr>
+      <tr>
+        <td>Aviso si <strong>la plantilla cambió de formato</strong> en algún período</td>
+        <td>El importador reconoce la plantilla actual; si hubo versiones distintas, debe contemplar más de un lector</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>5.3 &nbsp;Accesos e infraestructura</h3>
+  <table>
+    <thead><tr><th style="width:34%">Qué se necesita</th><th>Para qué</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Confirmar cuál es la cuenta de Chatwoot a medir</strong> y qué canales atienden a los clientes</td><td>La muestra analizada corresponde a un canal web sin actividad. Si la atención real ocurre por otro canal o en otra cuenta, los datos son distintos</td></tr>
+      <tr><td>Acceso administrativo a Chatwoot <span class="pill p-neu">Deseable</span></td><td>No es imprescindible para la carga de archivos, pero habilita la vía alterna de integración si los reportes resultaran insuficientes</td></tr>
+      <tr><td><strong>Dónde se va a alojar el sistema</strong></td><td>Servidor propio del cliente o provisto por nosotros. Define el despliegue y el esquema de respaldos</td></tr>
+      <tr><td>Cuenta de correo para envíos automáticos</td><td>Reportes programados y alertas de metas</td></tr>
+      <tr><td>Confirmación de <strong>si existe un dashboard previo</strong></td><td>Determina si se construye desde cero o se extiende algo existente. Debe revisarse antes de estimar</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.4 &nbsp;Definiciones a confirmar</h3>
+  <table>
+    <thead><tr><th style="width:5%">#</th><th style="width:38%">Definición</th><th>Por qué importa</th></tr></thead>
+    <tbody>
+      <tr><td class="c">1</td><td><strong>¿Qué tasa de cambio se usa y quién la carga?</strong></td><td>El análisis indica que se usa la oficial, pero no está confirmado. Toda la analítica en divisa depende de este valor</td></tr>
+      <tr><td class="c">2</td><td><strong>¿Cuál es el margen bruto o el costo de ventas?</strong></td><td>El archivo registra inventario a costo y ventas a precio de venta: así la rotación no es calculable. Con este dato se habilitan rotación real y días de inventario</td></tr>
+      <tr><td class="c">3</td><td>¿Cuántas sucursales hay y se consolidan entre sí?</td><td>El diseño ya contempla varias, pero define cuántas vistas y comparaciones se construyen</td></tr>
+      <tr><td class="c">4</td><td>¿Quiénes usarán el sistema y qué debe ver cada perfil?</td><td>En particular, si un agente puede ver el desempeño de sus compañeros o solo el propio</td></tr>
+      <tr><td class="c">5</td><td>¿Quién define las metas y con qué granularidad?</td><td>Mensual o también diaria, global o por sucursal, en bolívares o en divisa</td></tr>
+      <tr><td class="c">6</td><td>¿Con qué frecuencia se cargarán los reportes de Chatwoot?</td><td>Semanal o mensual: define la granularidad del panel de atención</td></tr>
+      <tr><td class="c">7</td><td>¿Los tiempos se calculan solo en horario laboral o a toda hora?</td><td>Chatwoot permite ambas opciones y los valores cambian. Debe fijarse antes de construir el panel</td></tr>
+      <tr><td class="c">8</td><td>¿Por qué no se registra inventario los sábados? ¿Es regla fija?</td><td>Confirma la periodicidad a configurar. Tratarlo como error generaría más de cincuenta alertas falsas al año</td></tr>
+      <tr><td class="c">9</td><td>¿Qué ocurrió el día atípico del mes auditado?</td><td>Valida la necesidad del campo de incidencias y de excluir días marcados de los promedios</td></tr>
+      <tr><td class="c">10</td><td>¿Cuántas personas cargan el archivo hoy?</td><td>Con años de captura sin validación, dimensiona el esfuerzo de limpieza durante la importación</td></tr>
+      <tr><td class="c">11</td><td>La valuación de inventario, ¿es a costo o a precio de venta?</td><td>El encabezado dice costo; conviene confirmarlo porque cambia la interpretación del indicador</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.5 &nbsp;Si hiciera falta algo más</h3>
+  <div class="box">
+    <div class="bt">Compromiso de transparencia</div>
+    <p>La lista anterior recoge todo lo identificado a partir de los archivos entregados. Al revisar los reportes reales de Chatwoot y los Excel históricos <strong>podrían aparecer necesidades adicionales</strong> que hoy no son visibles: por ejemplo, un formato de plantilla distinto en años anteriores, un reporte con estructura inesperada o un canal de atención no previsto.</p>
+    <p style="margin-bottom:0">En ese caso <strong>se comunicará de inmediato, indicando qué se necesita, por qué y qué efecto tiene sobre el alcance o el plazo</strong>, antes de continuar. No se asumirá ningún trabajo adicional sin acordarlo previamente.</p>
+  </div>
+
+  <div class="box w">
+    <div class="bt">Condición de la cotización</div>
+    <p style="margin-bottom:0">La <strong>Etapa 1</strong> se cotiza en firme: su alcance está cerrado y no depende de información pendiente. La <strong>Etapa 2</strong> se cotiza sobre el formato verificado en los archivos de muestra; al iniciarla se valida contra los reportes reales y, si su estructura difiere de lo verificado, se acuerda el ajuste antes de continuar.</p>
+  </div>
+</div>

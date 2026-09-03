@@ -1,0 +1,1391 @@
+<meta charset="utf-8">
+<title>Especificación Sistema Farmacia Guadalupe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#14262F; --ink2:#3D5560; --ink3:#6B7F88;
+  --acc:#0B6B5B; --acc2:#0E8A75; --accbg:#E9F3F0;
+  --warn:#A8721B; --warnbg:#FBF3E4;
+  --crit:#9E3527; --critbg:#FAECEA;
+  --ok:#2F6B3F; --okbg:#EAF3EC;
+  --line:#DCD8D1; --line2:#EDEAE4; --paper:#fff; --soft:#F8F7F4;
+  --serif:'Source Serif 4',Georgia,'Times New Roman',serif;
+  --sans:'Inter',-apple-system,'Segoe UI',Roboto,sans-serif;
+  --mono:'JetBrains Mono','Cascadia Mono',Consolas,monospace;
+}
+*{box-sizing:border-box}
+@page{ size:A4; margin:19mm 0 17mm 0; }
+html{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+body{font-family:var(--sans); color:var(--ink); font-size:9.6pt; line-height:1.62; margin:0; background:var(--paper);}
+.pg{padding:0 17mm;}
+h1,h2,h3,h4{font-family:var(--serif); font-weight:600; color:var(--ink); margin:0; line-height:1.22;}
+p{margin:0 0 8pt 0;}
+strong{font-weight:600; color:var(--ink);}
+a{color:var(--acc); text-decoration:none;}
+code{font-family:var(--mono); font-size:8.4pt; background:var(--soft); border:1px solid var(--line2); padding:0.5pt 3pt; border-radius:3px; color:var(--ink);}
+
+.cover{ height:260mm; background:linear-gradient(160deg,#14262F 0%,#123039 48%,#0B4A44 100%); color:#fff; padding:26mm 20mm 16mm 20mm; position:relative; page-break-after:always; }
+.cover .rx{ position:absolute; right:-14mm; top:34mm; font-family:var(--serif); font-size:170pt; color:rgba(255,255,255,.055); line-height:1; letter-spacing:-6pt;}
+.cv-kick{ font-family:var(--sans); font-size:8pt; letter-spacing:2.6pt; text-transform:uppercase; color:#7FD6C2; font-weight:600; margin-bottom:5mm;}
+.cv-rule{ width:26mm; height:2.5pt; background:#7FD6C2; margin:0 0 9mm 0;}
+.cover h1{ font-size:33pt; color:#fff; line-height:1.13; letter-spacing:-.4pt; margin-bottom:6mm; max-width:150mm;}
+.cover .sub{ font-family:var(--serif); font-size:13pt; color:#B9D6D0; line-height:1.45; max-width:128mm; font-weight:400;}
+.cv-cli{ position:absolute; left:20mm; bottom:56mm; }
+.cv-cli .lbl{ font-size:7.4pt; letter-spacing:1.8pt; text-transform:uppercase; color:#6FA79C; font-weight:600; margin-bottom:2.5mm;}
+.cv-cli .nm{ font-family:var(--serif); font-size:19pt; color:#fff;}
+.cv-meta{ position:absolute; left:20mm; right:20mm; bottom:16mm; border-top:1px solid rgba(255,255,255,.19); padding-top:5mm; display:flex; gap:14mm;}
+.cv-meta div{flex:1}
+.cv-meta .k{ font-size:7pt; letter-spacing:1.5pt; text-transform:uppercase; color:#6FA79C; font-weight:600; margin-bottom:1.5mm;}
+.cv-meta .v{ font-size:9.5pt; color:#E4EFEC; font-weight:500;}
+.cv-badge{ position:absolute; right:20mm; top:26mm; border:1px solid rgba(127,214,194,.45); border-radius:2mm; padding:3mm 5mm; text-align:center;}
+.cv-badge .n{ font-family:var(--serif); font-size:21pt; color:#7FD6C2; line-height:1;}
+.cv-badge .t{ font-size:6.6pt; letter-spacing:1.4pt; text-transform:uppercase; color:#9CC4BB; margin-top:1.5mm;}
+
+.sec{ page-break-before:always; }
+.sec-hd{ border-bottom:2.5pt solid var(--ink); padding-bottom:3mm; margin-bottom:6mm; display:flex; align-items:baseline; gap:6mm;}
+.sec-hd .num{ font-family:var(--serif); font-size:30pt; color:var(--acc); line-height:.85; font-weight:600;}
+.sec-hd .tt h2{ font-size:17.5pt; letter-spacing:-.2pt;}
+.sec-hd .tt .dk{ font-size:8.4pt; color:var(--ink3); margin-top:1.5mm; font-weight:400;}
+h3{ font-size:12pt; margin:6.5mm 0 2.5mm 0; color:var(--ink); }
+h3.first{margin-top:0}
+h3,h4{page-break-after:avoid; break-after:avoid;}
+p{orphans:2; widows:2;}
+h4{ font-family:var(--sans); font-size:9.4pt; font-weight:700; margin:4mm 0 1.6mm 0; color:var(--acc); letter-spacing:.2pt;}
+.lead{ font-family:var(--serif); font-size:11.2pt; line-height:1.5; color:var(--ink2); margin-bottom:5mm;}
+
+table{ width:100%; border-collapse:collapse; margin:2.5mm 0 5mm 0; font-size:8.5pt; page-break-inside:auto;}
+thead{display:table-header-group;}
+tbody tr{page-break-inside:avoid;}
+thead th{ background:var(--ink); color:#fff; font-weight:600; text-align:left; padding:2.6mm 3mm; font-size:7.6pt; letter-spacing:.7pt; text-transform:uppercase;}
+tbody td{ padding:2.4mm 3mm; border-bottom:1px solid var(--line2); vertical-align:top; line-height:1.48;}
+tbody tr:nth-child(even) td{ background:#FBFAF8;}
+tbody tr:last-child td{border-bottom:1px solid var(--line);}
+td.mono,th.mono{font-family:var(--mono); font-size:7.8pt;}
+td.c{text-align:center} td.r{text-align:right}
+.tnote{font-size:7.6pt; color:var(--ink3); margin:-4mm 0 6mm 0; font-style:italic;}
+
+.box{ border:1px solid var(--line); border-left:3pt solid var(--acc); background:var(--soft); padding:3.5mm 4.5mm; margin:3.5mm 0; border-radius:0 2mm 2mm 0; page-break-inside:avoid;}
+.box .bt{ font-size:7.4pt; letter-spacing:1.5pt; text-transform:uppercase; font-weight:700; color:var(--acc); margin-bottom:2mm;}
+.box.w{ border-left-color:var(--warn); background:var(--warnbg);} .box.w .bt{color:var(--warn)}
+.box.c{ border-left-color:var(--crit); background:var(--critbg);} .box.c .bt{color:var(--crit)}
+.box.o{ border-left-color:var(--ok); background:var(--okbg);} .box.o .bt{color:var(--ok)}
+.box p:last-child{margin-bottom:0}
+
+.stats{ display:flex; gap:3mm; margin:3.5mm 0 5mm 0; page-break-inside:avoid;}
+.stat{ flex:1; border:1px solid var(--line); border-top:2.5pt solid var(--acc); padding:3.5mm 3.5mm; background:#fff;}
+.stat .v{ font-family:var(--serif); font-size:17pt; color:var(--ink); line-height:1; font-weight:600;}
+.stat .l{ font-size:7pt; letter-spacing:.8pt; text-transform:uppercase; color:var(--ink3); margin-top:2mm; font-weight:600; line-height:1.35;}
+.stat.crit{border-top-color:var(--crit)} .stat.crit .v{color:var(--crit)}
+.stat.warn{border-top-color:var(--warn)} .stat.warn .v{color:var(--warn)}
+
+ul.cl{ list-style:none; padding:0; margin:2mm 0 4mm 0;}
+ul.cl li{ padding:1.6mm 0 1.6mm 7mm; position:relative; border-bottom:1px solid var(--line2); line-height:1.5;}
+ul.cl li:before{ content:''; position:absolute; left:1.5mm; top:3.4mm; width:2.4mm; height:2.4mm; background:var(--acc); border-radius:50%;}
+ul.cl li:last-child{border-bottom:none}
+ul.pl{ list-style:none; padding:0; margin:2mm 0 5mm 0; counter-reset:pl;}
+ul.pl li{ padding:2mm 0 2mm 9mm; position:relative; border-bottom:1px solid var(--line2); counter-increment:pl;}
+ul.pl li:before{ content:counter(pl); position:absolute; left:0; top:2mm; width:6mm; height:6mm; background:var(--accbg); color:var(--acc); border-radius:50%; font-size:7.4pt; font-weight:700; display:flex; align-items:center; justify-content:center;}
+ul.pl li:last-child{border-bottom:none}
+ul.dash{list-style:none;padding:0;margin:2mm 0 4mm 0}
+ul.dash li{padding:.8mm 0 .8mm 5mm;position:relative;line-height:1.5}
+ul.dash li:before{content:"\2014";position:absolute;left:0;color:var(--acc);font-weight:600}
+
+pre{ font-family:var(--mono); font-size:7.9pt; line-height:1.6; background:#F4F6F5; border:1px solid var(--line2); border-left:3pt solid var(--ink2); padding:3.5mm 4mm; margin:3mm 0 5mm 0; overflow:hidden; white-space:pre-wrap; page-break-inside:avoid; color:var(--ink);}
+
+.pill{ display:inline-block; font-size:6.8pt; font-weight:700; letter-spacing:.7pt; text-transform:uppercase; padding:1pt 5pt; border-radius:8pt; vertical-align:middle;}
+.p-crit{background:var(--critbg); color:var(--crit); border:1px solid #E2BDB6;}
+.p-warn{background:var(--warnbg); color:var(--warn); border:1px solid #E5D3AE;}
+.p-ok{background:var(--okbg); color:var(--ok); border:1px solid #BCD6C2;}
+.p-acc{background:var(--accbg); color:var(--acc); border:1px solid #B6D6CE;}
+.p-neu{background:#EFEDE9; color:var(--ink2); border:1px solid var(--line);}
+
+.toc{ margin-top:2mm;}
+.toc-g{ margin-bottom:3.5mm; }
+.toc a{ display:flex; align-items:baseline; padding:1.1mm 0; border-bottom:1px solid var(--line2); color:var(--ink); text-decoration:none;}
+.toc .n{ font-family:var(--mono); font-size:8pt; color:var(--acc); width:11mm; font-weight:500;}
+.toc .t{ flex:1; font-size:9.4pt; font-weight:500;}
+.toc .d{ font-size:7.8pt; color:var(--ink3); margin-left:4mm; font-weight:400;}
+.toc .sub-i{ padding-left:11mm; }
+.toc .sub-i .t{font-size:8.6pt; font-weight:400; color:var(--ink2)}
+
+.flow{ margin:5mm 0; page-break-inside:avoid;}
+.fnode{ border:1px solid var(--line); border-radius:2mm; padding:3mm 4mm; background:#fff; text-align:center;}
+.fnode .ft{ font-weight:700; font-size:8.6pt; color:var(--ink);}
+.fnode .fd{ font-size:7.4pt; color:var(--ink3); margin-top:1mm; line-height:1.4;}
+.fnode.acc{ background:var(--accbg); border-color:#B6D6CE;} .fnode.acc .ft{color:var(--acc)}
+.fnode.ink{ background:var(--ink); border-color:var(--ink);} .fnode.ink .ft{color:#fff} .fnode.ink .fd{color:#9FB4BC}
+.farrow{ text-align:center; color:var(--acc); font-size:11pt; line-height:1; margin:1.5mm 0;}
+.frow{ display:flex; gap:3mm; } .frow>*{flex:1}
+
+.q{ border:1px solid var(--line); border-radius:2mm; margin:0 0 3.5mm 0; page-break-inside:avoid; overflow:hidden;}
+.q-h{ display:flex; align-items:flex-start; gap:3mm; padding:3mm 4mm; background:var(--soft); border-bottom:1px solid var(--line2);}
+.q-n{ font-family:var(--serif); font-size:13pt; font-weight:700; color:var(--acc); line-height:1; min-width:8mm;}
+.q-t{ flex:1; font-size:9.6pt; font-weight:600; color:var(--ink); line-height:1.4;}
+.q-b{ padding:3mm 4mm 3.5mm 4mm;}
+.q-b .qr{ font-size:8.4pt; color:var(--ink2); margin-bottom:2.5mm; line-height:1.5;}
+.q-b .qi{ font-size:8.2pt; color:var(--ink); background:#fff; border-left:2.5pt solid var(--line); padding:1.5mm 0 1.5mm 3mm;}
+.q-b .qi b{color:var(--crit); font-weight:700}
+.q.critq{border-color:#E2BDB6} .q.critq .q-h{background:var(--critbg)} .q.critq .q-n{color:var(--crit)}
+.q.warnq{border-color:#E5D3AE} .q.warnq .q-h{background:var(--warnbg)} .q.warnq .q-n{color:var(--warn)}
+.qlbl{font-size:6.8pt;font-weight:700;letter-spacing:.8pt;text-transform:uppercase;color:var(--ink3);display:block;margin-bottom:.8mm}
+
+.ph{ border:1px solid var(--line); border-radius:2mm; margin-bottom:4mm; page-break-inside:avoid;}
+.ph-h{ background:var(--ink); color:#fff; padding:2.8mm 4mm; display:flex; align-items:center; gap:4mm;}
+.ph-h .pn{ font-family:var(--serif); font-size:9pt; font-weight:700; background:rgba(255,255,255,.14); padding:1mm 3mm; border-radius:1.5mm; letter-spacing:.5pt;}
+.ph-h .pt{ font-size:10pt; font-weight:600; flex:1;}
+.ph-h .ps{ font-size:7.4pt; color:#9FB4BC;}
+.ph-b{ padding:3.5mm 4mm;}
+.ph.f0 .ph-h{background:var(--warn)} .ph.f1 .ph-h{background:var(--acc)}
+
+.two{display:flex;gap:6mm} .two>*{flex:1}
+.nb{page-break-inside:avoid}
+.endnote{ margin-top:8mm; padding-top:4mm; border-top:1px solid var(--line); font-size:7.8pt; color:var(--ink3); font-style:italic;}
+</style>
+
+<div class="cover">
+  <div class="rx">Rx</div>
+  <div class="cv-badge"><div class="n">3</div><div class="t">Módulos</div></div>
+  <div class="cv-kick">Especificación Funcional y Técnica</div>
+  <div class="cv-rule"></div>
+  <h1>Sistema de Indicadores, Analítica Conversacional y Gestión de Pedidos</h1>
+  <div class="sub">Digitalización del cuadro de indicadores, extracción de estadísticas de Chatwoot y construcción de un embudo de pedidos integrado al canal de atención.</div>
+  <div class="cv-cli">
+    <div class="lbl">Preparado para</div>
+    <div class="nm">Farmacia Guadalupe, C.A.</div>
+  </div>
+  <div class="cv-meta">
+    <div><div class="k">Documento</div><div class="v">Especificación de Alcance</div></div>
+    <div><div class="k">Version</div><div class="v">1.0</div></div>
+    <div><div class="k">Fecha</div><div class="v">21 de agosto de 2026</div></div>
+    <div><div class="k">Estado</div><div class="v">Para revisión con el cliente</div></div>
+  </div>
+</div>
+<!-- ============ INDICE ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="tt"><h2>Contenido</h2><div class="dk">Especificación funcional y técnica &middot; Farmacia Guadalupe, C.A.</div></div></div>
+  <div class="toc">
+    <div class="toc-g">
+      <a><span class="n">1</span><span class="t">Resumen ejecutivo</span><span class="d">Qué se construye y por qué</span></a>
+      <a><span class="n">2</span><span class="t">Diagnóstico de la situación actual</span><span class="d">Auditoría del archivo vigente</span></a>
+      <a class="sub-i"><span class="n">2.1</span><span class="t">Estructura del cuadro de indicadores</span></a>
+      <a class="sub-i"><span class="n">2.2</span><span class="t">Hallazgos de la auditoría</span></a>
+      <a class="sub-i"><span class="n">2.3</span><span class="t">Lecturas de negocio del mes auditado</span></a>
+      <a><span class="n">3</span><span class="t">Visión general del sistema</span><span class="d">Los tres módulos y su circuito</span></a>
+      <a><span class="n">4</span><span class="t">Módulo A &mdash; Indicadores y Metas</span><span class="d">Reemplazo del Excel</span></a>
+      <a class="sub-i"><span class="n">4.1</span><span class="t">Captura de datos</span></a>
+      <a class="sub-i"><span class="n">4.2</span><span class="t">Motor de cálculo</span></a>
+      <a class="sub-i"><span class="n">4.3</span><span class="t">Catálogo de indicadores</span></a>
+      <a class="sub-i"><span class="n">4.4</span><span class="t">Sistema de metas</span></a>
+      <a class="sub-i"><span class="n">4.5</span><span class="t">Gráficas y visualizaciones</span></a>
+      <a class="sub-i"><span class="n">4.6</span><span class="t">Comparativa anual</span></a>
+      <a class="sub-i"><span class="n">4.7</span><span class="t">Importador de histórico</span></a>
+      <a class="sub-i"><span class="n">4.8</span><span class="t">Validaciones y reglas de negocio</span></a>
+      <a class="sub-i"><span class="n">4.9</span><span class="t">Reportes y exportación</span></a>
+      <a class="sub-i"><span class="n">4.10</span><span class="t">Pantallas</span></a>
+    </div>
+    <div class="toc-g">
+      <a><span class="n">5</span><span class="t">Módulo B &mdash; Analítica de Chatwoot</span><span class="d">Tiempos de atención y productividad</span></a>
+      <a><span class="n">6</span><span class="t">Módulo C &mdash; Pipeline de Pedidos</span><span class="d">Embudo integrado al canal</span></a>
+      <a><span class="n">7</span><span class="t">Arquitectura técnica</span><span class="d">Stack, datos, integraciones, seguridad</span></a>
+      <a><span class="n">8</span><span class="t">Usuarios y roles</span></a>
+      <a><span class="n">9</span><span class="t">Plan de implementación por fases</span></a>
+      <a><span class="n">10</span><span class="t">Preguntas para confirmar requisitos</span><span class="d">18 definiciones pendientes</span></a>
+      <a><span class="n">11</span><span class="t">Riesgos y supuestos</span></a>
+      <a><span class="n">12</span><span class="t">Anexos</span><span class="d">Mapeos, catálogos y glosario</span></a>
+    </div>
+  </div>
+
+  <div class="box" style="margin-top:4mm;padding:3mm 4.5mm">
+    <div class="bt">Cómo leer este documento</div>
+    <p style="margin-bottom:0">Las secciones 1 a 9 describen <strong>qué se construye</strong>; la sección 10 lista las <strong>definiciones que faltan</strong> para cerrar el alcance y cotizar en firme. Las afirmaciones sobre la operación actual provienen de una auditoría técnica del archivo <code>CUADRO DE INDICADORES MES SEPTIEMBRE GUADALUPE.xlsx</code>, verificada sobre su estructura interna y no solo sobre sus valores visibles.</p>
+  </div>
+</div>
+
+<!-- ============ 1. RESUMEN EJECUTIVO ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">1</div><div class="tt"><h2>Resumen ejecutivo</h2><div class="dk">Qué se construye y por qué</div></div></div>
+
+  <p class="lead">Farmacia Guadalupe registra a mano, todos los días, un cuadro de indicadores en Excel que luego circula como reporte. En paralelo atiende clientes por canales digitales a través de Chatwoot, sin ninguna conexión entre ambas cosas. Este documento especifica un sistema que reemplaza ese archivo, mide la operación de atención y convierte las conversaciones en pedidos gestionados.</p>
+
+  <h3 class="first">El requerimiento planteado</h3>
+  <p>El cliente formuló tres necesidades distintas, que en este documento se tratan como tres módulos:</p>
+
+  <table>
+    <thead><tr><th style="width:8%">Mód.</th><th style="width:30%">Necesidad planteada</th><th>Alcance</th><th style="width:16%">Definición</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="c"><strong>A</strong></td>
+        <td>Digitalizar el cuadro de indicadores y sacar estadística, gráficas y KPIs con metas</td>
+        <td>Sistema de captura, cálculo, visualización y seguimiento de objetivos que reemplaza el Excel y consolida el histórico</td>
+        <td><span class="pill p-ok">Completa</span></td>
+      </tr>
+      <tr>
+        <td class="c"><strong>B</strong></td>
+        <td>Extraer estadística de Chatwoot: tiempo de atención por usuario y similares</td>
+        <td>Módulo de analítica sobre la operación de atención, con histórico propio e ilimitado</td>
+        <td><span class="pill p-warn">Parcial</span></td>
+      </tr>
+      <tr>
+        <td class="c"><strong>C</strong></td>
+        <td>Pipeline o embudo con etapas personalizadas para gestionar pedidos del canal conectado a Chatwoot</td>
+        <td>Aplicación embebida en Chatwoot para armar pedidos y gestionarlos por etapas configurables</td>
+        <td><span class="pill p-crit">Por cerrar</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>La tesis del diseño</h3>
+  <p>Los tres módulos <strong>no son herramientas separadas que comparten un menú</strong>. Están diseñados como un circuito cerrado sobre una única base de datos, y ahí está el valor real del proyecto.</p>
+
+  <div class="box o">
+    <div class="bt">Por qué integrarlos importa</div>
+    <p>Por separado, cada módulo es reemplazable por una herramienta genérica de mercado. Juntos responden preguntas que hoy nadie en la farmacia puede contestar:</p>
+    <ul class="dash" style="margin-bottom:0">
+      <li>¿Qué porcentaje de las conversaciones digitales termina en una venta?</li>
+      <li>¿Qué agente <em>convierte</em> mejor, y no solamente cuál responde más rápido?</li>
+      <li>¿Cuánto del ticket promedio proviene del canal digital frente al mostrador?</li>
+      <li>¿En qué etapa del embudo se pierden los pedidos, y cuánto dinero representa esa fuga?</li>
+    </ul>
+  </div>
+
+  <p>Ninguna de esas preguntas puede responderse con Chatwoot solo, porque Chatwoot no sabe qué es un pedido. Ni con un dashboard de ventas solo, porque no sabe de dónde vino la venta. <strong>Solo existen si los tres módulos escriben en la misma base de datos.</strong></p>
+
+  <h3>Beneficio operativo inmediato</h3>
+  <p>Hoy una persona transcribe siete datos por día, treinta días al mes, y arma los gráficos a mano. Cuando el Módulo C esté en producción, <strong>la porción digital de esas ventas deja de ser manual</strong>: se registra sola al crearse el pedido. El Módulo A pasa de ser un formulario de carga a ser un consolidador.</p>
+
+  <h3>Estado de definición del alcance</h3>
+  <p>El Módulo A está especificado al detalle porque el archivo Excel actual funciona como especificación completa: se conocen sus catorce columnas, sus fórmulas, sus reglas implícitas y sus defectos. Los Módulos B y C requieren cerrar definiciones antes de una cotización en firme. La sección 10 las enumera.</p>
+
+  <div class="stats">
+    <div class="stat"><div class="v">100&#37;</div><div class="l">Módulo A<br>especificado</div></div>
+    <div class="stat warn"><div class="v">~70&#37;</div><div class="l">Módulo B<br>especificado</div></div>
+    <div class="stat crit"><div class="v">~50&#37;</div><div class="l">Módulo C<br>especificado</div></div>
+    <div class="stat"><div class="v">18</div><div class="l">Definiciones<br>por confirmar</div></div>
+  </div>
+
+  <div class="box w">
+    <div class="bt">Recomendación de contratación</div>
+    <p style="margin-bottom:0">No cotizar los tres módulos como un precio único cerrado. Se propone una <strong>Fase 0 de descubrimiento</strong> para cerrar las definiciones pendientes, cotización cerrada inmediata del Módulo A &mdash;que ya está completamente definido&mdash; y cotización del Módulo C solo después de resolver la disponibilidad del catálogo de productos. El detalle está en la sección 9.</p>
+  </div>
+</div>
+<!-- ============ 2. DIAGNOSTICO ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">2</div><div class="tt"><h2>Diagnóstico de la situación actual</h2><div class="dk">Auditoría técnica del archivo vigente</div></div></div>
+
+  <p class="lead">Antes de especificar el sistema se auditó el archivo que la farmacia usa hoy. No se revisaron solo los valores visibles: se analizó la estructura interna del archivo &mdash;fórmulas, definiciones de gráficos, rangos, metadatos y cadena de cálculo&mdash; para entender el modelo real y detectar defectos que a simple vista no se ven.</p>
+
+  <h3 class="first">2.1 &nbsp;Estructura del cuadro de indicadores</h3>
+  <p>El archivo contiene ocho hojas: una con los datos y siete que únicamente alojan un gráfico cada una. La hoja de datos registra un mes completo, un renglón por día, con catorce columnas.</p>
+
+  <table>
+    <thead><tr><th style="width:7%">Col.</th><th style="width:31%">Concepto</th><th style="width:15%">Origen</th><th>Fórmula / observación</th></tr></thead>
+    <tbody>
+      <tr><td class="mono c">A</td><td>Día de la semana</td><td><span class="pill p-crit">Manual</span></td><td>Letra escrita a mano. <strong>Defecto crítico detectado</strong> (ver 2.2)</td></tr>
+      <tr><td class="mono c">B</td><td>Fecha</td><td><span class="pill p-acc">Manual</span></td><td>Dato primario</td></tr>
+      <tr><td class="mono c">C</td><td>Venta en Bs</td><td><span class="pill p-acc">Manual</span></td><td>Dato primario</td></tr>
+      <tr><td class="mono c">D</td><td>Venta en $</td><td><span class="pill p-neu">Calculada</span></td><td class="mono">C / E</td></tr>
+      <tr><td class="mono c">E</td><td>Tasa $</td><td><span class="pill p-acc">Manual</span></td><td>Dato primario</td></tr>
+      <tr><td class="mono c">F</td><td>TRN &mdash; transacciones</td><td><span class="pill p-acc">Manual</span></td><td>Dato primario</td></tr>
+      <tr><td class="mono c">G</td><td>Unidades</td><td><span class="pill p-acc">Manual</span></td><td>Dato primario</td></tr>
+      <tr><td class="mono c">H</td><td>Ticket promedio Bs</td><td><span class="pill p-neu">Calculada</span></td><td class="mono">C / F</td></tr>
+      <tr><td class="mono c">I</td><td>Unidades promedio por compra</td><td><span class="pill p-neu">Calculada</span></td><td class="mono">G / F</td></tr>
+      <tr><td class="mono c">J</td><td>Ticket promedio $</td><td><span class="pill p-neu">Calculada</span></td><td class="mono">H / E</td></tr>
+      <tr><td class="mono c">K</td><td>Unidades cargadas (inventario)</td><td><span class="pill p-acc">Manual</span></td><td>Dato primario. No se registra los sábados</td></tr>
+      <tr><td class="mono c">L</td><td>Valuación de inventario a costo</td><td><span class="pill p-acc">Manual</span></td><td>Dato primario. No se registra los sábados</td></tr>
+      <tr><td class="mono c">M</td><td>Transacciones por jornada</td><td><span class="pill p-neu">Calculada</span></td><td class="mono">F / N</td></tr>
+      <tr><td class="mono c">N</td><td>Jornada &mdash; turnos del día</td><td><span class="pill p-acc">Manual</span></td><td>Dato primario</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box o">
+    <div class="bt">Hallazgo estructural clave</div>
+    <p style="margin-bottom:0">De las catorce columnas, <strong>solo siete se escriben a mano</strong>. Las otras cinco son fórmulas y una es derivable de la fecha. Esto se verificó contra la cadena de cálculo interna del archivo, que declara exactamente 163 celdas con fórmula: 30&nbsp;días &times; 5&nbsp;columnas calculadas, más 12&nbsp;totales, más una celda residual. <strong>El formulario de carga diaria del sistema tendrá siete campos, no catorce</strong> &mdash;y dos de ellos no se piden los sábados.</p>
+  </div>
+
+  <p>Adicionalmente el archivo contiene, en las filas 41 a 53, una <strong>tabla de consolidado anual</strong> (doce meses por doce indicadores) que está <strong>completamente vacía</strong>. La estructura existe desde que se creó la plantilla, pero nunca se ha llenado.</p>
+
+  <h3>2.2 &nbsp;Hallazgos de la auditoría</h3>
+  <p>Los defectos encontrados no son atribuibles a descuido de las personas: son las fallas típicas e inevitables de un proceso manual sostenido durante años sobre una plantilla que se copia mes a mes. Se documentan porque <strong>cada uno se traduce en un requerimiento concreto del sistema</strong>.</p>
+
+  <table>
+    <thead><tr><th style="width:5%">#</th><th style="width:27%">Hallazgo</th><th style="width:33%">Evidencia</th><th>Requerimiento que genera</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="c"><span class="pill p-crit">01</span></td>
+        <td><strong>La columna de día de la semana está desfasada cuatro días en los treinta registros</strong></td>
+        <td>Verificación fecha por fecha: 30 de 30 incorrectos. La prueba de desfase da coincidencia exacta con un corrimiento de +4 días, consistente con haber copiado la plantilla del mes anterior sin actualizar esa columna</td>
+        <td>El día de la semana debe <strong>derivarse de la fecha</strong>, nunca capturarse. Error estructuralmente imposible en el sistema</td>
+      </tr>
+      <tr>
+        <td class="c"><span class="pill p-crit">02</span></td>
+        <td>Los siete gráficos carecen de eje de categorías</td>
+        <td>Seis de los siete no tienen rango de categorías definido: el eje horizontal muestra 1, 2, 3&hellip;30 en lugar de las fechas</td>
+        <td>Gráficas con eje temporal real, con fecha y día de la semana</td>
+      </tr>
+      <tr>
+        <td class="c"><span class="pill p-crit">03</span></td>
+        <td>Un gráfico grafica una columna de texto como serie numérica</td>
+        <td>El gráfico de Venta en Bs incluye la columna A como serie; sus treinta valores son cero. Los índices de serie además revelan una serie eliminada previamente</td>
+        <td>Series definidas por configuración, no por rangos manuales</td>
+      </tr>
+      <tr>
+        <td class="c"><span class="pill p-crit">04</span></td>
+        <td>Un gráfico incluye el encabezado y la fila de totales como si fueran días</td>
+        <td>El gráfico de transacciones por jornada toma el rango desde la fila del encabezado hasta la de totales: dibuja un cero inicial y grafica el promedio del mes como si fuera un día adicional</td>
+        <td>Separación estricta entre datos y agregados</td>
+      </tr>
+      <tr>
+        <td class="c"><span class="pill p-warn">05</span></td>
+        <td>Un gráfico muestra dos series en escalas incompatibles</td>
+        <td>Ticket promedio (valores cercanos a 766) y unidades por compra (cercanos a 2,5) comparten un único eje: la segunda serie queda plana contra el eje y es invisible</td>
+        <td>Eje secundario automático cuando las magnitudes difieren en órdenes</td>
+      </tr>
+      <tr>
+        <td class="c"><span class="pill p-warn">06</span></td>
+        <td>Los totales usan promedio de promedios</td>
+        <td>La fila de totales promedia los ratios diarios en lugar de calcular el ratio de los totales. El desvío en el mes auditado va de 0,35&#37; a 0,52&#37;, y se origina casi por completo en un único día atípico</td>
+        <td>Ratios siempre ponderados. El desvío es pequeño en meses normales pero <strong>no tiene cota superior</strong></td>
+      </tr>
+      <tr>
+        <td class="c"><span class="pill p-warn">07</span></td>
+        <td>El filtro automático abarca la fila de totales</td>
+        <td>El rango de filtro definido llega hasta la fila de totales: al ordenar o filtrar, esa fila se mezcla entre los días</td>
+        <td>Totales calculados en presentación, nunca almacenados junto a los datos</td>
+      </tr>
+      <tr>
+        <td class="c"><span class="pill p-warn">08</span></td>
+        <td>Ausencia total de validación de datos</td>
+        <td>Ninguna de las ocho hojas tiene validación, formato condicional ni protección. Nada impide capturar una tasa de 15 en lugar de 150, o una venta negativa</td>
+        <td>Validación por rango y coherencia, con alertas de desviación</td>
+      </tr>
+      <tr>
+        <td class="c"><span class="pill p-neu">09</span></td>
+        <td>No existe registro de incidencias</td>
+        <td>El día atípico del mes vendió el 28&#37; de un día normal con la jornada completa registrada, y el archivo no tiene dónde anotar la causa</td>
+        <td>Campo de observación por día y opción de excluir días marcados de los promedios</td>
+      </tr>
+      <tr>
+        <td class="c"><span class="pill p-neu">10</span></td>
+        <td>Contenido ajeno incrustado en el reporte</td>
+        <td>Una de las hojas contiene un anuncio publicitario pegado desde el navegador: dos imágenes y cuatro hipervínculos. Es contenido legítimo de Microsoft, sin riesgo de seguridad, pero representa más de la mitad del peso del archivo</td>
+        <td>Higiene documental: el reporte se genera, no se edita</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>2.3 &nbsp;Dos hallazgos que cambian el diseño</h3>
+
+  <div class="box o">
+    <div class="bt">El histórico completo existe y es migrable</div>
+    <p>Los metadatos del archivo conservan su ruta original de guardado, que sigue una <strong>estructura de una carpeta por mes</strong> (<code>...\guadalupe indicadores\09-SEPTIEMBRE\</code>). Si existe la carpeta de septiembre, existen las de los meses anteriores; la plantilla además data de 2021.</p>
+    <p style="margin-bottom:0">La consecuencia es directa: <strong>la tabla de consolidado anual que lleva años vacía se llena automáticamente</strong> en cuanto se importen esas carpetas. Como todos los archivos comparten la misma plantilla, un único importador los lee todos. Esto convierte un dashboard del mes en curso en una herramienta de análisis de tendencia plurianual, con el mismo esfuerzo de desarrollo.</p>
+  </div>
+
+  <div class="box">
+    <div class="bt">El inventario no se cuenta los sábados: es una regla, no un error</div>
+    <p>Las columnas de inventario están vacías en cinco días del mes, siempre las dos juntas. Cuatro de esos cinco días son sábado &mdash;y son <strong>los cuatro sábados del mes, el 100&#37;</strong>. El quinto es el día atípico.</p>
+    <p style="margin-bottom:0">Esto no es dato faltante sino <strong>frecuencia de proceso</strong>. El sistema no debe marcar el sábado en rojo como incompleto: debe entender que el inventario tiene periodicidad de seis días. Tratarlo como error generaría más de cincuenta alertas falsas al año.</p>
+  </div>
+
+  <h3>2.4 &nbsp;Lecturas de negocio del mes auditado</h3>
+  <p>El mes analizado permite validar qué indicadores son relevantes y cómo debe comportarse el sistema.</p>
+
+  <div class="stats">
+    <div class="stat"><div class="v">3.853</div><div class="l">Transacciones<br>en el mes</div></div>
+    <div class="stat"><div class="v">7.543</div><div class="l">Unidades<br>vendidas</div></div>
+    <div class="stat"><div class="v">1,96</div><div class="l">Unidades<br>por compra</div></div>
+    <div class="stat warn"><div class="v">+19,7&#37;</div><div class="l">Variación de la tasa<br>en treinta días</div></div>
+  </div>
+
+  <h4>La moneda es el eje de todo el sistema</h4>
+  <p>La tasa pasó de 148,44 a 177,61 en un solo mes, de forma <strong>estrictamente creciente</strong>: nunca bajó. Eso significa que <strong>en bolívares las ventas siempre parecen crecer</strong>, aunque el volumen real caiga. Solo la columna en divisa refleja el desempeño verdadero.</p>
+  <p>De ahí que el sistema deba ser <strong>bimoneda nativo</strong>: cada indicador se almacena en ambas monedas, convertido con la tasa del día de la transacción y nunca con la de cierre, que distorsionaría el histórico.</p>
+
+  <h4>La tasa utilizada se comporta como la oficial</h4>
+  <p>De nueve repeticiones de tasa en días consecutivos, ocho caen en sábado o domingo: el ente emisor no publica los fines de semana y se arrastra la del viernes. Sumado a que la serie nunca decrece, todo indica que se usa la <strong>tasa oficial</strong>. Es una inferencia sólida pero <strong>no confirmada</strong>, y define si el sistema la consulta automáticamente o la carga un usuario.</p>
+
+  <h4>Existe un patrón semanal aprovechable</h4>
+  <p>Calculado sobre las fechas reales &mdash;no sobre la columna defectuosa&mdash; hay un mejor y un peor día claros, con una diferencia cercana al 33&#37;. Es accionable para programar personal y reposición, y hoy <strong>es invisible</strong>.</p>
+
+  <h4>La rotación de inventario no es calculable con los datos actuales</h4>
+  <p>El inventario se registra <strong>a costo</strong> y las ventas <strong>a precio de venta</strong>: dividir una entre otra no da una rotación válida. El indicador &mdash;y los días de inventario&mdash; exige el margen bruto o el costo de ventas, <strong>un dato que hoy no se captura</strong>.</p>
+</div>
+
+<!-- ============ 3. VISION GENERAL ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">3</div><div class="tt"><h2>Visión general del sistema</h2><div class="dk">Los tres módulos y el circuito de datos</div></div></div>
+
+  <p class="lead">El sistema es una aplicación web única, con una sola base de datos y un solo control de acceso, organizada en tres módulos funcionales. Dos de ellos se alimentan de Chatwoot; el tercero consolida toda la operación.</p>
+
+  <h3 class="first">3.1 &nbsp;Arquitectura funcional</h3>
+
+  <div class="flow">
+    <div class="fnode ink"><div class="ft">CHATWOOT</div><div class="fd">WhatsApp &middot; Instagram &middot; Facebook &middot; Widget web</div></div>
+    <div class="farrow">&darr; &nbsp;&nbsp; webhooks y API &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iframe embebido &nbsp;&nbsp; &darr;</div>
+    <div class="frow">
+      <div class="fnode acc"><div class="ft">MÓDULO B &mdash; Analítica</div><div class="fd">Tiempo de primera respuesta, tiempo de resolución, volumen y productividad por agente, canal y equipo</div></div>
+      <div class="fnode acc"><div class="ft">MÓDULO C &mdash; Pipeline</div><div class="fd">Armado de pedidos desde la conversación y gestión por etapas configurables en tablero</div></div>
+    </div>
+    <div class="farrow">&darr; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &darr;</div>
+    <div class="fnode" style="border-color:var(--ink2);border-width:1.5pt"><div class="ft">BASE DE DATOS ÚNICA</div><div class="fd">Conversaciones, pedidos, ventas, inventario, metas y usuarios en un mismo modelo relacional</div></div>
+    <div class="farrow">&darr;</div>
+    <div class="fnode ink"><div class="ft">MÓDULO A &mdash; Indicadores y Metas</div><div class="fd">KPIs bimoneda &middot; gráficas &middot; metas y proyección &middot; comparativa anual &middot; reporte exportable</div></div>
+  </div>
+
+  <h3>3.2 &nbsp;El circuito de datos</h3>
+  <p>El valor del sistema está en las flechas descendentes del diagrama: cada módulo entrega datos al siguiente.</p>
+
+  <ul class="pl">
+    <li><strong>Un cliente escribe</strong> por cualquiera de los canales conectados a Chatwoot.</li>
+    <li><strong>El Módulo B registra la conversación</strong> y empieza a medir tiempos de respuesta y atención.</li>
+    <li><strong>El agente abre el panel lateral</strong> dentro de Chatwoot, que es la aplicación del Módulo C, y arma el pedido sin salir de la herramienta que ya usa.</li>
+    <li><strong>El pedido avanza por el embudo</strong>, dejando registro de tiempo en cada etapa.</li>
+    <li><strong>El pedido cerrado alimenta al Módulo A</strong> como venta del canal digital, con su ticket, sus unidades y su atribución de origen.</li>
+    <li><strong>El Módulo A consolida</strong> la venta digital con la del mostrador y contrasta el total contra las metas del mes.</li>
+  </ul>
+
+  <div class="box">
+    <div class="bt">Resultado</div>
+    <p style="margin-bottom:0">Una conversación de WhatsApp queda conectada, de extremo a extremo, con la línea de venta del reporte mensual. Esa trazabilidad es la que hoy no existe y la que ninguna herramienta de mercado provee sin integración a medida.</p>
+  </div>
+
+  <h3>3.3 &nbsp;Alcance resumido por módulo</h3>
+  <table>
+    <thead><tr><th style="width:22%">Módulo</th><th>Incluye</th><th style="width:24%">No incluye</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>A &mdash; Indicadores<br>y Metas</strong></td>
+        <td>Carga diaria, motor de cálculo bimoneda, catálogo de KPIs, metas con proyección, gráficas corregidas, comparativa anual, importador de histórico, validaciones, reportes exportables y multisucursal</td>
+        <td>Contabilidad, facturación fiscal, nómina</td>
+      </tr>
+      <tr>
+        <td><strong>B &mdash; Analítica<br>de Chatwoot</strong></td>
+        <td>Espejado de eventos, métricas de tiempo y volumen por agente, canal, equipo y etiqueta, histórico ilimitado y tablero de productividad</td>
+        <td>Modificar la operación de Chatwoot o sustituir su bandeja</td>
+      </tr>
+      <tr>
+        <td><strong>C &mdash; Pipeline<br>de Pedidos</strong></td>
+        <td>Aplicación embebida en Chatwoot, armado de pedidos, etapas configurables, tablero, escritura de estado de vuelta a Chatwoot y métricas del embudo</td>
+        <td>Pasarela de pago en línea, tienda pública, logística de terceros <span class="pill p-warn">Por confirmar</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<!-- ============ 4. MODULO A ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">4</div><div class="tt"><h2>Módulo A &mdash; Indicadores y Metas</h2><div class="dk">Reemplazo integral del cuadro en Excel</div></div></div>
+
+  <p class="lead">Este módulo sustituye el archivo actual por completo: captura, calcula, valida, grafica, compara contra objetivos y genera el reporte que hoy se arma a mano. Es el único de los tres cuyo alcance está cerrado, porque el Excel auditado funciona como especificación exhaustiva.</p>
+
+  <h3 class="first">4.1 &nbsp;Captura de datos</h3>
+  <p>La carga admite tres vías, que conviven:</p>
+
+  <table>
+    <thead><tr><th style="width:24%">Vía</th><th>Descripción</th><th style="width:20%">Disponibilidad</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Formulario diario</strong></td><td>Pantalla de siete campos con validación en vivo, teclado numérico, cálculo de derivados en pantalla y confirmación antes de guardar</td><td><span class="pill p-ok">Fase 1</span></td></tr>
+      <tr><td><strong>Importador de archivos</strong></td><td>Carga de los <code>.xlsx</code> existentes con la plantilla actual, para migrar el histórico completo</td><td><span class="pill p-ok">Fase 1</span></td></tr>
+      <tr><td><strong>Alimentación desde el Módulo C</strong></td><td>Los pedidos digitales cerrados se contabilizan automáticamente como venta del canal</td><td><span class="pill p-acc">Fase 3</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="box">
+    <div class="bt">La carga diaria es manual por definición del alcance</div>
+    <p style="margin-bottom:0">El sistema <strong>no se conecta al sistema administrativo ni al punto de venta</strong>. El registro diario lo hace una persona, igual que hoy, y por eso el formulario está diseñado para uso intensivo y sostenido: siete campos en lugar de catorce, valores por defecto, validación en vivo y cálculo de los derivados en pantalla. El objetivo es que cargar un día tome menos de un minuto y que el error de captura sea difícil de cometer, no que la captura desaparezca.</p>
+  </div>
+
+  <h4>Campos del formulario diario</h4>
+  <table>
+    <thead><tr><th style="width:26%">Campo</th><th style="width:14%">Tipo</th><th style="width:14%">Requerido</th><th>Regla</th></tr></thead>
+    <tbody>
+      <tr><td>Fecha</td><td>Fecha</td><td>Sí</td><td>Única por sucursal. El día de la semana se deriva automáticamente</td></tr>
+      <tr><td>Venta en Bs</td><td>Decimal</td><td>Sí</td><td>Mayor o igual a cero. Alerta si se desvía más de un umbral respecto a la media móvil</td></tr>
+      <tr><td>Tasa de cambio</td><td>Decimal</td><td>Sí</td><td>Precargada automáticamente si la fuente está disponible; editable con registro de quién la cambió</td></tr>
+      <tr><td>Transacciones (TRN)</td><td>Entero</td><td>Sí</td><td>Mayor o igual a cero</td></tr>
+      <tr><td>Unidades vendidas</td><td>Entero</td><td>Sí</td><td>Debe ser mayor o igual a las transacciones en condiciones normales; si no, advierte</td></tr>
+      <tr><td>Unidades en inventario</td><td>Entero</td><td>Condicional</td><td>No se solicita los sábados. Configurable por sucursal</td></tr>
+      <tr><td>Valuación de inventario</td><td>Decimal</td><td>Condicional</td><td>Misma periodicidad que el campo anterior. Se indica si es a costo o a precio de venta</td></tr>
+      <tr><td>Jornadas</td><td>Entero</td><td>Sí</td><td>Valor por defecto configurable; el histórico muestra tres como norma y cuatro ocasional</td></tr>
+      <tr><td>Observación del día</td><td>Texto</td><td>No</td><td><strong>Campo nuevo.</strong> Permite marcar el día como atípico y excluirlo de los promedios</td></tr>
+    </tbody>
+  </table>
+  <p class="tnote">Los campos de inventario se ocultan automáticamente en los días sin conteo según la periodicidad configurada, en lugar de quedar marcados como incompletos.</p>
+
+  <h3>4.2 &nbsp;Motor de cálculo</h3>
+  <p>Los indicadores derivados <strong>no se almacenan</strong>: se calculan en el momento de consultar. Esto elimina la posibilidad de que un valor guardado quede desincronizado de sus componentes, que es lo que hoy ocurre cuando se rompe una fórmula del Excel.</p>
+
+  <table>
+    <thead><tr><th style="width:30%">Indicador derivado</th><th style="width:26%">Cálculo diario</th><th>Cálculo del período (corregido)</th></tr></thead>
+    <tbody>
+      <tr><td>Venta en divisa</td><td class="mono">venta_bs / tasa</td><td class="mono">suma de los valores diarios</td></tr>
+      <tr><td>Ticket promedio Bs</td><td class="mono">venta_bs / trn</td><td class="mono">suma(venta_bs) / suma(trn)</td></tr>
+      <tr><td>Unidades por compra</td><td class="mono">unidades / trn</td><td class="mono">suma(unidades) / suma(trn)</td></tr>
+      <tr><td>Ticket promedio en divisa</td><td class="mono">ticket_bs / tasa</td><td class="mono">suma(venta_div) / suma(trn)</td></tr>
+      <tr><td>Transacciones por jornada</td><td class="mono">trn / jornadas</td><td class="mono">suma(trn) / suma(jornadas)</td></tr>
+      <tr><td>Tasa promedio</td><td>&mdash;</td><td class="mono">ponderada por venta del día</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box o">
+    <div class="bt">Corrección metodológica</div>
+    <p style="margin-bottom:0">La columna derecha es la diferencia esencial con el archivo actual, que promedia los ratios diarios en lugar de dividir los totales. El sistema calcula siempre <strong>ratios ponderados</strong>. La venta en divisa del período se obtiene sumando la conversión de cada día a su propia tasa, nunca dividiendo el total en bolívares entre una tasa promedio.</p>
+  </div>
+
+  <h3>4.3 &nbsp;Catálogo de indicadores</h3>
+  <p>El sistema expone los doce indicadores del archivo actual más los que la auditoría identificó como faltantes.</p>
+
+  <table>
+    <thead><tr><th style="width:5%">#</th><th style="width:32%">Indicador</th><th style="width:14%">Unidad</th><th>Origen</th></tr></thead>
+    <tbody>
+      <tr><td class="c">1</td><td>Venta total</td><td>Bs y divisa</td><td>Existente</td></tr>
+      <tr><td class="c">2</td><td>Transacciones</td><td>Cantidad</td><td>Existente</td></tr>
+      <tr><td class="c">3</td><td>Unidades vendidas</td><td>Cantidad</td><td>Existente</td></tr>
+      <tr><td class="c">4</td><td>Ticket promedio</td><td>Bs y divisa</td><td>Existente</td></tr>
+      <tr><td class="c">5</td><td>Unidades por compra</td><td>Ratio</td><td>Existente</td></tr>
+      <tr><td class="c">6</td><td>Tasa de cambio promedio</td><td>Bs por divisa</td><td>Existente</td></tr>
+      <tr><td class="c">7</td><td>Transacciones por jornada</td><td>Ratio</td><td>Existente</td></tr>
+      <tr><td class="c">8</td><td>Jornadas trabajadas</td><td>Cantidad</td><td>Existente</td></tr>
+      <tr><td class="c">9</td><td>Unidades en inventario</td><td>Cantidad</td><td>Existente</td></tr>
+      <tr><td class="c">10</td><td>Valuación de inventario</td><td>Divisa</td><td>Existente</td></tr>
+      <tr><td class="c">11</td><td><strong>Venta por jornada</strong></td><td>Bs y divisa</td><td><span class="pill p-acc">Nuevo</span> Productividad real del turno</td></tr>
+      <tr><td class="c">12</td><td><strong>Rotación de inventario</strong></td><td>Veces</td><td><span class="pill p-acc">Nuevo</span> Requiere costo de ventas</td></tr>
+      <tr><td class="c">13</td><td><strong>Días de inventario</strong></td><td>Días</td><td><span class="pill p-acc">Nuevo</span> Cuánto dura el stock actual</td></tr>
+      <tr><td class="c">14</td><td><strong>Variación de la tasa en el período</strong></td><td>Porcentaje</td><td><span class="pill p-acc">Nuevo</span> Contexto obligado de toda comparación</td></tr>
+      <tr><td class="c">15</td><td><strong>Venta real deflactada</strong></td><td>Divisa</td><td><span class="pill p-acc">Nuevo</span> Crecimiento sin efecto cambiario</td></tr>
+      <tr><td class="c">16</td><td><strong>Participación del canal digital</strong></td><td>Porcentaje</td><td><span class="pill p-acc">Nuevo</span> Se habilita con el Módulo C</td></tr>
+    </tbody>
+  </table>
+
+  <p>Cada indicador se muestra con su valor del período, su variación contra el período anterior, su variación contra el mismo período del año anterior cuando hay histórico, y su porcentaje de cumplimiento de meta.</p>
+
+  <h3>4.4 &nbsp;Sistema de metas</h3>
+  <p>El archivo actual <strong>no contiene ninguna meta</strong>. Este es el componente que el cliente pidió explícitamente y que hoy no existe en ninguna forma.</p>
+
+  <h4>Definición de objetivos</h4>
+  <ul class="cl">
+    <li>Meta por indicador, por período y por sucursal, con vigencia y versión histórica</li>
+    <li>Carga manual del valor, o generación asistida a partir del histórico &mdash;por ejemplo, el promedio de los últimos tres meses más un porcentaje de crecimiento&mdash;</li>
+    <li>Distribución de la meta mensual entre los días según el patrón semanal detectado, en lugar de un simple prorrateo lineal</li>
+    <li>Metas expresadas en divisa para los indicadores monetarios, evitando que la devaluación las cumpla sola</li>
+  </ul>
+
+  <h4>Seguimiento</h4>
+  <ul class="cl">
+    <li><strong>Semáforo de cumplimiento</strong> con umbrales configurables por indicador</li>
+    <li><strong>Avance acumulado</strong> del período contra la meta a la fecha, no solo contra la meta total</li>
+    <li><strong>Proyección de cierre</strong> calculada sobre el ritmo real y el patrón semanal de los días restantes</li>
+    <li><strong>Brecha en valor absoluto</strong>: cuánto falta en dinero, transacciones o unidades para alcanzar el objetivo</li>
+    <li><strong>Alertas</strong> cuando la proyección cae por debajo de un umbral, con envío configurable</li>
+  </ul>
+
+  <div class="box">
+    <div class="bt">Ejemplo del comportamiento esperado</div>
+    <p style="margin-bottom:0">Al día 20 del mes, el sistema informa: <em>avance del 68&#37; de la meta mensual, proyección de cierre del 94&#37;, brecha estimada de X en divisa; los días de mayor venta que restan son dos, y concentran históricamente el 21&#37; de la venta semanal.</em> Ese nivel de lectura es imposible en el archivo actual.</p>
+  </div>
+
+  <h3>4.5 &nbsp;Gráficas y visualizaciones</h3>
+  <p>Se reconstruyen las siete gráficas existentes, corrigiendo los defectos documentados en la sección 2, y se agregan las que el análisis identificó como necesarias.</p>
+
+  <table>
+    <thead><tr><th style="width:34%">Gráfica</th><th style="width:16%">Tipo</th><th>Corrección o aporte</th></tr></thead>
+    <tbody>
+      <tr><td>Venta en Bs</td><td>Barras</td><td>Se elimina la serie de ceros y se agrega eje de fechas</td></tr>
+      <tr><td>Venta en divisa</td><td>Barras</td><td>Eje de fechas, título y línea de meta superpuesta</td></tr>
+      <tr><td>Transacciones y unidades</td><td>Combinada</td><td>Eje secundario para la serie de unidades</td></tr>
+      <tr><td>Ticket promedio en Bs</td><td>Barras y línea</td><td>Eje secundario: hoy la segunda serie es invisible</td></tr>
+      <tr><td>Unidades por compra y ticket en divisa</td><td>Líneas</td><td>Eje de fechas</td></tr>
+      <tr><td>Transacciones por jornada</td><td>Línea</td><td>Se corrige el rango: sin encabezado ni fila de totales</td></tr>
+      <tr><td>Inventario: unidades y valuación</td><td>Combinada</td><td>Eje secundario y manejo correcto de los días sin conteo</td></tr>
+      <tr><td><strong>Mapa de calor por día de semana</strong></td><td>Matriz</td><td><span class="pill p-acc">Nueva</span> Revela el patrón semanal hoy invisible</td></tr>
+      <tr><td><strong>Venta acumulada contra meta</strong></td><td>Área y línea</td><td><span class="pill p-acc">Nueva</span> Avance del mes en curso</td></tr>
+      <tr><td><strong>Evolución de la tasa contra venta en divisa</strong></td><td>Doble eje</td><td><span class="pill p-acc">Nueva</span> Separa crecimiento real de efecto cambiario</td></tr>
+      <tr><td><strong>Comparativa interanual</strong></td><td>Barras agrupadas</td><td><span class="pill p-acc">Nueva</span> Mes contra mismo mes del año anterior</td></tr>
+    </tbody>
+  </table>
+
+  <p>Todas las gráficas comparten filtros de período, sucursal y moneda, y son exportables como imagen para incorporarlas a presentaciones.</p>
+
+  <h3>4.6 &nbsp;Comparativa anual</h3>
+  <p>Reproduce la tabla de doce meses por doce indicadores que existe en el archivo y que nunca se ha llenado, con la diferencia de que <strong>se completa automáticamente</strong> a partir de los datos cargados.</p>
+  <ul class="cl">
+    <li>Matriz de indicadores por mes, con totales y promedios de año</li>
+    <li>Variación mes a mes y contra el mismo mes del año anterior</li>
+    <li>Vista en bolívares o en divisa, con la advertencia explícita de que la comparación en bolívares está afectada por la variación cambiaria</li>
+    <li>Exportación a Excel con el mismo formato que hoy circula, para no romper hábitos de quienes reciben el reporte</li>
+  </ul>
+
+  <h3>4.7 &nbsp;Importador de histórico</h3>
+  <p>Componente que permite cargar los archivos de meses anteriores. Su valor depende de cuántas carpetas conserve el cliente, lo que constituye una de las preguntas críticas de la sección 10.</p>
+
+  <ul class="pl">
+    <li><strong>Lectura tolerante.</strong> Normaliza espacios sobrantes y saltos de línea en los encabezados, presentes en el archivo auditado, para que variaciones menores entre meses no rompan la importación.</li>
+    <li><strong>Detección de la plantilla.</strong> Reconoce la estructura de columnas y advierte si un archivo no coincide con el formato esperado.</li>
+    <li><strong>Vista previa antes de confirmar.</strong> Muestra qué se va a importar, cuántos días trae y qué anomalías se detectaron.</li>
+    <li><strong>Reporte de anomalías.</strong> Señala días faltantes, duplicados, valores fuera de rango, tasas incoherentes y saltos bruscos. Dado que el archivo actual no tiene ninguna validación, es previsible que el histórico contenga errores de captura.</li>
+    <li><strong>Decisión por anomalía.</strong> Cada caso se corrige, se acepta o se marca como día atípico, quedando registrado quién lo hizo.</li>
+    <li><strong>Idempotencia.</strong> Reimportar el mismo archivo no duplica registros.</li>
+  </ul>
+
+  <h3>4.8 &nbsp;Validaciones y reglas de negocio</h3>
+  <table>
+    <thead><tr><th style="width:30%">Regla</th><th>Comportamiento</th></tr></thead>
+    <tbody>
+      <tr><td>Unicidad</td><td>Un solo registro por fecha y sucursal</td></tr>
+      <tr><td>Rangos válidos</td><td>Sin valores negativos; tasa dentro de una banda razonable respecto al día anterior</td></tr>
+      <tr><td>Coherencia</td><td>Unidades no inferiores a transacciones; advertencia si el ticket se aparta de la media móvil más allá de un umbral</td></tr>
+      <tr><td>Periodicidad del inventario</td><td>Los días sin conteo configurados no se consideran incompletos</td></tr>
+      <tr><td>Días atípicos</td><td>Marcables con motivo, excluibles de promedios y proyecciones sin borrarlos del histórico</td></tr>
+      <tr><td>Cierre de período</td><td>Un mes cerrado queda bloqueado; reabrirlo exige permiso y deja rastro</td></tr>
+      <tr><td>Auditoría</td><td>Todo cambio guarda usuario, fecha, valor anterior y valor nuevo</td></tr>
+      <tr><td>Separación de agregados</td><td>Los totales se calculan en la presentación y nunca se almacenan junto a los datos diarios</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.9 &nbsp;Reportes y exportación</h3>
+  <ul class="cl">
+    <li><strong>Reporte mensual en PDF</strong> con la portada, el cuadro de indicadores, las gráficas y el cumplimiento de metas: sustituye el envío del archivo Excel</li>
+    <li><strong>Exportación a Excel</strong> respetando el formato actual, para quienes prefieran seguir trabajando en hoja de cálculo</li>
+    <li><strong>Envío programado</strong> del reporte por correo a una lista de destinatarios en una fecha fija del mes</li>
+    <li><strong>Resumen diario</strong> opcional con el cierre del día y el avance de la meta</li>
+  </ul>
+
+  <h3>4.10 &nbsp;Pantallas</h3>
+  <table>
+    <thead><tr><th style="width:28%">Pantalla</th><th>Contenido</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Panel ejecutivo</strong></td><td>Tarjetas de KPI con variación y cumplimiento, gráfica de avance contra meta, comparativa del período y alertas activas</td></tr>
+      <tr><td><strong>Carga diaria</strong></td><td>Formulario de siete campos con validación en vivo y cálculo de derivados en pantalla</td></tr>
+      <tr><td><strong>Cuadro de indicadores</strong></td><td>Tabla equivalente a la hoja actual, con día de la semana correcto, filtros, ordenamiento y totales calculados aparte</td></tr>
+      <tr><td><strong>Gráficas</strong></td><td>Las once visualizaciones con filtros compartidos y exportación</td></tr>
+      <tr><td><strong>Metas</strong></td><td>Definición por indicador y período, seguimiento, proyección y configuración de alertas</td></tr>
+      <tr><td><strong>Comparativa anual</strong></td><td>Matriz de doce meses por indicador con variaciones</td></tr>
+      <tr><td><strong>Importación</strong></td><td>Carga de archivos, vista previa, reporte de anomalías y confirmación</td></tr>
+      <tr><td><strong>Administración</strong></td><td>Usuarios, roles, sucursales, parámetros de validación, periodicidad de inventario y fuente de la tasa</td></tr>
+    </tbody>
+  </table>
+</div>
+<!-- ============ 5. MODULO B ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">5</div><div class="tt"><h2>Módulo B &mdash; Analítica de Chatwoot</h2><div class="dk">Tiempos de atención, volumen y productividad</div></div></div>
+
+  <p class="lead">El cliente preguntó si es posible extraer estadística de Chatwoot, mencionando en particular el tiempo de atención por usuario. La respuesta es afirmativa, y este módulo va más allá de lo que la herramienta ofrece de forma nativa.</p>
+
+  <h3 class="first">5.1 &nbsp;Fuentes de datos</h3>
+  <p>Chatwoot expone dos mecanismos que el sistema aprovecha de forma complementaria.</p>
+
+  <h4>Interfaz de reportes</h4>
+  <p>Chatwoot dispone de un servicio de reportes que entrega series por métrica y rango de fechas, segmentables por cuenta, agente, bandeja de entrada, etiqueta o equipo. Las métricas disponibles son:</p>
+
+  <table>
+    <thead><tr><th style="width:38%">Métrica</th><th>Qué mide</th></tr></thead>
+    <tbody>
+      <tr><td>Conversaciones</td><td>Volumen de conversaciones en el período</td></tr>
+      <tr><td>Mensajes entrantes</td><td>Mensajes recibidos de clientes</td></tr>
+      <tr><td>Mensajes salientes</td><td>Mensajes enviados por agentes</td></tr>
+      <tr><td><strong>Tiempo promedio de primera respuesta</strong></td><td>Cuánto tarda un agente en responder por primera vez</td></tr>
+      <tr><td><strong>Tiempo promedio de resolución</strong></td><td>Cuánto tarda en cerrarse una conversación</td></tr>
+      <tr><td>Resoluciones</td><td>Conversaciones cerradas en el período</td></tr>
+    </tbody>
+  </table>
+  <p class="tnote">El &laquo;tiempo de atención por usuario&raquo; que solicitó el cliente corresponde a las dos métricas destacadas, segmentadas por agente.</p>
+
+  <h4>Eventos en tiempo real</h4>
+  <p>Chatwoot puede notificar al sistema cada vez que ocurre algo relevante: creación de conversación, cambio de estado, mensaje creado o actualizado, y actualización de conversación o contacto. El sistema recibe estos eventos y los almacena.</p>
+
+  <h3>5.2 &nbsp;Por qué el sistema mantiene su propia copia</h3>
+  <div class="box o">
+    <div class="bt">Decisión de arquitectura</div>
+    <p>Se recomienda <strong>no depender únicamente del servicio de reportes de Chatwoot</strong> y espejar los eventos en la base de datos propia. Las razones son tres:</p>
+    <ul class="dash" style="margin-bottom:0">
+      <li><strong>Histórico ilimitado y granularidad completa</strong>, sin las restricciones de retención y agregación del reporte nativo.</li>
+      <li><strong>Métricas propias</strong> que Chatwoot no calcula: cumplimiento de acuerdos de servicio por canal, carga por franja horaria, desempeño comparado entre turnos, tiempo de respuesta excluyendo horario no laborable.</li>
+      <li><strong>La razón decisiva:</strong> la métrica que de verdad interesa a la dirección es cuántas conversaciones terminan en venta y cuánto facturan. <strong>Chatwoot no sabe qué es un pedido.</strong> Solo puede calcularse cruzando sus datos con los del Módulo C, y eso exige que ambos vivan en la misma base.</li>
+    </ul>
+  </div>
+
+  <h3>5.3 &nbsp;Métricas del módulo</h3>
+  <table>
+    <thead><tr><th style="width:32%">Grupo</th><th>Indicadores</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Tiempos de atención</strong></td><td>Primera respuesta, resolución, tiempo de espera del cliente, tiempo activo del agente. Con promedio y percentiles, no solo media</td></tr>
+      <tr><td><strong>Volumen</strong></td><td>Conversaciones abiertas, resueltas y pendientes; mensajes entrantes y salientes; conversaciones sin respuesta</td></tr>
+      <tr><td><strong>Productividad por agente</strong></td><td>Conversaciones atendidas, resueltas, tiempo medio de manejo, carga simultánea</td></tr>
+      <tr><td><strong>Por canal</strong></td><td>Todas las anteriores segmentadas por WhatsApp, Instagram, Facebook o widget web</td></tr>
+      <tr><td><strong>Distribución temporal</strong></td><td>Mapa de calor por hora y día de la semana, para dimensionar turnos de atención</td></tr>
+      <tr><td><strong>Cumplimiento de servicio</strong></td><td>Porcentaje de conversaciones respondidas dentro del umbral definido, con alerta al incumplirse</td></tr>
+      <tr><td><strong>Conversión</strong> <span class="pill p-acc">Requiere Módulo C</span></td><td>Conversaciones que generaron pedido, monto facturado por conversación, tasa de conversión por agente y por canal</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.4 &nbsp;Pantallas</h3>
+  <ul class="cl">
+    <li><strong>Panel de atención:</strong> tiempos, volumen y cumplimiento del período, con comparación contra el período anterior</li>
+    <li><strong>Detalle por agente:</strong> tabla ordenable y ficha individual con evolución en el tiempo</li>
+    <li><strong>Detalle por canal:</strong> comparación de desempeño entre canales conectados</li>
+    <li><strong>Distribución horaria:</strong> mapa de calor de carga para planificar cobertura</li>
+    <li><strong>Embudo de conversión:</strong> de conversación a pedido y a venta <span class="pill p-acc">Con Módulo C</span></li>
+  </ul>
+
+  <div class="box w">
+    <div class="bt">Dependencia crítica</div>
+    <p style="margin-bottom:0">El alcance real de este módulo depende de si Chatwoot está instalado en servidor propio o se usa en la nube, y del plan contratado. Ambas modalidades permiten leer reportes y recibir eventos, pero la instalación propia ofrece control total sobre retención, acceso a datos y personalización. Es una de las preguntas críticas de la sección 10.</p>
+  </div>
+</div>
+
+<!-- ============ 6. MODULO C ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">6</div><div class="tt"><h2>Módulo C &mdash; Pipeline de Pedidos</h2><div class="dk">Embudo por etapas integrado al canal de atención</div></div></div>
+
+  <p class="lead">El cliente describió la necesidad de un embudo con etapas personalizadas para gestionar los pedidos que llegan por el canal conectado a Chatwoot, integrado mediante una dirección web, con un punto de entrada y una función para armar el pedido. Lo que describe corresponde exactamente a una capacidad nativa de Chatwoot llamada aplicaciones de panel.</p>
+
+  <h3 class="first">6.1 &nbsp;Cómo se integra a Chatwoot</h3>
+  <p>Chatwoot permite registrar una dirección web propia y la <strong>muestra dentro de un panel lateral, junto a la conversación</strong>, pasándole el contexto de esa conversación. El agente nunca sale de la herramienta que ya usa.</p>
+
+  <p>La comunicación entre Chatwoot y la aplicación se realiza mediante mensajes entre ventanas: la aplicación solicita el contexto y Chatwoot responde con los datos de la conversación, el contacto y el agente actual.</p>
+
+  <pre>// La aplicación, dentro del panel, solicita el contexto
+window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*')
+
+// Chatwoot responde
+{
+  event: 'appContext',
+  data: {
+    conversation: { ... },   // conversación en curso
+    contact:      { ... },   // datos del cliente
+    currentAgent: { ... }    // agente que atiende
+  }
+}</pre>
+
+  <p>A partir de ese contexto, el sistema identifica al cliente o lo crea si es nuevo, verifica si esa conversación ya tiene un pedido asociado y presenta la pantalla correspondiente.</p>
+
+  <h3>6.2 &nbsp;Flujo completo</h3>
+  <div class="flow">
+    <div class="fnode"><div class="ft">1 &middot; El cliente escribe</div><div class="fd">Por WhatsApp, Instagram, Facebook o el widget web</div></div>
+    <div class="farrow">&darr;</div>
+    <div class="fnode"><div class="ft">2 &middot; El agente abre el panel lateral</div><div class="fd">Es la aplicación del sistema, embebida dentro de Chatwoot</div></div>
+    <div class="farrow">&darr;</div>
+    <div class="fnode acc"><div class="ft">3 &middot; Identificación automática del cliente</div><div class="fd">A partir del contacto de Chatwoot; se crea si no existe, con su historial de pedidos previos</div></div>
+    <div class="farrow">&darr;</div>
+    <div class="fnode acc"><div class="ft">4 &middot; Armado del pedido</div><div class="fd">Búsqueda de producto, cantidad, precio, descuento y totales en ambas monedas a la tasa del día</div></div>
+    <div class="farrow">&darr;</div>
+    <div class="fnode"><div class="ft">5 &middot; El pedido entra al embudo</div><div class="fd">En la primera etapa configurada, vinculado a la conversación y al agente</div></div>
+    <div class="farrow">&darr;</div>
+    <div class="fnode"><div class="ft">6 &middot; Avance por etapas</div><div class="fd">Cada movimiento registra momento, usuario y motivo</div></div>
+    <div class="farrow">&darr;</div>
+    <div class="fnode ink"><div class="ft">7 &middot; Cierre y consolidación</div><div class="fd">El pedido entregado alimenta los indicadores del Módulo A como venta del canal digital</div></div>
+  </div>
+
+  <h3>6.3 &nbsp;Armado del pedido</h3>
+  <p>Es la función que el cliente pidió de forma explícita. Su alcance depende de manera determinante de la disponibilidad del catálogo de productos.</p>
+
+  <table>
+    <thead><tr><th style="width:30%">Componente</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Búsqueda de producto</strong></td><td>Por nombre, código o principio activo, con resultados inmediatos mientras se escribe</td></tr>
+      <tr><td><strong>Línea de pedido</strong></td><td>Producto, cantidad, precio unitario, descuento y subtotal</td></tr>
+      <tr><td><strong>Disponibilidad</strong></td><td>Existencia en el momento de armar el pedido <span class="pill p-warn">Sujeto a confirmación</span></td></tr>
+      <tr><td><strong>Totales bimoneda</strong></td><td>Total en bolívares y en divisa, calculados a la tasa vigente del día y congelados al confirmar</td></tr>
+      <tr><td><strong>Datos de entrega</strong></td><td>Retiro en tienda o envío, con dirección y costo asociado <span class="pill p-warn">Sujeto a confirmación</span></td></tr>
+      <tr><td><strong>Forma de pago</strong></td><td>Medio, referencia y verificación <span class="pill p-warn">Sujeto a confirmación</span></td></tr>
+      <tr><td><strong>Observaciones</strong></td><td>Notas del cliente o del agente</td></tr>
+      <tr><td><strong>Trazabilidad</strong></td><td>Conversación de origen, canal, agente que lo tomó y momento de creación</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box c">
+    <div class="bt">Advertencia de alcance</div>
+    <p style="margin-bottom:0">La expresión &laquo;armar un pedido&raquo; suena a un formulario, pero funcionalmente equivale a un punto de venta reducido: requiere catálogo, precios vigentes y, deseablemente, existencias. <strong>Si el catálogo debe construirse desde cero, el esfuerzo de este módulo se duplica.</strong> Es la razón por la cual no se recomienda cotizarlo antes de resolver la pregunta 1 de la sección 10.</p>
+  </div>
+
+  <h3>6.4 &nbsp;El embudo por etapas</h3>
+  <p>Las etapas son <strong>configurables por el propio cliente</strong>, tal como fue solicitado. Se propone una secuencia inicial que puede ajustarse en la puesta en marcha:</p>
+
+  <table>
+    <thead><tr><th style="width:6%">#</th><th style="width:22%">Etapa</th><th>Significado y salida esperada</th></tr></thead>
+    <tbody>
+      <tr><td class="c">1</td><td><strong>Nuevo</strong></td><td>Solicitud recibida, aún sin cotizar</td></tr>
+      <tr><td class="c">2</td><td><strong>Cotizado</strong></td><td>Se envió precio y disponibilidad; se espera respuesta del cliente</td></tr>
+      <tr><td class="c">3</td><td><strong>Confirmado</strong></td><td>El cliente aceptó; el pedido es firme</td></tr>
+      <tr><td class="c">4</td><td><strong>En preparación</strong></td><td>Se está armando físicamente en la farmacia</td></tr>
+      <tr><td class="c">5</td><td><strong>Listo o en despacho</strong></td><td>Disponible para retiro o en ruta de entrega</td></tr>
+      <tr><td class="c">6</td><td><strong>Entregado</strong></td><td>En manos del cliente</td></tr>
+      <tr><td class="c">7</td><td><strong>Pagado</strong></td><td>Cobro verificado y conciliado</td></tr>
+      <tr><td class="c">&mdash;</td><td><strong>Cancelado</strong></td><td>Estado terminal alternativo, con motivo obligatorio para alimentar el análisis de fuga</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Comportamiento del tablero</h4>
+  <ul class="cl">
+    <li>Vista de columnas por etapa, con arrastre para mover pedidos entre ellas</li>
+    <li>Cada tarjeta muestra cliente, monto, canal de origen, agente y antigüedad en la etapa actual</li>
+    <li>Alerta visual cuando un pedido supera el tiempo máximo definido para su etapa</li>
+    <li>Filtros por agente, canal, sucursal, rango de fechas y monto</li>
+    <li>Reglas de transición configurables: qué etapas exigen motivo, cuáles requieren autorización y cuáles no admiten retroceso</li>
+    <li>Registro completo del recorrido de cada pedido, con momento y responsable de cada movimiento</li>
+  </ul>
+
+  <h3>6.5 &nbsp;Escritura de vuelta hacia Chatwoot</h3>
+  <p>Para que el agente vea el estado del pedido sin cambiar de herramienta, el sistema escribe de regreso en Chatwoot:</p>
+  <ul class="dash">
+    <li><strong>Atributos personalizados</strong> en la conversación: número de pedido, estado y monto</li>
+    <li><strong>Etiqueta</strong> correspondiente a la etapa actual, lo que permite filtrar la bandeja por estado de pedido</li>
+    <li><strong>Nota privada</strong> al crearse el pedido y en los cambios de etapa relevantes, visible solo para el equipo</li>
+  </ul>
+
+  <h3>6.6 &nbsp;Puntos de entrada del servicio</h3>
+  <p>El cliente mencionó la necesidad de un punto de entrada. El sistema expone los siguientes:</p>
+
+  <table>
+    <thead><tr><th style="width:34%" class="mono">Servicio</th><th>Función</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">POST /chatwoot/webhook</td><td>Recepción de eventos de Chatwoot, con validación de origen mediante firma</td></tr>
+      <tr><td class="mono">GET /pedidos?conversacion=</td><td>Consulta si una conversación ya tiene pedido asociado</td></tr>
+      <tr><td class="mono">POST /pedidos</td><td>Creación del pedido &mdash;la función de armado solicitada&mdash;</td></tr>
+      <tr><td class="mono">PATCH /pedidos/{id}</td><td>Modificación de líneas, montos y datos de entrega</td></tr>
+      <tr><td class="mono">PATCH /pedidos/{id}/etapa</td><td>Movimiento en el embudo, con motivo y validación de la transición</td></tr>
+      <tr><td class="mono">GET /productos?q=</td><td>Búsqueda del catálogo para el armado</td></tr>
+      <tr><td class="mono">GET /embudo/metricas</td><td>Conversión y tiempos de ciclo por etapa</td></tr>
+      <tr><td class="mono">GET /app/panel</td><td>Interfaz que Chatwoot muestra en el panel lateral</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.7 &nbsp;Métricas del embudo</h3>
+  <p>El registro de cada transición convierte al embudo en una fuente analítica, no solo operativa.</p>
+  <ul class="cl">
+    <li><strong>Tasa de conversión global</strong> y entre etapas consecutivas: dónde se pierden los pedidos</li>
+    <li><strong>Tiempo de ciclo</strong> promedio y por percentiles, total y por etapa: dónde se atascan</li>
+    <li><strong>Valor en riesgo</strong>: monto acumulado en pedidos detenidos más allá del umbral</li>
+    <li><strong>Motivos de cancelación</strong> agrupados y su peso en dinero</li>
+    <li><strong>Desempeño por agente y por canal</strong>: quién convierte mejor y qué canal produce mejores pedidos</li>
+    <li><strong>Ticket promedio del canal digital</strong> comparado con el general del Módulo A</li>
+  </ul>
+</div>
+<!-- ============ 7. ARQUITECTURA ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">7</div><div class="tt"><h2>Arquitectura técnica</h2><div class="dk">Stack, modelo de datos, integraciones y seguridad</div></div></div>
+
+  <h3 class="first">7.1 &nbsp;Principios de diseño</h3>
+  <ul class="cl">
+    <li><strong>Una sola base de datos.</strong> Es la condición que hace posibles las métricas cruzadas descritas en la sección 3</li>
+    <li><strong>Los derivados se calculan, no se guardan.</strong> Elimina el riesgo de valores desincronizados de sus componentes</li>
+    <li><strong>Bimoneda desde el modelo.</strong> Cada monto conserva su valor en bolívares, la tasa aplicada y el momento; la conversión nunca se recalcula con una tasa posterior</li>
+    <li><strong>Todo cambio deja rastro.</strong> Auditoría de quién, cuándo, valor anterior y valor nuevo</li>
+    <li><strong>Configurable sin programar.</strong> Etapas del embudo, metas, umbrales, periodicidad de inventario y roles se administran desde la interfaz</li>
+    <li><strong>Integración no invasiva.</strong> El sistema lee de Chatwoot y escribe atributos y notas, sin alterar su funcionamiento ni sustituir su bandeja</li>
+  </ul>
+
+  <h3>7.2 &nbsp;Stack propuesto</h3>
+  <table>
+    <thead><tr><th style="width:24%">Capa</th><th style="width:26%">Tecnología</th><th>Justificación</th></tr></thead>
+    <tbody>
+      <tr><td>Aplicación</td><td><strong>Laravel</strong> (PHP)</td><td>Framework maduro que ya resuelve autenticación, roles y permisos, colas, tareas programadas, migraciones y capa de datos: acelera de forma notable los módulos administrativos</td></tr>
+      <tr><td>Interfaz</td><td>Blade con Livewire</td><td>Pantallas reactivas sin mantener una aplicación cliente separada, lo que simplifica el mantenimiento posterior</td></tr>
+      <tr><td>Base de datos</td><td><strong>MySQL</strong></td><td>Tipo decimal de precisión exacta para los montos en ambas monedas; ampliamente disponible en la infraestructura de hosting local</td></tr>
+      <tr><td>Gráficas</td><td>Librería de visualización en cliente</td><td>Ejes secundarios, escalas temporales y exportación de imagen</td></tr>
+      <tr><td>Trabajos en segundo plano</td><td>Colas y tareas programadas de Laravel</td><td>Importaciones, sincronización con Chatwoot, envío de reportes y alertas</td></tr>
+      <tr><td>Despliegue</td><td>Contenedores, junto a Chatwoot o en servidor propio</td><td>Reduce latencia de integración y simplifica el respaldo conjunto</td></tr>
+    </tbody>
+  </table>
+  <p class="tnote">La elección final se ajustará en la Fase 0, considerando dónde está alojado Chatwoot y qué infraestructura administra hoy el cliente.</p>
+
+  <h3>7.3 &nbsp;Modelo de datos</h3>
+  <p>Estructura principal, expresada en entidades y no en detalle de implementación.</p>
+
+  <table>
+    <thead><tr><th style="width:26%">Entidad</th><th style="width:12%">Módulo</th><th>Contenido</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Sucursal</strong></td><td class="c">A</td><td>Identificación, parámetros de validación, periodicidad de inventario, moneda de referencia</td></tr>
+      <tr><td><strong>Registro diario</strong></td><td class="c">A</td><td>Fecha, sucursal, los siete datos primarios, observación y marca de día atípico</td></tr>
+      <tr><td><strong>Tasa de cambio</strong></td><td class="c">A</td><td>Fecha, valor, fuente y origen (automático o manual) con el usuario que la fijó</td></tr>
+      <tr><td><strong>Meta</strong></td><td class="c">A</td><td>Indicador, período, sucursal, valor objetivo, moneda y vigencia</td></tr>
+      <tr><td><strong>Importación</strong></td><td class="c">A</td><td>Archivo, momento, usuario, resultado y anomalías detectadas</td></tr>
+      <tr><td><strong>Conversación</strong></td><td class="c">B</td><td>Espejo del registro de Chatwoot: canal, contacto, agente, estados y marcas de tiempo</td></tr>
+      <tr><td><strong>Evento de conversación</strong></td><td class="c">B</td><td>Cada cambio recibido por webhook, con su instante exacto</td></tr>
+      <tr><td><strong>Agente</strong></td><td class="c">B</td><td>Correspondencia entre el usuario de Chatwoot y el usuario del sistema</td></tr>
+      <tr><td><strong>Cliente</strong></td><td class="c">C</td><td>Datos de contacto, vínculo con el contacto de Chatwoot e historial</td></tr>
+      <tr><td><strong>Producto</strong></td><td class="c">C</td><td>Código, descripción, precio vigente y existencia <span class="pill p-warn">Según origen</span></td></tr>
+      <tr><td><strong>Pedido</strong></td><td class="c">C</td><td>Cliente, conversación de origen, canal, agente, etapa actual, totales en ambas monedas y tasa aplicada</td></tr>
+      <tr><td><strong>Línea de pedido</strong></td><td class="c">C</td><td>Producto, cantidad, precio unitario, descuento y subtotal</td></tr>
+      <tr><td><strong>Etapa</strong></td><td class="c">C</td><td>Nombre, orden, color, tiempo máximo, reglas de transición y si exige motivo</td></tr>
+      <tr><td><strong>Transición</strong></td><td class="c">C</td><td>Pedido, etapa origen, etapa destino, momento, usuario y motivo</td></tr>
+      <tr><td><strong>Usuario y rol</strong></td><td class="c">&mdash;</td><td>Credenciales, rol, sucursales asignadas y permisos</td></tr>
+      <tr><td><strong>Bitácora</strong></td><td class="c">&mdash;</td><td>Registro de auditoría de todas las modificaciones</td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.4 &nbsp;Integraciones</h3>
+  <table>
+    <thead><tr><th style="width:24%">Integración</th><th style="width:18%">Dirección</th><th>Contenido</th></tr></thead>
+    <tbody>
+      <tr><td>Chatwoot &mdash; eventos</td><td>Entrante</td><td>Conversaciones y mensajes, en tiempo real</td></tr>
+      <tr><td>Chatwoot &mdash; reportes</td><td>Saliente</td><td>Consulta periódica para conciliar los datos espejados</td></tr>
+      <tr><td>Chatwoot &mdash; panel</td><td>Embebida</td><td>La aplicación del Módulo C dentro de la conversación</td></tr>
+      <tr><td>Chatwoot &mdash; escritura</td><td>Saliente</td><td>Atributos, etiquetas y notas privadas con el estado del pedido</td></tr>
+      <tr><td>Fuente de la tasa</td><td>Entrante</td><td>Carga automática diaria <span class="pill p-warn">Por confirmar</span></td></tr>
+      <tr><td>Catálogo de productos</td><td>Entrante</td><td>Importación periódica de productos y precios por archivo <span class="pill p-warn">Por confirmar</span></td></tr>
+      <tr><td>Correo</td><td>Saliente</td><td>Reportes programados y alertas</td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.5 &nbsp;Seguridad</h3>
+  <ul class="cl">
+    <li><strong>Autenticación</strong> con sesión propia y contraseñas cifradas; segundo factor opcional para roles administrativos</li>
+    <li><strong>Autorización por rol y por sucursal</strong>, verificada en el servidor y no solo en la interfaz</li>
+    <li><strong>Validación de origen de los eventos</strong> de Chatwoot mediante firma, para impedir que un tercero inyecte datos falsos</li>
+    <li><strong>Restricción de incrustación:</strong> la aplicación del panel solo puede mostrarse dentro del dominio autorizado de Chatwoot</li>
+    <li><strong>Cifrado en tránsito</strong> obligatorio en todas las comunicaciones</li>
+    <li><strong>Bitácora de auditoría</strong> no modificable desde la aplicación</li>
+    <li><strong>Respaldo automático</strong> diario con verificación periódica de restauración</li>
+    <li><strong>Datos de clientes</strong> tratados bajo el principio de mínima recolección; el sistema no almacena información sensible de salud salvo requerimiento expreso <span class="pill p-warn">Ver pregunta 11</span></li>
+  </ul>
+</div>
+
+<!-- ============ 8. USUARIOS Y ROLES ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">8</div><div class="tt"><h2>Usuarios y roles</h2><div class="dk">Perfiles previstos y su alcance</div></div></div>
+
+  <p class="lead">La estructura de roles es preliminar: depende de cómo esté organizado el equipo, lo que constituye una de las definiciones pendientes. Se propone el siguiente esquema como punto de partida.</p>
+
+  <table>
+    <thead><tr><th style="width:20%">Rol</th><th style="width:32%">Puede</th><th>No puede</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Dirección</strong></td>
+        <td>Ver todos los indicadores de todas las sucursales, definir metas, acceder a la analítica completa y al embudo</td>
+        <td>&mdash;</td>
+      </tr>
+      <tr>
+        <td><strong>Supervisión</strong></td>
+        <td>Ver indicadores de sus sucursales, gestionar el embudo completo, ver desempeño de todos los agentes, reabrir períodos</td>
+        <td>Definir metas globales ni administrar usuarios</td>
+      </tr>
+      <tr>
+        <td><strong>Carga de datos</strong></td>
+        <td>Registrar el cuadro diario, importar archivos, marcar días atípicos</td>
+        <td>Ver analítica de agentes ni modificar períodos cerrados</td>
+      </tr>
+      <tr>
+        <td><strong>Agente de atención</strong></td>
+        <td>Armar pedidos desde el panel de Chatwoot, mover sus pedidos, ver su propio desempeño</td>
+        <td>Ver la venta total ni el desempeño de otros agentes</td>
+      </tr>
+      <tr>
+        <td><strong>Despacho</strong></td>
+        <td>Ver pedidos confirmados y moverlos por las etapas operativas</td>
+        <td>Crear ni modificar montos de pedidos</td>
+      </tr>
+      <tr>
+        <td><strong>Administración</strong></td>
+        <td>Gestionar usuarios, sucursales, etapas, parámetros e integraciones</td>
+        <td>&mdash;</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="box">
+    <div class="bt">Consideración</div>
+    <p style="margin-bottom:0">La separación entre lo que un agente ve de sí mismo y lo que ve de los demás es una decisión sensible: afecta el clima del equipo. Se recomienda definirla explícitamente con la dirección antes de la puesta en marcha, no dejarla al criterio técnico.</p>
+  </div>
+</div>
+
+<!-- ============ 9. PLAN DE FASES ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">9</div><div class="tt"><h2>Plan de implementación por fases</h2><div class="dk">Secuencia recomendada y entregables</div></div></div>
+
+  <p class="lead">La secuencia está diseñada para entregar valor visible desde el inicio y para no comprometer precio sobre la parte del alcance que aún no está definida.</p>
+
+  <div class="ph f0">
+    <div class="ph-h"><span class="pn">FASE 0</span><span class="pt">Descubrimiento y cierre de alcance</span><span class="ps">Corta</span></div>
+    <div class="ph-b">
+      <p><strong>Objetivo.</strong> Resolver las dieciocho definiciones de la sección 10 y determinar el alcance real de los Módulos B y C.</p>
+      <p><strong>Actividades.</strong> Sesión de trabajo con el cliente &mdash;quien ya ofreció explicar en detalle los puntos dos y tres&mdash;, revisión del acceso a Chatwoot, inventario de los archivos históricos disponibles y definición del origen del catálogo de productos.</p>
+      <p style="margin-bottom:0"><strong>Entregable.</strong> Documento de alcance cerrado y firmado, con la cotización en firme de las fases siguientes.</p>
+    </div>
+  </div>
+
+  <div class="ph f1">
+    <div class="ph-h"><span class="pn">FASE 1</span><span class="pt">Módulo A &mdash; Indicadores y Metas</span><span class="ps">Cotizable de inmediato</span></div>
+    <div class="ph-b">
+      <p><strong>Objetivo.</strong> Sustituir el archivo Excel por completo y recuperar el histórico.</p>
+      <p><strong>Alcance.</strong> Modelo de datos, formulario de carga, motor de cálculo bimoneda con la metodología corregida, catálogo de indicadores, sistema de metas con proyección, las once gráficas, comparativa anual, importador de histórico, validaciones, reportes exportables, usuarios y roles.</p>
+      <p><strong>Por qué va primero.</strong> Es el único módulo con alcance cerrado, no depende de terceros y produce un resultado que el cliente reconoce de inmediato, porque reemplaza algo que usa todos los días.</p>
+      <p style="margin-bottom:0"><strong>Entregable.</strong> Sistema en producción con el mes en curso cargado y el histórico disponible importado.</p>
+    </div>
+  </div>
+
+  <div class="ph">
+    <div class="ph-h"><span class="pn">FASE 2</span><span class="pt">Módulo B &mdash; Analítica de Chatwoot</span><span class="ps">Tras confirmar accesos</span></div>
+    <div class="ph-b">
+      <p><strong>Objetivo.</strong> Medir la operación de atención con histórico propio.</p>
+      <p><strong>Alcance.</strong> Conexión con Chatwoot, recepción y espejado de eventos, conciliación periódica con los reportes nativos, métricas de tiempo y volumen, tableros por agente y por canal, distribución horaria y alertas de cumplimiento.</p>
+      <p><strong>Requisito previo.</strong> Acceso administrativo a Chatwoot y confirmación de la modalidad de instalación.</p>
+      <p style="margin-bottom:0"><strong>Entregable.</strong> Tablero de atención operativo, acumulando histórico desde el momento de la conexión.</p>
+    </div>
+  </div>
+
+  <div class="ph">
+    <div class="ph-h"><span class="pn">FASE 3</span><span class="pt">Módulo C &mdash; Pipeline de Pedidos</span><span class="ps">Solo tras la Fase 0</span></div>
+    <div class="ph-b">
+      <p><strong>Objetivo.</strong> Convertir conversaciones en pedidos gestionados y cerrar el circuito de datos.</p>
+      <p><strong>Alcance.</strong> Aplicación embebida en Chatwoot, identificación de clientes, armado de pedidos, etapas configurables, tablero, escritura de estado hacia Chatwoot, métricas del embudo y alimentación automática de los indicadores del Módulo A.</p>
+      <p><strong>Requisito previo.</strong> Resolución del origen del catálogo de productos, precios y existencias, y definición de si el pedido debe registrar pago y entrega.</p>
+      <p style="margin-bottom:0"><strong>Entregable.</strong> Embudo operativo y métricas de conversión de extremo a extremo.</p>
+    </div>
+  </div>
+
+  <div class="ph">
+    <div class="ph-h"><span class="pn">FASE 4</span><span class="pt">Automatización y ajuste</span><span class="ps">Opcional</span></div>
+    <div class="ph-b">
+      <p style="margin-bottom:0"><strong>Alcance.</strong> Carga automática de la tasa, afinamiento de metas con el histórico ya consolidado y ampliación de reportes según el uso real observado.</p>
+    </div>
+  </div>
+
+  <div class="box o">
+    <div class="bt">Racional de la secuencia</div>
+    <p style="margin-bottom:0">Cada fase entrega un sistema utilizable por sí mismo. Si el proyecto se detuviera al terminar la Fase 1, el cliente ya habría sustituido su proceso manual y recuperado años de histórico. Las fases siguientes suman capacidad sin rehacer lo anterior.</p>
+  </div>
+</div>
+<!-- ============ 10. PREGUNTAS ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">10</div><div class="tt"><h2>Preguntas para confirmar requisitos</h2><div class="dk">Dieciocho definiciones pendientes, ordenadas por impacto</div></div></div>
+
+  <p class="lead">Estas preguntas no son detalles de afinamiento: varias de ellas <strong>cambian el tamaño del proyecto</strong>, no solo su configuración. Se agrupan en tres niveles según su efecto sobre la cotización. Cada una indica por qué importa y qué cambia en el desarrollo según la respuesta.</p>
+
+  <div class="stats">
+    <div class="stat crit"><div class="v">5</div><div class="l">Bloqueantes<br>Impiden cotizar en firme</div></div>
+    <div class="stat warn"><div class="v">7</div><div class="l">Importantes<br>Alteran el alcance</div></div>
+    <div class="stat"><div class="v">6</div><div class="l">De afinamiento<br>Ajustan el comportamiento</div></div>
+  </div>
+
+  <h3 class="first">Nivel 1 &mdash; Bloqueantes <span class="pill p-crit">Sin respuesta no hay cotización en firme</span></h3>
+
+  <div class="q critq">
+    <div class="q-h"><div class="q-n">1</div><div class="q-t">¿Existe hoy un catálogo de productos con precios, y en qué formato puede entregarse al sistema?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>Armar un pedido exige buscar productos, aplicar precios vigentes y, deseablemente, verificar disponibilidad. Sin catálogo no hay función de armado posible.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Si puede exportarse a un archivo y actualizarse periódicamente, el Módulo C solo lo importa. <b>Si hay que construirlo y mantenerlo dentro del sistema desde cero, el esfuerzo del módulo se duplica</b> y aparece un problema permanente de actualización de precios. Es la pregunta de mayor impacto económico de toda la lista.</div>
+    </div>
+  </div>
+
+  <div class="q critq">
+    <div class="q-h"><div class="q-n">2</div><div class="q-t">¿Chatwoot está instalado en servidor propio o se usa en la nube? ¿Qué versión y qué plan? ¿Se dispone de acceso administrativo?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>Define qué mecanismos de integración están disponibles. La capacidad de mostrar una aplicación propia dentro del panel de conversación &mdash;base del Módulo C&mdash; depende de la modalidad y del plan contratado.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>En servidor propio hay control total sobre datos, retención e integración. <b>En la nube, la disponibilidad del panel embebido debe verificarse antes de comprometer el Módulo C</b>, y podría requerir una vía alterna de integración.</div>
+    </div>
+  </div>
+
+  <div class="q critq">
+    <div class="q-h"><div class="q-n">3</div><div class="q-t">¿Se conservan los archivos de los meses anteriores? ¿Desde qué año?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>La auditoría detectó que el archivo se guarda en una estructura de una carpeta por mes, y que la plantilla data de 2021. Si esas carpetas existen, hay años de histórico recuperable.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Con histórico disponible, <b>la comparativa anual que lleva años vacía se llena desde el primer día</b> y las metas pueden calcularse sobre datos reales. Sin él, el sistema arranca en blanco y las comparaciones interanuales tardan un año en existir.</div>
+    </div>
+  </div>
+
+  <div class="q critq">
+    <div class="q-h"><div class="q-n">4</div><div class="q-t">¿Existe ya un dashboard en desarrollo o en uso?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>El planteamiento del cliente menciona revisar dos cosas &laquo;a ese dashboard&raquo;, lo que sugiere algo preexistente. La información entregada hasta ahora contiene únicamente el archivo Excel.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Determina si este proyecto <b>construye desde cero o extiende algo existente</b>. Si hay una base previa, es indispensable revisarla antes de estimar: podría acelerar el trabajo o, por el contrario, obligar a rehacerlo.</div>
+    </div>
+  </div>
+
+  <div class="q critq">
+    <div class="q-h"><div class="q-n">5</div><div class="q-t">¿El pedido debe registrar forma de pago y datos de entrega?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>En la práctica comercial local es habitual que un pedido requiera medio de pago, número de referencia y verificación, además de dirección y costo de envío cuando hay despacho.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Cada uno agrega campos, etapas al embudo y reglas de validación. <b>Incluir cobro y despacho puede aumentar el Módulo C de forma significativa</b>, y conviene decidir si entran en la primera versión o en una posterior.</div>
+    </div>
+  </div>
+</div>
+
+<div class="sec pg">
+  <div class="sec-hd"><div class="tt"><h2>Preguntas &mdash; niveles 2 y 3</h2><div class="dk">Continuación de la sección 10</div></div></div>
+
+  <h3 class="first">Nivel 2 &mdash; Importantes <span class="pill p-warn">Alteran el alcance funcional</span></h3>
+
+  <div class="q warnq">
+    <div class="q-h"><div class="q-n">6</div><div class="q-t">¿Qué canales están conectados actualmente a Chatwoot?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>WhatsApp mediante interfaz oficial, WhatsApp por vía no oficial, Instagram, Facebook y widget web tienen comportamientos y límites distintos.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Afecta qué datos llegan en cada evento, la fiabilidad de la integración y qué segmentaciones tienen sentido en la analítica.</div>
+    </div>
+  </div>
+
+  <div class="q warnq">
+    <div class="q-h"><div class="q-n">7</div><div class="q-t">¿Cuántas sucursales tiene la organización y se consolidan entre sí?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>El archivo auditado corresponde a una sola, pero la existencia de una tabla de consolidado anual sugiere una necesidad de agregación.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>El diseño ya contempla múltiples sucursales, pero define cuántos niveles de comparación, permisos y vistas consolidadas se construyen.</div>
+    </div>
+  </div>
+
+  <div class="q warnq">
+    <div class="q-h"><div class="q-n">8</div><div class="q-t">¿Cuál es el margen bruto aproximado, o se dispone del costo de ventas?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>El archivo registra el inventario a costo y las ventas a precio de venta. <strong>Con esos datos la rotación de inventario no es calculable</strong>: dividir una cifra entre otra mezcla dos unidades distintas.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Con el margen o el costo de ventas se habilitan dos indicadores nuevos de alto valor para una farmacia: rotación real y días de inventario. Sin ellos quedan fuera del alcance.</div>
+    </div>
+  </div>
+
+  <div class="q warnq">
+    <div class="q-h"><div class="q-n">9</div><div class="q-t">¿Qué tasa de cambio se utiliza y quién la carga?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>El análisis del mes muestra que la tasa se mantiene los fines de semana y nunca decrece, comportamiento compatible con la tasa oficial. Es una inferencia sólida pero no confirmada.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Determina si el sistema consulta la tasa de forma automática o la carga un usuario, y qué regla aplica en días sin publicación. Como toda la analítica en divisa depende de este valor, <b>una definición equivocada distorsiona todos los indicadores monetarios</b>.</div>
+    </div>
+  </div>
+
+  <div class="q warnq">
+    <div class="q-h"><div class="q-n">10</div><div class="q-t">¿Quiénes usarán el sistema y qué debe ver cada perfil?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>Especialmente relevante decidir si un agente puede ver el desempeño de sus compañeros o solo el propio.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Define la matriz de permisos. Es además una decisión con efecto sobre el clima del equipo, por lo que conviene que la tome la dirección y no el criterio técnico.</div>
+    </div>
+  </div>
+
+  <div class="q warnq">
+    <div class="q-h"><div class="q-n">11</div><div class="q-t">¿El pedido puede incluir medicamentos controlados o que exijan récipe, lote o fecha de vencimiento?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>Se trata de una farmacia. Si aplica, el pedido deja de ser un documento comercial simple y adquiere requisitos de trazabilidad sanitaria.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Incorpora campos obligatorios, validaciones, control documental y posibles obligaciones de conservación de registros. <b>Es alcance regulatorio y debe confirmarse de forma explícita</b>, nunca asumirse.</div>
+    </div>
+  </div>
+
+  <div class="q warnq">
+    <div class="q-h"><div class="q-n">12</div><div class="q-t">Cuando un pedido nace por Chatwoot y luego se cobra en caja, ¿cómo se evita contarlo dos veces?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>El Módulo C registra el pedido y el Módulo A registra la venta total del día. Si la venta digital ya está incluida en el total de caja, sumarla otra vez inflaría los indicadores.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Exige una regla de conciliación definida <b>desde el diseño y no después</b>: marcar el pedido como ya incluido, identificarlo en el punto de venta, o tratar el canal digital como una categoría dentro del total en vez de un añadido.</div>
+    </div>
+  </div>
+
+  <h3>Nivel 3 &mdash; De afinamiento <span class="pill p-neu">Ajustan el comportamiento</span></h3>
+
+  <div class="q">
+    <div class="q-h"><div class="q-n">13</div><div class="q-t">¿Quién define las metas, con qué frecuencia y a qué nivel de detalle?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>El archivo actual no contiene ninguna meta, de modo que no hay precedente sobre cómo se fijan.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Define si las metas son mensuales o también diarias, globales o por sucursal, y si se expresan en bolívares o en divisa. Esta última decisión es relevante: <b>una meta en bolívares se cumple sola por efecto de la devaluación</b>.</div>
+    </div>
+  </div>
+
+  <div class="q">
+    <div class="q-h"><div class="q-n">14</div><div class="q-t">¿Por qué no se registra inventario los sábados? ¿Es una regla fija?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>La auditoría detectó que los cuatro sábados del mes carecen de conteo, sin excepción. Es un patrón sistemático, no un olvido.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Confirma la periodicidad que debe configurarse. Si se tratara como dato faltante, <b>el sistema generaría más de cincuenta alertas falsas al año</b>.</div>
+    </div>
+  </div>
+
+  <div class="q">
+    <div class="q-h"><div class="q-n">15</div><div class="q-t">¿Qué ocurrió el día atípico del mes auditado?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>Ese día vendió alrededor del 28&#37; de un día normal pero registró la jornada completa. El archivo no tiene dónde consignar la causa.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Valida la necesidad del campo de incidencias y de la opción de excluir días atípicos de promedios y proyecciones.</div>
+    </div>
+  </div>
+
+  <div class="q">
+    <div class="q-h"><div class="q-n">16</div><div class="q-t">¿Cuántas personas cargan el archivo hoy y con qué rutina?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>El archivo no tiene ninguna validación. Con varios años de histórico capturado sin controles, es previsible que existan errores de tipeo.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Dimensiona el esfuerzo de limpieza durante la importación y define qué controles conviene aplicar en la carga diaria.</div>
+    </div>
+  </div>
+
+  <div class="q">
+    <div class="q-h"><div class="q-n">17</div><div class="q-t">¿La plantilla ha sido la misma en todos los meses y años?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>El importador reconoce la estructura del archivo auditado. Si el formato cambió en algún período, esos archivos no se leerían igual.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Determina si basta un lector o si el importador debe contemplar varias versiones de plantilla.</div>
+    </div>
+  </div>
+
+  <div class="q">
+    <div class="q-h"><div class="q-n">18</div><div class="q-t">¿Qué etapas quiere el cliente en el embudo y qué significa cada una en su operación?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>La secuencia propuesta en la sección 6 es una hipótesis razonable, no una definición del cliente. Él pidió etapas personalizadas.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Aunque las etapas son configurables, conocer las reales permite definir bien los tiempos máximos, los motivos de cancelación y las reglas de transición desde el inicio.</div>
+    </div>
+  </div>
+
+  <div class="box" style="margin-top:8mm">
+    <div class="bt">Nota sobre el origen de estas preguntas</div>
+    <p style="margin-bottom:0">Nueve de las dieciocho surgen directamente de la auditoría del archivo y no de supuestos generales. Son, por tanto, preguntas verificables: cada una puede contrastarse contra el archivo que el cliente ya tiene.</p>
+  </div>
+</div>
+
+<!-- ============ 11. RIESGOS ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">11</div><div class="tt"><h2>Riesgos y supuestos</h2><div class="dk">Lo que puede desviar el proyecto y cómo se contiene</div></div></div>
+
+  <h3 class="first">11.1 &nbsp;Riesgos identificados</h3>
+  <table>
+    <thead><tr><th style="width:26%">Riesgo</th><th style="width:11%">Impacto</th><th>Descripción y contención</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Desbordamiento del alcance del pedido</strong></td>
+        <td><span class="pill p-crit">Alto</span></td>
+        <td>La expresión &laquo;armar un pedido&raquo; sugiere un formulario, pero equivale a un punto de venta reducido: catálogo, precios, existencias, pago y despacho. <strong>Contención:</strong> acotar por escrito en la Fase 0 y cotizar el Módulo C solo después.</td>
+      </tr>
+      <tr>
+        <td><strong>Catálogo de productos inexistente</strong></td>
+        <td><span class="pill p-crit">Alto</span></td>
+        <td>Si no hay catálogo accesible, aparece un problema permanente de carga y actualización de precios. <strong>Contención:</strong> pregunta 1, resuelta antes de comprometer la fase.</td>
+      </tr>
+      <tr>
+        <td><strong>Limitaciones de la modalidad de Chatwoot</strong></td>
+        <td><span class="pill p-warn">Medio</span></td>
+        <td>La integración embebida puede depender del plan contratado. <strong>Contención:</strong> verificación técnica en Fase 0, con vía alterna prevista.</td>
+      </tr>
+      <tr>
+        <td><strong>Calidad del histórico</strong></td>
+        <td><span class="pill p-warn">Medio</span></td>
+        <td>Años de captura sin validación pueden contener errores que contaminen las comparaciones. <strong>Contención:</strong> el importador incluye detección de anomalías y decisión caso por caso, no carga ciega.</td>
+      </tr>
+      <tr>
+        <td><strong>Doble conteo de la venta digital</strong></td>
+        <td><span class="pill p-warn">Medio</span></td>
+        <td>Un pedido registrado en el sistema y cobrado también en caja inflaría los indicadores. <strong>Contención:</strong> regla de conciliación definida en el diseño, pregunta 12.</td>
+      </tr>
+      <tr>
+        <td><strong>Requisitos regulatorios no previstos</strong></td>
+        <td><span class="pill p-warn">Medio</span></td>
+        <td>Medicamentos controlados podrían imponer trazabilidad y conservación de registros. <strong>Contención:</strong> confirmación explícita en pregunta 11.</td>
+      </tr>
+      <tr>
+        <td><strong>Dependencia de la definición de la tasa</strong></td>
+        <td><span class="pill p-warn">Medio</span></td>
+        <td>Toda la analítica en divisa depende de este valor; una fuente equivocada distorsiona el histórico completo. <strong>Contención:</strong> pregunta 9 y registro del origen de cada tasa cargada.</td>
+      </tr>
+      <tr>
+        <td><strong>Resistencia al cambio de proceso</strong></td>
+        <td><span class="pill p-neu">Bajo</span></td>
+        <td>Quienes reciben el reporte están habituados al formato Excel. <strong>Contención:</strong> el sistema exporta en el mismo formato, de modo que el cambio no es obligatorio para los receptores.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>11.2 &nbsp;Supuestos de este documento</h3>
+  <ul class="cl">
+    <li>El archivo auditado es representativo del formato utilizado en los demás meses</li>
+    <li>La operación descrita corresponde a una sucursal; el diseño contempla varias, pero el volumen real está por confirmar</li>
+    <li>Chatwoot continuará siendo la herramienta de atención; el sistema la complementa y no la sustituye</li>
+    <li>El cliente dispone de infraestructura donde alojar el sistema, o acepta que se provea</li>
+    <li>Los indicadores del archivo actual siguen siendo los relevantes para la dirección; se agregan otros, no se eliminan</li>
+    <li>Los importes y cifras citados provienen exclusivamente del archivo auditado y sirven para ilustrar el comportamiento del sistema, no como cifras oficiales de la empresa</li>
+  </ul>
+</div>
+<!-- ============ 12. ANEXOS ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">12</div><div class="tt"><h2>Anexos</h2><div class="dk">Mapeos, verificación y glosario</div></div></div>
+
+  <h3 class="first">Anexo A &nbsp;&mdash;&nbsp; Correspondencia entre el archivo actual y el sistema</h3>
+  <p>Trazabilidad entre cada elemento del Excel y su destino en el nuevo modelo, para verificar que nada se pierde en la transición.</p>
+
+  <table>
+    <thead><tr><th style="width:28%">Elemento del archivo</th><th style="width:32%">Destino en el sistema</th><th>Tratamiento</th></tr></thead>
+    <tbody>
+      <tr><td>Columna A &mdash; día de semana</td><td>Derivado de la fecha</td><td>Se elimina como campo capturable</td></tr>
+      <tr><td>Columna B &mdash; fecha</td><td>Registro diario &middot; fecha</td><td>Clave junto con la sucursal</td></tr>
+      <tr><td>Columna C &mdash; venta Bs</td><td>Registro diario &middot; venta</td><td>Dato primario</td></tr>
+      <tr><td>Columna D &mdash; venta $</td><td>Indicador calculado</td><td>No se almacena</td></tr>
+      <tr><td>Columna E &mdash; tasa</td><td>Entidad tasa de cambio</td><td>Con fuente y origen registrados</td></tr>
+      <tr><td>Columna F &mdash; transacciones</td><td>Registro diario &middot; transacciones</td><td>Dato primario</td></tr>
+      <tr><td>Columna G &mdash; unidades</td><td>Registro diario &middot; unidades</td><td>Dato primario</td></tr>
+      <tr><td>Columnas H, I, J &mdash; promedios</td><td>Indicadores calculados</td><td>No se almacenan; ponderados a nivel de período</td></tr>
+      <tr><td>Columna K &mdash; unidades en inventario</td><td>Registro diario &middot; inventario</td><td>Periodicidad configurable</td></tr>
+      <tr><td>Columna L &mdash; valuación</td><td>Registro diario &middot; valuación</td><td>Se documenta si es a costo o a precio</td></tr>
+      <tr><td>Columna M &mdash; TRN por jornada</td><td>Indicador calculado</td><td>No se almacena</td></tr>
+      <tr><td>Columna N &mdash; jornadas</td><td>Registro diario &middot; jornadas</td><td>Dato primario con valor por defecto</td></tr>
+      <tr><td>Fila de totales</td><td>Agregado de presentación</td><td>Calculado con metodología ponderada; nunca almacenado junto a los datos</td></tr>
+      <tr><td>Tabla anual vacía</td><td>Pantalla de comparativa anual</td><td>Se llena automáticamente</td></tr>
+      <tr><td>Siete hojas de gráficos</td><td>Pantalla de gráficas</td><td>Reconstruidas con los defectos corregidos</td></tr>
+      <tr><td>Celda de cálculo residual</td><td>&mdash;</td><td>No se migra</td></tr>
+      <tr><td>Contenido publicitario incrustado</td><td>&mdash;</td><td>No se migra</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Anexo B &nbsp;&mdash;&nbsp; Verificación de la auditoría</h3>
+  <p>Resumen de lo comprobado sobre la estructura interna del archivo, para respaldo de las afirmaciones de la sección 2.</p>
+
+  <table>
+    <thead><tr><th style="width:52%">Verificación</th><th style="width:14%">Resultado</th><th>Observación</th></tr></thead>
+    <tbody>
+      <tr><td>Correspondencia entre día de semana declarado y fecha real</td><td><span class="pill p-crit">30 de 30 erróneos</span></td><td>Desfase constante de cuatro días</td></tr>
+      <tr><td>Coincidencia de la cadena de cálculo con el modelo deducido</td><td><span class="pill p-ok">Exacta</span></td><td>163 fórmulas, sin fórmulas ocultas</td></tr>
+      <tr><td>Totales del mes contra valores almacenados</td><td><span class="pill p-ok">Cuadran</span></td><td>Ventas, transacciones, unidades y jornadas</td></tr>
+      <tr><td>Gráficos con eje de categorías definido</td><td><span class="pill p-crit">1 de 7</span></td><td>Y el único que lo tiene apunta a la columna defectuosa</td></tr>
+      <tr><td>Días sin registro de inventario</td><td><span class="pill p-warn">5 de 30</span></td><td>Cuatro son los cuatro sábados del mes</td></tr>
+      <tr><td>Valores atípicos por prueba estadística</td><td><span class="pill p-warn">1 día</span></td><td>Muy por debajo del límite inferior</td></tr>
+      <tr><td>Comportamiento de la tasa en fines de semana</td><td><span class="pill p-acc">8 de 9 casos</span></td><td>Compatible con tasa oficial</td></tr>
+      <tr><td>Desvío del método de promedio de promedios</td><td><span class="pill p-warn">0,35&#37; a 0,52&#37;</span></td><td>Originado casi por completo en el día atípico</td></tr>
+      <tr><td>Filas y columnas ocultas</td><td><span class="pill p-ok">Ninguna</span></td><td>Verificado hoja por hoja</td></tr>
+      <tr><td>Celdas combinadas</td><td><span class="pill p-ok">Ninguna</span></td><td>Facilita la importación</td></tr>
+      <tr><td>Validación de datos y formato condicional</td><td><span class="pill p-crit">Ninguna</span></td><td>En ninguna de las ocho hojas</td></tr>
+      <tr><td>Protección de hoja o libro</td><td><span class="pill p-crit">Ninguna</span></td><td>Cualquier usuario puede alterar fórmulas</td></tr>
+      <tr><td>Macros o código incrustado</td><td><span class="pill p-ok">Ninguno</span></td><td>Formato sin macros</td></tr>
+      <tr><td>Contenido ajeno al reporte</td><td><span class="pill p-neu">Detectado</span></td><td>Anuncio con imágenes e hipervínculos; sin riesgo de seguridad</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Anexo C &nbsp;&mdash;&nbsp; Glosario</h3>
+  <table>
+    <thead><tr><th style="width:26%">Término</th><th>Definición en el contexto de este documento</th></tr></thead>
+    <tbody>
+      <tr><td><strong>TRN</strong></td><td>Transacción. Cada operación de venta registrada, equivalente a un ticket o factura</td></tr>
+      <tr><td><strong>Jornada</strong></td><td>Turno de trabajo del día. El histórico muestra tres como norma y cuatro de forma ocasional</td></tr>
+      <tr><td><strong>Ticket promedio</strong></td><td>Venta dividida entre transacciones: cuánto gasta un cliente por visita</td></tr>
+      <tr><td><strong>Ratio ponderado</strong></td><td>Cociente entre la suma de numeradores y la suma de denominadores del período. Es el método correcto, frente a promediar los cocientes diarios</td></tr>
+      <tr><td><strong>Bimoneda</strong></td><td>Propiedad del sistema de conservar y mostrar todo monto en bolívares y en divisa simultáneamente, con la tasa del momento de la operación</td></tr>
+      <tr><td><strong>Venta deflactada</strong></td><td>Venta expresada eliminando el efecto de la variación cambiaria, para medir crecimiento real</td></tr>
+      <tr><td><strong>Rotación de inventario</strong></td><td>Número de veces que el inventario se renueva en un período. Requiere costo de ventas, no venta a precio de venta</td></tr>
+      <tr><td><strong>Días de inventario</strong></td><td>Cuántos días de venta cubre el inventario actual</td></tr>
+      <tr><td><strong>Embudo o pipeline</strong></td><td>Secuencia de etapas por las que atraviesa un pedido desde la solicitud hasta el cierre</td></tr>
+      <tr><td><strong>Tiempo de ciclo</strong></td><td>Tiempo transcurrido entre la entrada y la salida de un pedido, total o por etapa</td></tr>
+      <tr><td><strong>Tasa de conversión</strong></td><td>Proporción de conversaciones que terminan en pedido, o de pedidos que avanzan de una etapa a la siguiente</td></tr>
+      <tr><td><strong>Primera respuesta</strong></td><td>Tiempo entre el mensaje del cliente y la primera contestación de un agente</td></tr>
+      <tr><td><strong>Aplicación de panel</strong></td><td>Capacidad de Chatwoot de mostrar una aplicación web propia dentro de la vista de conversación</td></tr>
+      <tr><td><strong>Webhook</strong></td><td>Notificación automática que Chatwoot envía al sistema cuando ocurre un evento</td></tr>
+      <tr><td><strong>Día atípico</strong></td><td>Jornada marcada por una incidencia, excluible de promedios y proyecciones sin borrarla del histórico</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============ CIERRE ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="tt"><h2>Próximos pasos</h2><div class="dk">Cómo avanzar desde este documento</div></div></div>
+
+  <p class="lead">Este documento cumple dos funciones: describe el sistema propuesto y delimita con precisión lo que todavía no está definido. Ambas cosas son necesarias para avanzar con seriedad.</p>
+
+  <h3 class="first">Lo que ya puede decidirse</h3>
+  <ul class="cl">
+    <li><strong>El Módulo A puede cotizarse y comenzarse de inmediato.</strong> Su alcance está cerrado porque el archivo auditado funciona como especificación completa, y no depende de accesos ni definiciones de terceros</li>
+    <li><strong>La secuencia de fases</strong> propuesta en la sección 9 puede aprobarse tal como está, ya que cada fase entrega un sistema utilizable por sí mismo</li>
+  </ul>
+
+  <h3>Lo que requiere una sesión de trabajo</h3>
+  <ul class="cl">
+    <li><strong>Las cinco preguntas bloqueantes</strong> de la sección 10. Dos de ellas &mdash;la disponibilidad del catálogo de productos y la modalidad de Chatwoot&mdash; determinan por sí solas si el Módulo C es un desarrollo acotado o un proyecto del doble de tamaño</li>
+    <li><strong>El detalle del embudo y de la analítica</strong>, sobre los cuales el cliente ya manifestó disposición a explicar en profundidad</li>
+  </ul>
+
+  <h3>Recomendación</h3>
+  <div class="box o">
+    <p>Iniciar con una <strong>Fase 0 de descubrimiento</strong> acotada, cuyo entregable sea el alcance cerrado y firmado, y en paralelo <strong>arrancar el Módulo A</strong>, que no depende de ninguna de las respuestas pendientes.</p>
+    <p style="margin-bottom:0">De este modo el cliente ve resultados desde las primeras semanas &mdash;sustituyendo un proceso manual que realiza todos los días&mdash; mientras se define con rigor la parte del proyecto que hoy no puede estimarse de forma responsable.</p>
+  </div>
+
+  <h3>Una observación final sobre el diagnóstico</h3>
+  <p>Los defectos documentados en la sección 2 no son un señalamiento hacia el equipo que mantiene el archivo. Son la consecuencia previsible de sostener durante años un proceso manual sobre una plantilla que se copia mes a mes: <strong>ningún nivel de cuidado personal evita que una columna copiada quede desfasada, ni que un promedio de promedios se calcule mal</strong>.</p>
+  <p>Ese es precisamente el argumento del proyecto. En el sistema propuesto, el día de la semana se deriva de la fecha, los ratios se ponderan por definición y los totales no conviven con los datos. <strong>No son errores que se corrigen: son errores que dejan de ser posibles.</strong></p>
+
+  <div class="endnote">
+    Documento elaborado a partir de la auditoría técnica del archivo <span style="font-family:var(--mono);font-size:7.6pt">CUADRO DE INDICADORES MES SEPTIEMBRE GUADALUPE.xlsx</span>, analizado sobre su estructura interna. Las cifras citadas corresponden exclusivamente a ese archivo y se emplean para ilustrar el comportamiento esperado del sistema. Versión 1.0 &mdash; sujeto a revisión tras la sesión de descubrimiento.
+  </div>
+</div>
+<style>.cover + .sec{page-break-before:auto}</style>

@@ -1,0 +1,80 @@
+<!-- ============ 4. ETAPA 2 ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">4</div><div class="tt"><h2>Etapa 2 &mdash; Métricas de Chatwoot</h2><div class="dk">Qué se hará y cómo queda</div></div></div>
+
+  <p class="lead">Chatwoot mide la operación de atención &mdash;tiempos de respuesta, volumen de conversaciones, productividad por agente&mdash; pero esa información vive dentro de la herramienta y no se cruza con los indicadores del negocio. Esta etapa la incorpora al mismo tablero, cargando los reportes que Chatwoot genera al descargarlos.</p>
+
+  <h3 class="first">4.1 &nbsp;Cómo funciona</h3>
+  <div class="flow">
+    <div class="fnode"><div class="ft">1 &middot; Descarga desde Chatwoot</div><div class="fd">El usuario entra a Informes, elige el período y pulsa descargar</div></div>
+    <div class="farrow">&darr;</div>
+    <div class="fnode acc"><div class="ft">2 &middot; Carga en el tablero</div><div class="fd">Sube el archivo; el sistema lo interpreta, valida y muestra qué va a importar antes de confirmar</div></div>
+    <div class="farrow">&darr;</div>
+    <div class="fnode acc"><div class="ft">3 &middot; Histórico acumulado</div><div class="fd">Cada período queda guardado, construyendo una serie que Chatwoot no conserva de forma consultable</div></div>
+    <div class="farrow">&darr;</div>
+    <div class="fnode ink"><div class="ft">4 &middot; Vista conjunta</div><div class="fd">Las métricas de atención se muestran junto a los indicadores de venta del mismo período</div></div>
+  </div>
+
+  <div class="box">
+    <div class="bt">El valor de tenerlo junto</div>
+    <p style="margin-bottom:0">Separadas, ambas cosas ya existen. Juntas permiten leer si un repunte de conversaciones se tradujo en ventas, si los días de mayor atención coinciden con los de mayor facturación, y si los tiempos de respuesta se deterioran justo en los días de más movimiento. <strong>Ninguna de las dos herramientas responde eso por separado.</strong></p>
+  </div>
+
+  <h3>4.2 &nbsp;Qué se verificó en los archivos de muestra</h3>
+  <p>Se analizaron dos reportes exportados desde Chatwoot para confirmar la viabilidad antes de comprometer esta etapa. Llegaron sin datos, pero bastaron para confirmar que <strong>el trabajo es realizable</strong> y para saber con precisión qué debe resolver el importador. Ambos comparten la misma estructura fija:</p>
+
+<pre>Fila 1   Reportando el periodo desde 2026-08-19 hasta 2026-08-26
+Fila 2   (vacía)
+Fila 3   (vacía)
+Fila 4   Conversaciones | Mensajes recibidos | Mensajes enviados | ...   &larr; encabezado real
+Fila 5   0 | 0 | 0 | N/A | N/A | 0 | N/A                                 &larr; datos</pre>
+
+  <table>
+    <thead><tr><th style="width:36%">Lo encontrado</th><th>Cómo se resuelve</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p-warn">01</span> El período solo figura en la primera línea; no hay columna de fecha</td><td>Se extrae de ese texto y se usa como clave del registro histórico</td></tr>
+      <tr><td><span class="pill p-warn">02</span> El encabezado está en la cuarta fila, no en la primera</td><td>Detección de la fila de encabezado en vez de posición fija</td></tr>
+      <tr><td><span class="pill p-crit">03</span> <strong>Chatwoot exporta dos columnas sin encabezado</strong>: cinco nombres para siete valores</td><td>Mapeo por posición contra un esquema conocido por tipo de reporte, nunca por el nombre</td></tr>
+      <tr><td><span class="pill p-warn">04</span> Las columnas mezclan idiomas (una en inglés entre las españolas)</td><td>Misma solución: no se depende del texto del encabezado</td></tr>
+      <tr><td><span class="pill p-warn">05</span> El tipo de dato cambia: número cuando hay datos, texto cuando no</td><td>Normalización a valor nulo antes de calcular, para no contaminar promedios</td></tr>
+      <tr><td><span class="pill p-crit">06</span> <strong>Abrir el archivo en Excel destruye los acentos</strong> de forma irrecuperable</td><td>Se carga el archivo original sin pasar por Excel, y el sistema rechaza los que vengan dañados en vez de aceptarlos en silencio</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box o">
+    <div class="bt">Conclusión</div>
+    <p style="margin-bottom:0">Ninguno de estos puntos es un impedimento: son trabajo rutinario de importación. Que las columnas resultaran identificables incluso en un archivo vacío y con el encabezado defectuoso <strong>confirma la viabilidad</strong>. Y como la cuenta opera en la nube de Chatwoot, existe una vía alterna de integración si los reportes descargados resultaran insuficientes para algún indicador.</p>
+  </div>
+
+  <h3>4.3 &nbsp;Qué reportes se incorporan</h3>
+  <p>Chatwoot ofrece seis informes y <strong>cada uno tiene su propia estructura, por lo que requiere su propio lector</strong>. Cuáles se incluyen debe definirse antes de cerrar la cotización de esta etapa.</p>
+
+  <table>
+    <thead><tr><th style="width:26%">Reporte</th><th>Qué aporta</th><th style="width:18%">Prioridad</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Conversaciones</strong></td><td>Volumen, mensajes recibidos y enviados, tiempo de primera respuesta, tiempo de resolución y tiempo de espera del cliente</td><td><span class="pill p-ok">Esencial</span></td></tr>
+      <tr><td><strong>Agentes</strong></td><td>Las mismas métricas desglosadas por persona: es la fuente del <strong>tiempo de atención por usuario</strong></td><td><span class="pill p-ok">Esencial</span></td></tr>
+      <tr><td>Bandejas de entrada</td><td>Desglose por canal de atención</td><td><span class="pill p-acc">Recomendado</span></td></tr>
+      <tr><td>Equipos</td><td>Desglose por equipo, si la operación está organizada así</td><td><span class="pill p-neu">Según aplique</span></td></tr>
+      <tr><td>Etiquetas</td><td>Desglose por motivo, si clasifican las conversaciones</td><td><span class="pill p-neu">Según aplique</span></td></tr>
+      <tr><td>Resumen</td><td>Consolidado general, redundante si se cargan los anteriores</td><td><span class="pill p-neu">Opcional</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.4 &nbsp;Cómo queda: las pantallas</h3>
+  <table>
+    <thead><tr><th style="width:30%">Pantalla</th><th>Contenido</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Panel de atención</strong></td><td>Tarjetas con tiempos y volúmenes del período, comparados contra el anterior</td></tr>
+      <tr><td><strong>Evolución por período</strong></td><td>Serie histórica de cada métrica, según se van cargando los reportes</td></tr>
+      <tr><td><strong>Desempeño por agente</strong></td><td>Tabla comparativa y ficha individual <span class="pill p-acc">Requiere el reporte de agentes</span></td></tr>
+      <tr><td><strong>Vista combinada</strong></td><td>Métricas de atención junto a los indicadores de venta del mismo período: el objetivo de esta etapa</td></tr>
+      <tr><td><strong>Carga de reportes</strong></td><td>Subida, vista previa, validación, control de duplicados y registro de cargas</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box w">
+    <div class="bt">Una precisión sobre el detalle de las gráficas</div>
+    <p style="margin-bottom:0">Los archivos de muestra entregan <strong>el total del período en una sola fila, sin desglose por día</strong>. Si con datos reales se confirma ese comportamiento, el panel mostrará comparaciones entre períodos &mdash;semana contra semana, mes contra mes&mdash; en lugar de una curva diaria. Sigue siendo plenamente funcional; es una diferencia de detalle visual, no de viabilidad. Se confirma al revisar los archivos reales.</p>
+  </div>
+</div>

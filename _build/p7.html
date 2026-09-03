@@ -1,0 +1,233 @@
+<!-- ============ 10. PREGUNTAS ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">10</div><div class="tt"><h2>Preguntas para confirmar requisitos</h2><div class="dk">Dieciocho definiciones pendientes, ordenadas por impacto</div></div></div>
+
+  <p class="lead">Estas preguntas no son detalles de afinamiento: varias de ellas <strong>cambian el tamaño del proyecto</strong>, no solo su configuración. Se agrupan en tres niveles según su efecto sobre la cotización. Cada una indica por qué importa y qué cambia en el desarrollo según la respuesta.</p>
+
+  <div class="stats">
+    <div class="stat crit"><div class="v">5</div><div class="l">Bloqueantes<br>Impiden cotizar en firme</div></div>
+    <div class="stat warn"><div class="v">7</div><div class="l">Importantes<br>Alteran el alcance</div></div>
+    <div class="stat"><div class="v">6</div><div class="l">De afinamiento<br>Ajustan el comportamiento</div></div>
+  </div>
+
+  <h3 class="first">Nivel 1 &mdash; Bloqueantes <span class="pill p-crit">Sin respuesta no hay cotización en firme</span></h3>
+
+  <div class="q critq">
+    <div class="q-h"><div class="q-n">1</div><div class="q-t">¿Existe hoy un catálogo de productos con precios, y en qué formato puede entregarse al sistema?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>Armar un pedido exige buscar productos, aplicar precios vigentes y, deseablemente, verificar disponibilidad. Sin catálogo no hay función de armado posible.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Si puede exportarse a un archivo y actualizarse periódicamente, el Módulo C solo lo importa. <b>Si hay que construirlo y mantenerlo dentro del sistema desde cero, el esfuerzo del módulo se duplica</b> y aparece un problema permanente de actualización de precios. Es la pregunta de mayor impacto económico de toda la lista.</div>
+    </div>
+  </div>
+
+  <div class="q critq">
+    <div class="q-h"><div class="q-n">2</div><div class="q-t">¿Chatwoot está instalado en servidor propio o se usa en la nube? ¿Qué versión y qué plan? ¿Se dispone de acceso administrativo?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>Define qué mecanismos de integración están disponibles. La capacidad de mostrar una aplicación propia dentro del panel de conversación &mdash;base del Módulo C&mdash; depende de la modalidad y del plan contratado.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>En servidor propio hay control total sobre datos, retención e integración. <b>En la nube, la disponibilidad del panel embebido debe verificarse antes de comprometer el Módulo C</b>, y podría requerir una vía alterna de integración.</div>
+    </div>
+  </div>
+
+  <div class="q critq">
+    <div class="q-h"><div class="q-n">3</div><div class="q-t">¿Se conservan los archivos de los meses anteriores? ¿Desde qué año?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>La auditoría detectó que el archivo se guarda en una estructura de una carpeta por mes, y que la plantilla data de 2021. Si esas carpetas existen, hay años de histórico recuperable.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Con histórico disponible, <b>la comparativa anual que lleva años vacía se llena desde el primer día</b> y las metas pueden calcularse sobre datos reales. Sin él, el sistema arranca en blanco y las comparaciones interanuales tardan un año en existir.</div>
+    </div>
+  </div>
+
+  <div class="q critq">
+    <div class="q-h"><div class="q-n">4</div><div class="q-t">¿Existe ya un dashboard en desarrollo o en uso?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>El planteamiento del cliente menciona revisar dos cosas &laquo;a ese dashboard&raquo;, lo que sugiere algo preexistente. La información entregada hasta ahora contiene únicamente el archivo Excel.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Determina si este proyecto <b>construye desde cero o extiende algo existente</b>. Si hay una base previa, es indispensable revisarla antes de estimar: podría acelerar el trabajo o, por el contrario, obligar a rehacerlo.</div>
+    </div>
+  </div>
+
+  <div class="q critq">
+    <div class="q-h"><div class="q-n">5</div><div class="q-t">¿El pedido debe registrar forma de pago y datos de entrega?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>En la práctica comercial local es habitual que un pedido requiera medio de pago, número de referencia y verificación, además de dirección y costo de envío cuando hay despacho.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Cada uno agrega campos, etapas al embudo y reglas de validación. <b>Incluir cobro y despacho puede aumentar el Módulo C de forma significativa</b>, y conviene decidir si entran en la primera versión o en una posterior.</div>
+    </div>
+  </div>
+</div>
+
+<div class="sec pg">
+  <div class="sec-hd"><div class="tt"><h2>Preguntas &mdash; niveles 2 y 3</h2><div class="dk">Continuación de la sección 10</div></div></div>
+
+  <h3 class="first">Nivel 2 &mdash; Importantes <span class="pill p-warn">Alteran el alcance funcional</span></h3>
+
+  <div class="q warnq">
+    <div class="q-h"><div class="q-n">6</div><div class="q-t">¿Qué canales están conectados actualmente a Chatwoot?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>WhatsApp mediante interfaz oficial, WhatsApp por vía no oficial, Instagram, Facebook y widget web tienen comportamientos y límites distintos.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Afecta qué datos llegan en cada evento, la fiabilidad de la integración y qué segmentaciones tienen sentido en la analítica.</div>
+    </div>
+  </div>
+
+  <div class="q warnq">
+    <div class="q-h"><div class="q-n">7</div><div class="q-t">¿Cuántas sucursales tiene la organización y se consolidan entre sí?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>El archivo auditado corresponde a una sola, pero la existencia de una tabla de consolidado anual sugiere una necesidad de agregación.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>El diseño ya contempla múltiples sucursales, pero define cuántos niveles de comparación, permisos y vistas consolidadas se construyen.</div>
+    </div>
+  </div>
+
+  <div class="q warnq">
+    <div class="q-h"><div class="q-n">8</div><div class="q-t">¿Cuál es el margen bruto aproximado, o se dispone del costo de ventas?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>El archivo registra el inventario a costo y las ventas a precio de venta. <strong>Con esos datos la rotación de inventario no es calculable</strong>: dividir una cifra entre otra mezcla dos unidades distintas.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Con el margen o el costo de ventas se habilitan dos indicadores nuevos de alto valor para una farmacia: rotación real y días de inventario. Sin ellos quedan fuera del alcance.</div>
+    </div>
+  </div>
+
+  <div class="q warnq">
+    <div class="q-h"><div class="q-n">9</div><div class="q-t">¿Qué tasa de cambio se utiliza y quién la carga?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>El análisis del mes muestra que la tasa se mantiene los fines de semana y nunca decrece, comportamiento compatible con la tasa oficial. Es una inferencia sólida pero no confirmada.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Determina si el sistema consulta la tasa de forma automática o la carga un usuario, y qué regla aplica en días sin publicación. Como toda la analítica en divisa depende de este valor, <b>una definición equivocada distorsiona todos los indicadores monetarios</b>.</div>
+    </div>
+  </div>
+
+  <div class="q warnq">
+    <div class="q-h"><div class="q-n">10</div><div class="q-t">¿Quiénes usarán el sistema y qué debe ver cada perfil?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>Especialmente relevante decidir si un agente puede ver el desempeño de sus compañeros o solo el propio.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Define la matriz de permisos. Es además una decisión con efecto sobre el clima del equipo, por lo que conviene que la tome la dirección y no el criterio técnico.</div>
+    </div>
+  </div>
+
+  <div class="q warnq">
+    <div class="q-h"><div class="q-n">11</div><div class="q-t">¿El pedido puede incluir medicamentos controlados o que exijan récipe, lote o fecha de vencimiento?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>Se trata de una farmacia. Si aplica, el pedido deja de ser un documento comercial simple y adquiere requisitos de trazabilidad sanitaria.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Incorpora campos obligatorios, validaciones, control documental y posibles obligaciones de conservación de registros. <b>Es alcance regulatorio y debe confirmarse de forma explícita</b>, nunca asumirse.</div>
+    </div>
+  </div>
+
+  <div class="q warnq">
+    <div class="q-h"><div class="q-n">12</div><div class="q-t">Cuando un pedido nace por Chatwoot y luego se cobra en caja, ¿cómo se evita contarlo dos veces?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>El Módulo C registra el pedido y el Módulo A registra la venta total del día. Si la venta digital ya está incluida en el total de caja, sumarla otra vez inflaría los indicadores.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Exige una regla de conciliación definida <b>desde el diseño y no después</b>: marcar el pedido como ya incluido, identificarlo en el punto de venta, o tratar el canal digital como una categoría dentro del total en vez de un añadido.</div>
+    </div>
+  </div>
+
+  <h3>Nivel 3 &mdash; De afinamiento <span class="pill p-neu">Ajustan el comportamiento</span></h3>
+
+  <div class="q">
+    <div class="q-h"><div class="q-n">13</div><div class="q-t">¿Quién define las metas, con qué frecuencia y a qué nivel de detalle?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>El archivo actual no contiene ninguna meta, de modo que no hay precedente sobre cómo se fijan.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Define si las metas son mensuales o también diarias, globales o por sucursal, y si se expresan en bolívares o en divisa. Esta última decisión es relevante: <b>una meta en bolívares se cumple sola por efecto de la devaluación</b>.</div>
+    </div>
+  </div>
+
+  <div class="q">
+    <div class="q-h"><div class="q-n">14</div><div class="q-t">¿Por qué no se registra inventario los sábados? ¿Es una regla fija?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>La auditoría detectó que los cuatro sábados del mes carecen de conteo, sin excepción. Es un patrón sistemático, no un olvido.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Confirma la periodicidad que debe configurarse. Si se tratara como dato faltante, <b>el sistema generaría más de cincuenta alertas falsas al año</b>.</div>
+    </div>
+  </div>
+
+  <div class="q">
+    <div class="q-h"><div class="q-n">15</div><div class="q-t">¿Qué ocurrió el día atípico del mes auditado?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>Ese día vendió alrededor del 28&#37; de un día normal pero registró la jornada completa. El archivo no tiene dónde consignar la causa.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Valida la necesidad del campo de incidencias y de la opción de excluir días atípicos de promedios y proyecciones.</div>
+    </div>
+  </div>
+
+  <div class="q">
+    <div class="q-h"><div class="q-n">16</div><div class="q-t">¿Cuántas personas cargan el archivo hoy y con qué rutina?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>El archivo no tiene ninguna validación. Con varios años de histórico capturado sin controles, es previsible que existan errores de tipeo.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Dimensiona el esfuerzo de limpieza durante la importación y define qué controles conviene aplicar en la carga diaria.</div>
+    </div>
+  </div>
+
+  <div class="q">
+    <div class="q-h"><div class="q-n">17</div><div class="q-t">¿La plantilla ha sido la misma en todos los meses y años?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>El importador reconoce la estructura del archivo auditado. Si el formato cambió en algún período, esos archivos no se leerían igual.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Determina si basta un lector o si el importador debe contemplar varias versiones de plantilla.</div>
+    </div>
+  </div>
+
+  <div class="q">
+    <div class="q-h"><div class="q-n">18</div><div class="q-t">¿Qué etapas quiere el cliente en el embudo y qué significa cada una en su operación?</div></div>
+    <div class="q-b">
+      <div class="qr"><span class="qlbl">Por qué importa</span>La secuencia propuesta en la sección 6 es una hipótesis razonable, no una definición del cliente. Él pidió etapas personalizadas.</div>
+      <div class="qi"><span class="qlbl">Qué cambia</span>Aunque las etapas son configurables, conocer las reales permite definir bien los tiempos máximos, los motivos de cancelación y las reglas de transición desde el inicio.</div>
+    </div>
+  </div>
+
+  <div class="box" style="margin-top:8mm">
+    <div class="bt">Nota sobre el origen de estas preguntas</div>
+    <p style="margin-bottom:0">Nueve de las dieciocho surgen directamente de la auditoría del archivo y no de supuestos generales. Son, por tanto, preguntas verificables: cada una puede contrastarse contra el archivo que el cliente ya tiene.</p>
+  </div>
+</div>
+
+<!-- ============ 11. RIESGOS ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">11</div><div class="tt"><h2>Riesgos y supuestos</h2><div class="dk">Lo que puede desviar el proyecto y cómo se contiene</div></div></div>
+
+  <h3 class="first">11.1 &nbsp;Riesgos identificados</h3>
+  <table>
+    <thead><tr><th style="width:26%">Riesgo</th><th style="width:11%">Impacto</th><th>Descripción y contención</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Desbordamiento del alcance del pedido</strong></td>
+        <td><span class="pill p-crit">Alto</span></td>
+        <td>La expresión &laquo;armar un pedido&raquo; sugiere un formulario, pero equivale a un punto de venta reducido: catálogo, precios, existencias, pago y despacho. <strong>Contención:</strong> acotar por escrito en la Fase 0 y cotizar el Módulo C solo después.</td>
+      </tr>
+      <tr>
+        <td><strong>Catálogo de productos inexistente</strong></td>
+        <td><span class="pill p-crit">Alto</span></td>
+        <td>Si no hay catálogo accesible, aparece un problema permanente de carga y actualización de precios. <strong>Contención:</strong> pregunta 1, resuelta antes de comprometer la fase.</td>
+      </tr>
+      <tr>
+        <td><strong>Limitaciones de la modalidad de Chatwoot</strong></td>
+        <td><span class="pill p-warn">Medio</span></td>
+        <td>La integración embebida puede depender del plan contratado. <strong>Contención:</strong> verificación técnica en Fase 0, con vía alterna prevista.</td>
+      </tr>
+      <tr>
+        <td><strong>Calidad del histórico</strong></td>
+        <td><span class="pill p-warn">Medio</span></td>
+        <td>Años de captura sin validación pueden contener errores que contaminen las comparaciones. <strong>Contención:</strong> el importador incluye detección de anomalías y decisión caso por caso, no carga ciega.</td>
+      </tr>
+      <tr>
+        <td><strong>Doble conteo de la venta digital</strong></td>
+        <td><span class="pill p-warn">Medio</span></td>
+        <td>Un pedido registrado en el sistema y cobrado también en caja inflaría los indicadores. <strong>Contención:</strong> regla de conciliación definida en el diseño, pregunta 12.</td>
+      </tr>
+      <tr>
+        <td><strong>Requisitos regulatorios no previstos</strong></td>
+        <td><span class="pill p-warn">Medio</span></td>
+        <td>Medicamentos controlados podrían imponer trazabilidad y conservación de registros. <strong>Contención:</strong> confirmación explícita en pregunta 11.</td>
+      </tr>
+      <tr>
+        <td><strong>Dependencia de la definición de la tasa</strong></td>
+        <td><span class="pill p-warn">Medio</span></td>
+        <td>Toda la analítica en divisa depende de este valor; una fuente equivocada distorsiona el histórico completo. <strong>Contención:</strong> pregunta 9 y registro del origen de cada tasa cargada.</td>
+      </tr>
+      <tr>
+        <td><strong>Resistencia al cambio de proceso</strong></td>
+        <td><span class="pill p-neu">Bajo</span></td>
+        <td>Quienes reciben el reporte están habituados al formato Excel. <strong>Contención:</strong> el sistema exporta en el mismo formato, de modo que el cambio no es obligatorio para los receptores.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>11.2 &nbsp;Supuestos de este documento</h3>
+  <ul class="cl">
+    <li>El archivo auditado es representativo del formato utilizado en los demás meses</li>
+    <li>La operación descrita corresponde a una sucursal; el diseño contempla varias, pero el volumen real está por confirmar</li>
+    <li>Chatwoot continuará siendo la herramienta de atención; el sistema la complementa y no la sustituye</li>
+    <li>El cliente dispone de infraestructura donde alojar el sistema, o acepta que se provea</li>
+    <li>Los indicadores del archivo actual siguen siendo los relevantes para la dirección; se agregan otros, no se eliminan</li>
+    <li>Los importes y cifras citados provienen exclusivamente del archivo auditado y sirven para ilustrar el comportamiento del sistema, no como cifras oficiales de la empresa</li>
+  </ul>
+</div>

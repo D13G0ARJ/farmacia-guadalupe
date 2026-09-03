@@ -1,0 +1,196 @@
+<!-- ============ 5. MODULO B ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">5</div><div class="tt"><h2>Módulo B &mdash; Analítica de Chatwoot</h2><div class="dk">Tiempos de atención, volumen y productividad</div></div></div>
+
+  <p class="lead">El cliente preguntó si es posible extraer estadística de Chatwoot, mencionando en particular el tiempo de atención por usuario. La respuesta es afirmativa, y este módulo va más allá de lo que la herramienta ofrece de forma nativa.</p>
+
+  <h3 class="first">5.1 &nbsp;Fuentes de datos</h3>
+  <p>Chatwoot expone dos mecanismos que el sistema aprovecha de forma complementaria.</p>
+
+  <h4>Interfaz de reportes</h4>
+  <p>Chatwoot dispone de un servicio de reportes que entrega series por métrica y rango de fechas, segmentables por cuenta, agente, bandeja de entrada, etiqueta o equipo. Las métricas disponibles son:</p>
+
+  <table>
+    <thead><tr><th style="width:38%">Métrica</th><th>Qué mide</th></tr></thead>
+    <tbody>
+      <tr><td>Conversaciones</td><td>Volumen de conversaciones en el período</td></tr>
+      <tr><td>Mensajes entrantes</td><td>Mensajes recibidos de clientes</td></tr>
+      <tr><td>Mensajes salientes</td><td>Mensajes enviados por agentes</td></tr>
+      <tr><td><strong>Tiempo promedio de primera respuesta</strong></td><td>Cuánto tarda un agente en responder por primera vez</td></tr>
+      <tr><td><strong>Tiempo promedio de resolución</strong></td><td>Cuánto tarda en cerrarse una conversación</td></tr>
+      <tr><td>Resoluciones</td><td>Conversaciones cerradas en el período</td></tr>
+    </tbody>
+  </table>
+  <p class="tnote">El &laquo;tiempo de atención por usuario&raquo; que solicitó el cliente corresponde a las dos métricas destacadas, segmentadas por agente.</p>
+
+  <h4>Eventos en tiempo real</h4>
+  <p>Chatwoot puede notificar al sistema cada vez que ocurre algo relevante: creación de conversación, cambio de estado, mensaje creado o actualizado, y actualización de conversación o contacto. El sistema recibe estos eventos y los almacena.</p>
+
+  <h3>5.2 &nbsp;Por qué el sistema mantiene su propia copia</h3>
+  <div class="box o">
+    <div class="bt">Decisión de arquitectura</div>
+    <p>Se recomienda <strong>no depender únicamente del servicio de reportes de Chatwoot</strong> y espejar los eventos en la base de datos propia. Las razones son tres:</p>
+    <ul class="dash" style="margin-bottom:0">
+      <li><strong>Histórico ilimitado y granularidad completa</strong>, sin las restricciones de retención y agregación del reporte nativo.</li>
+      <li><strong>Métricas propias</strong> que Chatwoot no calcula: cumplimiento de acuerdos de servicio por canal, carga por franja horaria, desempeño comparado entre turnos, tiempo de respuesta excluyendo horario no laborable.</li>
+      <li><strong>La razón decisiva:</strong> la métrica que de verdad interesa a la dirección es cuántas conversaciones terminan en venta y cuánto facturan. <strong>Chatwoot no sabe qué es un pedido.</strong> Solo puede calcularse cruzando sus datos con los del Módulo C, y eso exige que ambos vivan en la misma base.</li>
+    </ul>
+  </div>
+
+  <h3>5.3 &nbsp;Métricas del módulo</h3>
+  <table>
+    <thead><tr><th style="width:32%">Grupo</th><th>Indicadores</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Tiempos de atención</strong></td><td>Primera respuesta, resolución, tiempo de espera del cliente, tiempo activo del agente. Con promedio y percentiles, no solo media</td></tr>
+      <tr><td><strong>Volumen</strong></td><td>Conversaciones abiertas, resueltas y pendientes; mensajes entrantes y salientes; conversaciones sin respuesta</td></tr>
+      <tr><td><strong>Productividad por agente</strong></td><td>Conversaciones atendidas, resueltas, tiempo medio de manejo, carga simultánea</td></tr>
+      <tr><td><strong>Por canal</strong></td><td>Todas las anteriores segmentadas por WhatsApp, Instagram, Facebook o widget web</td></tr>
+      <tr><td><strong>Distribución temporal</strong></td><td>Mapa de calor por hora y día de la semana, para dimensionar turnos de atención</td></tr>
+      <tr><td><strong>Cumplimiento de servicio</strong></td><td>Porcentaje de conversaciones respondidas dentro del umbral definido, con alerta al incumplirse</td></tr>
+      <tr><td><strong>Conversión</strong> <span class="pill p-acc">Requiere Módulo C</span></td><td>Conversaciones que generaron pedido, monto facturado por conversación, tasa de conversión por agente y por canal</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.4 &nbsp;Pantallas</h3>
+  <ul class="cl">
+    <li><strong>Panel de atención:</strong> tiempos, volumen y cumplimiento del período, con comparación contra el período anterior</li>
+    <li><strong>Detalle por agente:</strong> tabla ordenable y ficha individual con evolución en el tiempo</li>
+    <li><strong>Detalle por canal:</strong> comparación de desempeño entre canales conectados</li>
+    <li><strong>Distribución horaria:</strong> mapa de calor de carga para planificar cobertura</li>
+    <li><strong>Embudo de conversión:</strong> de conversación a pedido y a venta <span class="pill p-acc">Con Módulo C</span></li>
+  </ul>
+
+  <div class="box w">
+    <div class="bt">Dependencia crítica</div>
+    <p style="margin-bottom:0">El alcance real de este módulo depende de si Chatwoot está instalado en servidor propio o se usa en la nube, y del plan contratado. Ambas modalidades permiten leer reportes y recibir eventos, pero la instalación propia ofrece control total sobre retención, acceso a datos y personalización. Es una de las preguntas críticas de la sección 10.</p>
+  </div>
+</div>
+
+<!-- ============ 6. MODULO C ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">6</div><div class="tt"><h2>Módulo C &mdash; Pipeline de Pedidos</h2><div class="dk">Embudo por etapas integrado al canal de atención</div></div></div>
+
+  <p class="lead">El cliente describió la necesidad de un embudo con etapas personalizadas para gestionar los pedidos que llegan por el canal conectado a Chatwoot, integrado mediante una dirección web, con un punto de entrada y una función para armar el pedido. Lo que describe corresponde exactamente a una capacidad nativa de Chatwoot llamada aplicaciones de panel.</p>
+
+  <h3 class="first">6.1 &nbsp;Cómo se integra a Chatwoot</h3>
+  <p>Chatwoot permite registrar una dirección web propia y la <strong>muestra dentro de un panel lateral, junto a la conversación</strong>, pasándole el contexto de esa conversación. El agente nunca sale de la herramienta que ya usa.</p>
+
+  <p>La comunicación entre Chatwoot y la aplicación se realiza mediante mensajes entre ventanas: la aplicación solicita el contexto y Chatwoot responde con los datos de la conversación, el contacto y el agente actual.</p>
+
+  <pre>// La aplicación, dentro del panel, solicita el contexto
+window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*')
+
+// Chatwoot responde
+{
+  event: 'appContext',
+  data: {
+    conversation: { ... },   // conversación en curso
+    contact:      { ... },   // datos del cliente
+    currentAgent: { ... }    // agente que atiende
+  }
+}</pre>
+
+  <p>A partir de ese contexto, el sistema identifica al cliente o lo crea si es nuevo, verifica si esa conversación ya tiene un pedido asociado y presenta la pantalla correspondiente.</p>
+
+  <h3>6.2 &nbsp;Flujo completo</h3>
+  <div class="flow">
+    <div class="fnode"><div class="ft">1 &middot; El cliente escribe</div><div class="fd">Por WhatsApp, Instagram, Facebook o el widget web</div></div>
+    <div class="farrow">&darr;</div>
+    <div class="fnode"><div class="ft">2 &middot; El agente abre el panel lateral</div><div class="fd">Es la aplicación del sistema, embebida dentro de Chatwoot</div></div>
+    <div class="farrow">&darr;</div>
+    <div class="fnode acc"><div class="ft">3 &middot; Identificación automática del cliente</div><div class="fd">A partir del contacto de Chatwoot; se crea si no existe, con su historial de pedidos previos</div></div>
+    <div class="farrow">&darr;</div>
+    <div class="fnode acc"><div class="ft">4 &middot; Armado del pedido</div><div class="fd">Búsqueda de producto, cantidad, precio, descuento y totales en ambas monedas a la tasa del día</div></div>
+    <div class="farrow">&darr;</div>
+    <div class="fnode"><div class="ft">5 &middot; El pedido entra al embudo</div><div class="fd">En la primera etapa configurada, vinculado a la conversación y al agente</div></div>
+    <div class="farrow">&darr;</div>
+    <div class="fnode"><div class="ft">6 &middot; Avance por etapas</div><div class="fd">Cada movimiento registra momento, usuario y motivo</div></div>
+    <div class="farrow">&darr;</div>
+    <div class="fnode ink"><div class="ft">7 &middot; Cierre y consolidación</div><div class="fd">El pedido entregado alimenta los indicadores del Módulo A como venta del canal digital</div></div>
+  </div>
+
+  <h3>6.3 &nbsp;Armado del pedido</h3>
+  <p>Es la función que el cliente pidió de forma explícita. Su alcance depende de manera determinante de la disponibilidad del catálogo de productos.</p>
+
+  <table>
+    <thead><tr><th style="width:30%">Componente</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Búsqueda de producto</strong></td><td>Por nombre, código o principio activo, con resultados inmediatos mientras se escribe</td></tr>
+      <tr><td><strong>Línea de pedido</strong></td><td>Producto, cantidad, precio unitario, descuento y subtotal</td></tr>
+      <tr><td><strong>Disponibilidad</strong></td><td>Existencia en el momento de armar el pedido <span class="pill p-warn">Sujeto a confirmación</span></td></tr>
+      <tr><td><strong>Totales bimoneda</strong></td><td>Total en bolívares y en divisa, calculados a la tasa vigente del día y congelados al confirmar</td></tr>
+      <tr><td><strong>Datos de entrega</strong></td><td>Retiro en tienda o envío, con dirección y costo asociado <span class="pill p-warn">Sujeto a confirmación</span></td></tr>
+      <tr><td><strong>Forma de pago</strong></td><td>Medio, referencia y verificación <span class="pill p-warn">Sujeto a confirmación</span></td></tr>
+      <tr><td><strong>Observaciones</strong></td><td>Notas del cliente o del agente</td></tr>
+      <tr><td><strong>Trazabilidad</strong></td><td>Conversación de origen, canal, agente que lo tomó y momento de creación</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box c">
+    <div class="bt">Advertencia de alcance</div>
+    <p style="margin-bottom:0">La expresión &laquo;armar un pedido&raquo; suena a un formulario, pero funcionalmente equivale a un punto de venta reducido: requiere catálogo, precios vigentes y, deseablemente, existencias. <strong>Si el catálogo debe construirse desde cero, el esfuerzo de este módulo se duplica.</strong> Es la razón por la cual no se recomienda cotizarlo antes de resolver la pregunta 1 de la sección 10.</p>
+  </div>
+
+  <h3>6.4 &nbsp;El embudo por etapas</h3>
+  <p>Las etapas son <strong>configurables por el propio cliente</strong>, tal como fue solicitado. Se propone una secuencia inicial que puede ajustarse en la puesta en marcha:</p>
+
+  <table>
+    <thead><tr><th style="width:6%">#</th><th style="width:22%">Etapa</th><th>Significado y salida esperada</th></tr></thead>
+    <tbody>
+      <tr><td class="c">1</td><td><strong>Nuevo</strong></td><td>Solicitud recibida, aún sin cotizar</td></tr>
+      <tr><td class="c">2</td><td><strong>Cotizado</strong></td><td>Se envió precio y disponibilidad; se espera respuesta del cliente</td></tr>
+      <tr><td class="c">3</td><td><strong>Confirmado</strong></td><td>El cliente aceptó; el pedido es firme</td></tr>
+      <tr><td class="c">4</td><td><strong>En preparación</strong></td><td>Se está armando físicamente en la farmacia</td></tr>
+      <tr><td class="c">5</td><td><strong>Listo o en despacho</strong></td><td>Disponible para retiro o en ruta de entrega</td></tr>
+      <tr><td class="c">6</td><td><strong>Entregado</strong></td><td>En manos del cliente</td></tr>
+      <tr><td class="c">7</td><td><strong>Pagado</strong></td><td>Cobro verificado y conciliado</td></tr>
+      <tr><td class="c">&mdash;</td><td><strong>Cancelado</strong></td><td>Estado terminal alternativo, con motivo obligatorio para alimentar el análisis de fuga</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Comportamiento del tablero</h4>
+  <ul class="cl">
+    <li>Vista de columnas por etapa, con arrastre para mover pedidos entre ellas</li>
+    <li>Cada tarjeta muestra cliente, monto, canal de origen, agente y antigüedad en la etapa actual</li>
+    <li>Alerta visual cuando un pedido supera el tiempo máximo definido para su etapa</li>
+    <li>Filtros por agente, canal, sucursal, rango de fechas y monto</li>
+    <li>Reglas de transición configurables: qué etapas exigen motivo, cuáles requieren autorización y cuáles no admiten retroceso</li>
+    <li>Registro completo del recorrido de cada pedido, con momento y responsable de cada movimiento</li>
+  </ul>
+
+  <h3>6.5 &nbsp;Escritura de vuelta hacia Chatwoot</h3>
+  <p>Para que el agente vea el estado del pedido sin cambiar de herramienta, el sistema escribe de regreso en Chatwoot:</p>
+  <ul class="dash">
+    <li><strong>Atributos personalizados</strong> en la conversación: número de pedido, estado y monto</li>
+    <li><strong>Etiqueta</strong> correspondiente a la etapa actual, lo que permite filtrar la bandeja por estado de pedido</li>
+    <li><strong>Nota privada</strong> al crearse el pedido y en los cambios de etapa relevantes, visible solo para el equipo</li>
+  </ul>
+
+  <h3>6.6 &nbsp;Puntos de entrada del servicio</h3>
+  <p>El cliente mencionó la necesidad de un punto de entrada. El sistema expone los siguientes:</p>
+
+  <table>
+    <thead><tr><th style="width:34%" class="mono">Servicio</th><th>Función</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">POST /chatwoot/webhook</td><td>Recepción de eventos de Chatwoot, con validación de origen mediante firma</td></tr>
+      <tr><td class="mono">GET /pedidos?conversacion=</td><td>Consulta si una conversación ya tiene pedido asociado</td></tr>
+      <tr><td class="mono">POST /pedidos</td><td>Creación del pedido &mdash;la función de armado solicitada&mdash;</td></tr>
+      <tr><td class="mono">PATCH /pedidos/{id}</td><td>Modificación de líneas, montos y datos de entrega</td></tr>
+      <tr><td class="mono">PATCH /pedidos/{id}/etapa</td><td>Movimiento en el embudo, con motivo y validación de la transición</td></tr>
+      <tr><td class="mono">GET /productos?q=</td><td>Búsqueda del catálogo para el armado</td></tr>
+      <tr><td class="mono">GET /embudo/metricas</td><td>Conversión y tiempos de ciclo por etapa</td></tr>
+      <tr><td class="mono">GET /app/panel</td><td>Interfaz que Chatwoot muestra en el panel lateral</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.7 &nbsp;Métricas del embudo</h3>
+  <p>El registro de cada transición convierte al embudo en una fuente analítica, no solo operativa.</p>
+  <ul class="cl">
+    <li><strong>Tasa de conversión global</strong> y entre etapas consecutivas: dónde se pierden los pedidos</li>
+    <li><strong>Tiempo de ciclo</strong> promedio y por percentiles, total y por etapa: dónde se atascan</li>
+    <li><strong>Valor en riesgo</strong>: monto acumulado en pedidos detenidos más allá del umbral</li>
+    <li><strong>Motivos de cancelación</strong> agrupados y su peso en dinero</li>
+    <li><strong>Desempeño por agente y por canal</strong>: quién convierte mejor y qué canal produce mejores pedidos</li>
+    <li><strong>Ticket promedio del canal digital</strong> comparado con el general del Módulo A</li>
+  </ul>
+</div>

@@ -1,0 +1,94 @@
+<!-- ============ 3. ETAPA 1 ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">3</div><div class="tt"><h2>Etapa 1 &mdash; Dashboard de indicadores y metas</h2><div class="dk">Qué se hará y cómo queda</div></div></div>
+
+  <p class="lead">Esta etapa sustituye el archivo Excel por completo: captura, calcula, valida, grafica, compara contra objetivos y genera el reporte que hoy se arma a mano. Su alcance está cerrado, porque el archivo auditado funciona como especificación.</p>
+
+  <h3 class="first">3.1 &nbsp;Carga diaria</h3>
+  <p>Un formulario de <strong>siete campos</strong>, no de catorce: los cinco indicadores derivados se calculan solos y el día de la semana se obtiene de la fecha.</p>
+
+  <table>
+    <thead><tr><th style="width:30%">Se captura</th><th style="width:34%">Se calcula automáticamente</th><th>Regla</th></tr></thead>
+    <tbody>
+      <tr><td>Fecha</td><td>Día de la semana</td><td>Único por día y sucursal</td></tr>
+      <tr><td>Venta en bolívares</td><td>Venta en divisa</td><td>Alerta si se aparta de la media móvil</td></tr>
+      <tr><td>Tasa de cambio</td><td>&mdash;</td><td>Precargada si la fuente está disponible; editable con registro</td></tr>
+      <tr><td>Transacciones</td><td>Ticket promedio en Bs y en divisa</td><td>&mdash;</td></tr>
+      <tr><td>Unidades vendidas</td><td>Unidades por compra</td><td>Advierte si es menor que las transacciones</td></tr>
+      <tr><td>Unidades en inventario</td><td>&mdash;</td><td>No se solicita los sábados</td></tr>
+      <tr><td>Valuación de inventario</td><td>&mdash;</td><td>Misma periodicidad</td></tr>
+      <tr><td>Jornadas</td><td>Transacciones por jornada</td><td>Valor por defecto configurable</td></tr>
+      <tr><td>Observación del día <span class="pill p-acc">Nuevo</span></td><td>&mdash;</td><td>Permite marcar el día como atípico y excluirlo de promedios</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box">
+    <div class="bt">La carga sigue siendo manual, por definición del alcance</div>
+    <p style="margin-bottom:0">El sistema <strong>no se conecta al sistema administrativo ni al punto de venta</strong>. El registro diario lo hace una persona, igual que hoy. Por eso el formulario está diseñado para uso sostenido: menos campos, valores por defecto, validación en vivo y cálculo en pantalla. El objetivo es que cargar un día tome menos de un minuto y que equivocarse sea difícil.</p>
+  </div>
+
+  <h3>3.2 &nbsp;Cálculo corregido</h3>
+  <p>Los indicadores derivados <strong>no se almacenan</strong>: se calculan al consultar, de modo que nunca pueden quedar desfasados de sus componentes. Y los promedios del período se calculan como <strong>ratios ponderados</strong>, no promediando los ratios diarios.</p>
+
+  <table>
+    <thead><tr><th style="width:34%">Indicador</th><th style="width:30%">Cálculo diario</th><th>Cálculo del período</th></tr></thead>
+    <tbody>
+      <tr><td>Venta en divisa</td><td class="mono">venta / tasa</td><td class="mono">suma de los valores diarios</td></tr>
+      <tr><td>Ticket promedio</td><td class="mono">venta / transacciones</td><td class="mono">suma(venta) / suma(transacciones)</td></tr>
+      <tr><td>Unidades por compra</td><td class="mono">unidades / transacciones</td><td class="mono">suma(unidades) / suma(transacciones)</td></tr>
+      <tr><td>Transacciones por jornada</td><td class="mono">transacciones / jornadas</td><td class="mono">suma(transacciones) / suma(jornadas)</td></tr>
+      <tr><td>Tasa promedio</td><td>&mdash;</td><td class="mono">ponderada por la venta del día</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.3 &nbsp;Metas: lo que hoy no existe</h3>
+  <p>El archivo actual <strong>no contiene ninguna meta</strong>. Esta es la pieza que se pidió explícitamente y que hay que construir desde cero.</p>
+  <ul class="cl">
+    <li><strong>Objetivo por indicador, período y sucursal</strong>, cargado a mano o sugerido a partir del histórico</li>
+    <li><strong>Metas en divisa</strong> para los indicadores monetarios, para que la devaluación no las cumpla sola</li>
+    <li><strong>Semáforo de cumplimiento</strong> y avance acumulado contra la meta a la fecha, no solo contra la meta total</li>
+    <li><strong>Proyección de cierre</strong> calculada sobre el ritmo real y el patrón semanal de los días que faltan</li>
+    <li><strong>Brecha en valor absoluto</strong>: cuánto falta en dinero, transacciones o unidades</li>
+    <li><strong>Alertas</strong> cuando la proyección cae por debajo del umbral definido</li>
+  </ul>
+
+  <div class="box o">
+    <div class="bt">Cómo se lee en la práctica</div>
+    <p style="margin-bottom:0">Al día 20 el tablero informa: <em>avance del 68&#37; de la meta mensual, proyección de cierre del 94&#37;, faltan X en divisa; quedan dos de los días fuertes del mes.</em> Ese nivel de lectura es imposible en el archivo actual.</p>
+  </div>
+
+  <h3>3.4 &nbsp;Gráficas</h3>
+  <p>Se reconstruyen las siete existentes corrigiendo los defectos de la sección 2 &mdash;eje de fechas real, sin la serie de ceros, con eje secundario donde las magnitudes difieren&mdash; y se agregan cuatro que hoy no existen:</p>
+  <ul class="dash">
+    <li><strong>Mapa de calor por día de la semana</strong>, que revela el patrón hoy invisible</li>
+    <li><strong>Venta acumulada contra meta</strong>, con el avance del mes en curso</li>
+    <li><strong>Evolución de la tasa contra venta en divisa</strong>, que separa crecimiento real de efecto cambiario</li>
+    <li><strong>Comparativa interanual</strong>, mes contra el mismo mes del año anterior</li>
+  </ul>
+
+  <h3>3.5 &nbsp;Comparativa anual e histórico</h3>
+  <p>Se reproduce la tabla de doce meses por indicador que existe en el archivo y nunca se llenó, <strong>completada automáticamente</strong> con los datos cargados, con variación mes a mes y contra el año anterior, en bolívares o en divisa.</p>
+  <p>Para poblarla se incluye un <strong>importador de los Excel de meses anteriores</strong>: lee la plantilla actual tolerando variaciones menores, muestra una vista previa antes de confirmar, reporta anomalías &mdash;días faltantes, duplicados, valores fuera de rango, saltos bruscos&mdash; y permite decidir caso por caso. Reimportar el mismo archivo no duplica registros.</p>
+
+  <h3>3.6 &nbsp;Cómo queda: las pantallas</h3>
+  <table>
+    <thead><tr><th style="width:30%">Pantalla</th><th>Contenido</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Panel principal</strong></td><td>Tarjetas de KPI con variación contra el período anterior y cumplimiento de meta, avance del mes, gráficas principales y alertas activas</td></tr>
+      <tr><td><strong>Carga diaria</strong></td><td>Formulario de siete campos con validación en vivo y cálculo en pantalla</td></tr>
+      <tr><td><strong>Cuadro de indicadores</strong></td><td>La tabla equivalente a la hoja actual, con el día de la semana correcto, filtros y totales calculados aparte</td></tr>
+      <tr><td><strong>Gráficas</strong></td><td>Las once visualizaciones con filtros compartidos de período, sucursal y moneda</td></tr>
+      <tr><td><strong>Metas</strong></td><td>Definición, seguimiento, proyección y alertas</td></tr>
+      <tr><td><strong>Comparativa anual</strong></td><td>Matriz de doce meses por indicador con sus variaciones</td></tr>
+      <tr><td><strong>Importación</strong></td><td>Carga de archivos, vista previa, reporte de anomalías y confirmación</td></tr>
+      <tr><td><strong>Administración</strong></td><td>Usuarios y permisos, sucursales, parámetros de validación y periodicidad de inventario</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.7 &nbsp;Salidas</h3>
+  <ul class="dash">
+    <li><strong>Reporte mensual en PDF</strong> con indicadores, gráficas y cumplimiento de metas, que sustituye el envío del Excel</li>
+    <li><strong>Exportación a Excel</strong> en el formato actual, para quienes prefieran seguir en hoja de cálculo</li>
+    <li><strong>Envío programado</strong> por correo en una fecha fija del mes</li>
+  </ul>
+</div>

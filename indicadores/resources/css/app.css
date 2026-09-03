@@ -1,0 +1,36 @@
+/* IBM Plex Sans self-hosted (§13.2): sin depender de CDN en el hosting. */
+@import '@fontsource/ibm-plex-sans/latin-400.css';
+@import '@fontsource/ibm-plex-sans/latin-500.css';
+@import '@fontsource/ibm-plex-sans/latin-600.css';
+@import '@fontsource/ibm-plex-sans/latin-ext-400.css';
+@import '@fontsource/ibm-plex-sans/latin-ext-500.css';
+@import '@fontsource/ibm-plex-sans/latin-ext-600.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html {
+        @apply text-body text-ink-900 antialiased;
+    }
+
+    body {
+        @apply bg-brand-50;
+    }
+
+    /* Foco visible de 2 px en el azul de marca (§13.8). */
+    :focus-visible {
+        @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-brand-50;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+}
+
+/* Alpine x-cloak: oculto hasta que Alpine inicializa. */
+[x-cloak] { display: none !important; }

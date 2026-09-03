@@ -1,0 +1,108 @@
+<!-- ============ INDICE ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="tt"><h2>Contenido</h2><div class="dk">Especificación funcional y técnica &middot; Farmacia Guadalupe, C.A.</div></div></div>
+  <div class="toc">
+    <div class="toc-g">
+      <a><span class="n">1</span><span class="t">Resumen ejecutivo</span><span class="d">Qué se construye y por qué</span></a>
+      <a><span class="n">2</span><span class="t">Diagnóstico de la situación actual</span><span class="d">Auditoría del archivo vigente</span></a>
+      <a class="sub-i"><span class="n">2.1</span><span class="t">Estructura del cuadro de indicadores</span></a>
+      <a class="sub-i"><span class="n">2.2</span><span class="t">Hallazgos de la auditoría</span></a>
+      <a class="sub-i"><span class="n">2.3</span><span class="t">Lecturas de negocio del mes auditado</span></a>
+      <a><span class="n">3</span><span class="t">Visión general del sistema</span><span class="d">Los tres módulos y su circuito</span></a>
+      <a><span class="n">4</span><span class="t">Módulo A &mdash; Indicadores y Metas</span><span class="d">Reemplazo del Excel</span></a>
+      <a class="sub-i"><span class="n">4.1</span><span class="t">Captura de datos</span></a>
+      <a class="sub-i"><span class="n">4.2</span><span class="t">Motor de cálculo</span></a>
+      <a class="sub-i"><span class="n">4.3</span><span class="t">Catálogo de indicadores</span></a>
+      <a class="sub-i"><span class="n">4.4</span><span class="t">Sistema de metas</span></a>
+      <a class="sub-i"><span class="n">4.5</span><span class="t">Gráficas y visualizaciones</span></a>
+      <a class="sub-i"><span class="n">4.6</span><span class="t">Comparativa anual</span></a>
+      <a class="sub-i"><span class="n">4.7</span><span class="t">Importador de histórico</span></a>
+      <a class="sub-i"><span class="n">4.8</span><span class="t">Validaciones y reglas de negocio</span></a>
+      <a class="sub-i"><span class="n">4.9</span><span class="t">Reportes y exportación</span></a>
+      <a class="sub-i"><span class="n">4.10</span><span class="t">Pantallas</span></a>
+    </div>
+    <div class="toc-g">
+      <a><span class="n">5</span><span class="t">Módulo B &mdash; Analítica de Chatwoot</span><span class="d">Tiempos de atención y productividad</span></a>
+      <a><span class="n">6</span><span class="t">Módulo C &mdash; Pipeline de Pedidos</span><span class="d">Embudo integrado al canal</span></a>
+      <a><span class="n">7</span><span class="t">Arquitectura técnica</span><span class="d">Stack, datos, integraciones, seguridad</span></a>
+      <a><span class="n">8</span><span class="t">Usuarios y roles</span></a>
+      <a><span class="n">9</span><span class="t">Plan de implementación por fases</span></a>
+      <a><span class="n">10</span><span class="t">Preguntas para confirmar requisitos</span><span class="d">18 definiciones pendientes</span></a>
+      <a><span class="n">11</span><span class="t">Riesgos y supuestos</span></a>
+      <a><span class="n">12</span><span class="t">Anexos</span><span class="d">Mapeos, catálogos y glosario</span></a>
+    </div>
+  </div>
+
+  <div class="box" style="margin-top:4mm;padding:3mm 4.5mm">
+    <div class="bt">Cómo leer este documento</div>
+    <p style="margin-bottom:0">Las secciones 1 a 9 describen <strong>qué se construye</strong>; la sección 10 lista las <strong>definiciones que faltan</strong> para cerrar el alcance y cotizar en firme. Las afirmaciones sobre la operación actual provienen de una auditoría técnica del archivo <code>CUADRO DE INDICADORES MES SEPTIEMBRE GUADALUPE.xlsx</code>, verificada sobre su estructura interna y no solo sobre sus valores visibles.</p>
+  </div>
+</div>
+
+<!-- ============ 1. RESUMEN EJECUTIVO ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">1</div><div class="tt"><h2>Resumen ejecutivo</h2><div class="dk">Qué se construye y por qué</div></div></div>
+
+  <p class="lead">Farmacia Guadalupe registra a mano, todos los días, un cuadro de indicadores en Excel que luego circula como reporte. En paralelo atiende clientes por canales digitales a través de Chatwoot, sin ninguna conexión entre ambas cosas. Este documento especifica un sistema que reemplaza ese archivo, mide la operación de atención y convierte las conversaciones en pedidos gestionados.</p>
+
+  <h3 class="first">El requerimiento planteado</h3>
+  <p>El cliente formuló tres necesidades distintas, que en este documento se tratan como tres módulos:</p>
+
+  <table>
+    <thead><tr><th style="width:8%">Mód.</th><th style="width:30%">Necesidad planteada</th><th>Alcance</th><th style="width:16%">Definición</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="c"><strong>A</strong></td>
+        <td>Digitalizar el cuadro de indicadores y sacar estadística, gráficas y KPIs con metas</td>
+        <td>Sistema de captura, cálculo, visualización y seguimiento de objetivos que reemplaza el Excel y consolida el histórico</td>
+        <td><span class="pill p-ok">Completa</span></td>
+      </tr>
+      <tr>
+        <td class="c"><strong>B</strong></td>
+        <td>Extraer estadística de Chatwoot: tiempo de atención por usuario y similares</td>
+        <td>Módulo de analítica sobre la operación de atención, con histórico propio e ilimitado</td>
+        <td><span class="pill p-warn">Parcial</span></td>
+      </tr>
+      <tr>
+        <td class="c"><strong>C</strong></td>
+        <td>Pipeline o embudo con etapas personalizadas para gestionar pedidos del canal conectado a Chatwoot</td>
+        <td>Aplicación embebida en Chatwoot para armar pedidos y gestionarlos por etapas configurables</td>
+        <td><span class="pill p-crit">Por cerrar</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>La tesis del diseño</h3>
+  <p>Los tres módulos <strong>no son herramientas separadas que comparten un menú</strong>. Están diseñados como un circuito cerrado sobre una única base de datos, y ahí está el valor real del proyecto.</p>
+
+  <div class="box o">
+    <div class="bt">Por qué integrarlos importa</div>
+    <p>Por separado, cada módulo es reemplazable por una herramienta genérica de mercado. Juntos responden preguntas que hoy nadie en la farmacia puede contestar:</p>
+    <ul class="dash" style="margin-bottom:0">
+      <li>¿Qué porcentaje de las conversaciones digitales termina en una venta?</li>
+      <li>¿Qué agente <em>convierte</em> mejor, y no solamente cuál responde más rápido?</li>
+      <li>¿Cuánto del ticket promedio proviene del canal digital frente al mostrador?</li>
+      <li>¿En qué etapa del embudo se pierden los pedidos, y cuánto dinero representa esa fuga?</li>
+    </ul>
+  </div>
+
+  <p>Ninguna de esas preguntas puede responderse con Chatwoot solo, porque Chatwoot no sabe qué es un pedido. Ni con un dashboard de ventas solo, porque no sabe de dónde vino la venta. <strong>Solo existen si los tres módulos escriben en la misma base de datos.</strong></p>
+
+  <h3>Beneficio operativo inmediato</h3>
+  <p>Hoy una persona transcribe siete datos por día, treinta días al mes, y arma los gráficos a mano. Cuando el Módulo C esté en producción, <strong>la porción digital de esas ventas deja de ser manual</strong>: se registra sola al crearse el pedido. El Módulo A pasa de ser un formulario de carga a ser un consolidador.</p>
+
+  <h3>Estado de definición del alcance</h3>
+  <p>El Módulo A está especificado al detalle porque el archivo Excel actual funciona como especificación completa: se conocen sus catorce columnas, sus fórmulas, sus reglas implícitas y sus defectos. Los Módulos B y C requieren cerrar definiciones antes de una cotización en firme. La sección 10 las enumera.</p>
+
+  <div class="stats">
+    <div class="stat"><div class="v">100&#37;</div><div class="l">Módulo A<br>especificado</div></div>
+    <div class="stat warn"><div class="v">~70&#37;</div><div class="l">Módulo B<br>especificado</div></div>
+    <div class="stat crit"><div class="v">~50&#37;</div><div class="l">Módulo C<br>especificado</div></div>
+    <div class="stat"><div class="v">18</div><div class="l">Definiciones<br>por confirmar</div></div>
+  </div>
+
+  <div class="box w">
+    <div class="bt">Recomendación de contratación</div>
+    <p style="margin-bottom:0">No cotizar los tres módulos como un precio único cerrado. Se propone una <strong>Fase 0 de descubrimiento</strong> para cerrar las definiciones pendientes, cotización cerrada inmediata del Módulo A &mdash;que ya está completamente definido&mdash; y cotización del Módulo C solo después de resolver la disponibilidad del catálogo de productos. El detalle está en la sección 9.</p>
+  </div>
+</div>

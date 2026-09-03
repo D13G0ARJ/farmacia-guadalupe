@@ -1,0 +1,185 @@
+<!-- ============ 7. ARQUITECTURA ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">7</div><div class="tt"><h2>Arquitectura técnica</h2><div class="dk">Stack, modelo de datos, integraciones y seguridad</div></div></div>
+
+  <h3 class="first">7.1 &nbsp;Principios de diseño</h3>
+  <ul class="cl">
+    <li><strong>Una sola base de datos.</strong> Es la condición que hace posibles las métricas cruzadas descritas en la sección 3</li>
+    <li><strong>Los derivados se calculan, no se guardan.</strong> Elimina el riesgo de valores desincronizados de sus componentes</li>
+    <li><strong>Bimoneda desde el modelo.</strong> Cada monto conserva su valor en bolívares, la tasa aplicada y el momento; la conversión nunca se recalcula con una tasa posterior</li>
+    <li><strong>Todo cambio deja rastro.</strong> Auditoría de quién, cuándo, valor anterior y valor nuevo</li>
+    <li><strong>Configurable sin programar.</strong> Etapas del embudo, metas, umbrales, periodicidad de inventario y roles se administran desde la interfaz</li>
+    <li><strong>Integración no invasiva.</strong> El sistema lee de Chatwoot y escribe atributos y notas, sin alterar su funcionamiento ni sustituir su bandeja</li>
+  </ul>
+
+  <h3>7.2 &nbsp;Stack propuesto</h3>
+  <table>
+    <thead><tr><th style="width:24%">Capa</th><th style="width:26%">Tecnología</th><th>Justificación</th></tr></thead>
+    <tbody>
+      <tr><td>Aplicación</td><td><strong>Laravel</strong> (PHP)</td><td>Framework maduro que ya resuelve autenticación, roles y permisos, colas, tareas programadas, migraciones y capa de datos: acelera de forma notable los módulos administrativos</td></tr>
+      <tr><td>Interfaz</td><td>Blade con Livewire</td><td>Pantallas reactivas sin mantener una aplicación cliente separada, lo que simplifica el mantenimiento posterior</td></tr>
+      <tr><td>Base de datos</td><td><strong>MySQL</strong></td><td>Tipo decimal de precisión exacta para los montos en ambas monedas; ampliamente disponible en la infraestructura de hosting local</td></tr>
+      <tr><td>Gráficas</td><td>Librería de visualización en cliente</td><td>Ejes secundarios, escalas temporales y exportación de imagen</td></tr>
+      <tr><td>Trabajos en segundo plano</td><td>Colas y tareas programadas de Laravel</td><td>Importaciones, sincronización con Chatwoot, envío de reportes y alertas</td></tr>
+      <tr><td>Despliegue</td><td>Contenedores, junto a Chatwoot o en servidor propio</td><td>Reduce latencia de integración y simplifica el respaldo conjunto</td></tr>
+    </tbody>
+  </table>
+  <p class="tnote">La elección final se ajustará en la Fase 0, considerando dónde está alojado Chatwoot y qué infraestructura administra hoy el cliente.</p>
+
+  <h3>7.3 &nbsp;Modelo de datos</h3>
+  <p>Estructura principal, expresada en entidades y no en detalle de implementación.</p>
+
+  <table>
+    <thead><tr><th style="width:26%">Entidad</th><th style="width:12%">Módulo</th><th>Contenido</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Sucursal</strong></td><td class="c">A</td><td>Identificación, parámetros de validación, periodicidad de inventario, moneda de referencia</td></tr>
+      <tr><td><strong>Registro diario</strong></td><td class="c">A</td><td>Fecha, sucursal, los siete datos primarios, observación y marca de día atípico</td></tr>
+      <tr><td><strong>Tasa de cambio</strong></td><td class="c">A</td><td>Fecha, valor, fuente y origen (automático o manual) con el usuario que la fijó</td></tr>
+      <tr><td><strong>Meta</strong></td><td class="c">A</td><td>Indicador, período, sucursal, valor objetivo, moneda y vigencia</td></tr>
+      <tr><td><strong>Importación</strong></td><td class="c">A</td><td>Archivo, momento, usuario, resultado y anomalías detectadas</td></tr>
+      <tr><td><strong>Conversación</strong></td><td class="c">B</td><td>Espejo del registro de Chatwoot: canal, contacto, agente, estados y marcas de tiempo</td></tr>
+      <tr><td><strong>Evento de conversación</strong></td><td class="c">B</td><td>Cada cambio recibido por webhook, con su instante exacto</td></tr>
+      <tr><td><strong>Agente</strong></td><td class="c">B</td><td>Correspondencia entre el usuario de Chatwoot y el usuario del sistema</td></tr>
+      <tr><td><strong>Cliente</strong></td><td class="c">C</td><td>Datos de contacto, vínculo con el contacto de Chatwoot e historial</td></tr>
+      <tr><td><strong>Producto</strong></td><td class="c">C</td><td>Código, descripción, precio vigente y existencia <span class="pill p-warn">Según origen</span></td></tr>
+      <tr><td><strong>Pedido</strong></td><td class="c">C</td><td>Cliente, conversación de origen, canal, agente, etapa actual, totales en ambas monedas y tasa aplicada</td></tr>
+      <tr><td><strong>Línea de pedido</strong></td><td class="c">C</td><td>Producto, cantidad, precio unitario, descuento y subtotal</td></tr>
+      <tr><td><strong>Etapa</strong></td><td class="c">C</td><td>Nombre, orden, color, tiempo máximo, reglas de transición y si exige motivo</td></tr>
+      <tr><td><strong>Transición</strong></td><td class="c">C</td><td>Pedido, etapa origen, etapa destino, momento, usuario y motivo</td></tr>
+      <tr><td><strong>Usuario y rol</strong></td><td class="c">&mdash;</td><td>Credenciales, rol, sucursales asignadas y permisos</td></tr>
+      <tr><td><strong>Bitácora</strong></td><td class="c">&mdash;</td><td>Registro de auditoría de todas las modificaciones</td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.4 &nbsp;Integraciones</h3>
+  <table>
+    <thead><tr><th style="width:24%">Integración</th><th style="width:18%">Dirección</th><th>Contenido</th></tr></thead>
+    <tbody>
+      <tr><td>Chatwoot &mdash; eventos</td><td>Entrante</td><td>Conversaciones y mensajes, en tiempo real</td></tr>
+      <tr><td>Chatwoot &mdash; reportes</td><td>Saliente</td><td>Consulta periódica para conciliar los datos espejados</td></tr>
+      <tr><td>Chatwoot &mdash; panel</td><td>Embebida</td><td>La aplicación del Módulo C dentro de la conversación</td></tr>
+      <tr><td>Chatwoot &mdash; escritura</td><td>Saliente</td><td>Atributos, etiquetas y notas privadas con el estado del pedido</td></tr>
+      <tr><td>Fuente de la tasa</td><td>Entrante</td><td>Carga automática diaria <span class="pill p-warn">Por confirmar</span></td></tr>
+      <tr><td>Catálogo de productos</td><td>Entrante</td><td>Importación periódica de productos y precios por archivo <span class="pill p-warn">Por confirmar</span></td></tr>
+      <tr><td>Correo</td><td>Saliente</td><td>Reportes programados y alertas</td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.5 &nbsp;Seguridad</h3>
+  <ul class="cl">
+    <li><strong>Autenticación</strong> con sesión propia y contraseñas cifradas; segundo factor opcional para roles administrativos</li>
+    <li><strong>Autorización por rol y por sucursal</strong>, verificada en el servidor y no solo en la interfaz</li>
+    <li><strong>Validación de origen de los eventos</strong> de Chatwoot mediante firma, para impedir que un tercero inyecte datos falsos</li>
+    <li><strong>Restricción de incrustación:</strong> la aplicación del panel solo puede mostrarse dentro del dominio autorizado de Chatwoot</li>
+    <li><strong>Cifrado en tránsito</strong> obligatorio en todas las comunicaciones</li>
+    <li><strong>Bitácora de auditoría</strong> no modificable desde la aplicación</li>
+    <li><strong>Respaldo automático</strong> diario con verificación periódica de restauración</li>
+    <li><strong>Datos de clientes</strong> tratados bajo el principio de mínima recolección; el sistema no almacena información sensible de salud salvo requerimiento expreso <span class="pill p-warn">Ver pregunta 11</span></li>
+  </ul>
+</div>
+
+<!-- ============ 8. USUARIOS Y ROLES ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">8</div><div class="tt"><h2>Usuarios y roles</h2><div class="dk">Perfiles previstos y su alcance</div></div></div>
+
+  <p class="lead">La estructura de roles es preliminar: depende de cómo esté organizado el equipo, lo que constituye una de las definiciones pendientes. Se propone el siguiente esquema como punto de partida.</p>
+
+  <table>
+    <thead><tr><th style="width:20%">Rol</th><th style="width:32%">Puede</th><th>No puede</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Dirección</strong></td>
+        <td>Ver todos los indicadores de todas las sucursales, definir metas, acceder a la analítica completa y al embudo</td>
+        <td>&mdash;</td>
+      </tr>
+      <tr>
+        <td><strong>Supervisión</strong></td>
+        <td>Ver indicadores de sus sucursales, gestionar el embudo completo, ver desempeño de todos los agentes, reabrir períodos</td>
+        <td>Definir metas globales ni administrar usuarios</td>
+      </tr>
+      <tr>
+        <td><strong>Carga de datos</strong></td>
+        <td>Registrar el cuadro diario, importar archivos, marcar días atípicos</td>
+        <td>Ver analítica de agentes ni modificar períodos cerrados</td>
+      </tr>
+      <tr>
+        <td><strong>Agente de atención</strong></td>
+        <td>Armar pedidos desde el panel de Chatwoot, mover sus pedidos, ver su propio desempeño</td>
+        <td>Ver la venta total ni el desempeño de otros agentes</td>
+      </tr>
+      <tr>
+        <td><strong>Despacho</strong></td>
+        <td>Ver pedidos confirmados y moverlos por las etapas operativas</td>
+        <td>Crear ni modificar montos de pedidos</td>
+      </tr>
+      <tr>
+        <td><strong>Administración</strong></td>
+        <td>Gestionar usuarios, sucursales, etapas, parámetros e integraciones</td>
+        <td>&mdash;</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="box">
+    <div class="bt">Consideración</div>
+    <p style="margin-bottom:0">La separación entre lo que un agente ve de sí mismo y lo que ve de los demás es una decisión sensible: afecta el clima del equipo. Se recomienda definirla explícitamente con la dirección antes de la puesta en marcha, no dejarla al criterio técnico.</p>
+  </div>
+</div>
+
+<!-- ============ 9. PLAN DE FASES ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">9</div><div class="tt"><h2>Plan de implementación por fases</h2><div class="dk">Secuencia recomendada y entregables</div></div></div>
+
+  <p class="lead">La secuencia está diseñada para entregar valor visible desde el inicio y para no comprometer precio sobre la parte del alcance que aún no está definida.</p>
+
+  <div class="ph f0">
+    <div class="ph-h"><span class="pn">FASE 0</span><span class="pt">Descubrimiento y cierre de alcance</span><span class="ps">Corta</span></div>
+    <div class="ph-b">
+      <p><strong>Objetivo.</strong> Resolver las dieciocho definiciones de la sección 10 y determinar el alcance real de los Módulos B y C.</p>
+      <p><strong>Actividades.</strong> Sesión de trabajo con el cliente &mdash;quien ya ofreció explicar en detalle los puntos dos y tres&mdash;, revisión del acceso a Chatwoot, inventario de los archivos históricos disponibles y definición del origen del catálogo de productos.</p>
+      <p style="margin-bottom:0"><strong>Entregable.</strong> Documento de alcance cerrado y firmado, con la cotización en firme de las fases siguientes.</p>
+    </div>
+  </div>
+
+  <div class="ph f1">
+    <div class="ph-h"><span class="pn">FASE 1</span><span class="pt">Módulo A &mdash; Indicadores y Metas</span><span class="ps">Cotizable de inmediato</span></div>
+    <div class="ph-b">
+      <p><strong>Objetivo.</strong> Sustituir el archivo Excel por completo y recuperar el histórico.</p>
+      <p><strong>Alcance.</strong> Modelo de datos, formulario de carga, motor de cálculo bimoneda con la metodología corregida, catálogo de indicadores, sistema de metas con proyección, las once gráficas, comparativa anual, importador de histórico, validaciones, reportes exportables, usuarios y roles.</p>
+      <p><strong>Por qué va primero.</strong> Es el único módulo con alcance cerrado, no depende de terceros y produce un resultado que el cliente reconoce de inmediato, porque reemplaza algo que usa todos los días.</p>
+      <p style="margin-bottom:0"><strong>Entregable.</strong> Sistema en producción con el mes en curso cargado y el histórico disponible importado.</p>
+    </div>
+  </div>
+
+  <div class="ph">
+    <div class="ph-h"><span class="pn">FASE 2</span><span class="pt">Módulo B &mdash; Analítica de Chatwoot</span><span class="ps">Tras confirmar accesos</span></div>
+    <div class="ph-b">
+      <p><strong>Objetivo.</strong> Medir la operación de atención con histórico propio.</p>
+      <p><strong>Alcance.</strong> Conexión con Chatwoot, recepción y espejado de eventos, conciliación periódica con los reportes nativos, métricas de tiempo y volumen, tableros por agente y por canal, distribución horaria y alertas de cumplimiento.</p>
+      <p><strong>Requisito previo.</strong> Acceso administrativo a Chatwoot y confirmación de la modalidad de instalación.</p>
+      <p style="margin-bottom:0"><strong>Entregable.</strong> Tablero de atención operativo, acumulando histórico desde el momento de la conexión.</p>
+    </div>
+  </div>
+
+  <div class="ph">
+    <div class="ph-h"><span class="pn">FASE 3</span><span class="pt">Módulo C &mdash; Pipeline de Pedidos</span><span class="ps">Solo tras la Fase 0</span></div>
+    <div class="ph-b">
+      <p><strong>Objetivo.</strong> Convertir conversaciones en pedidos gestionados y cerrar el circuito de datos.</p>
+      <p><strong>Alcance.</strong> Aplicación embebida en Chatwoot, identificación de clientes, armado de pedidos, etapas configurables, tablero, escritura de estado hacia Chatwoot, métricas del embudo y alimentación automática de los indicadores del Módulo A.</p>
+      <p><strong>Requisito previo.</strong> Resolución del origen del catálogo de productos, precios y existencias, y definición de si el pedido debe registrar pago y entrega.</p>
+      <p style="margin-bottom:0"><strong>Entregable.</strong> Embudo operativo y métricas de conversión de extremo a extremo.</p>
+    </div>
+  </div>
+
+  <div class="ph">
+    <div class="ph-h"><span class="pn">FASE 4</span><span class="pt">Automatización y ajuste</span><span class="ps">Opcional</span></div>
+    <div class="ph-b">
+      <p style="margin-bottom:0"><strong>Alcance.</strong> Carga automática de la tasa, afinamiento de metas con el histórico ya consolidado y ampliación de reportes según el uso real observado.</p>
+    </div>
+  </div>
+
+  <div class="box o">
+    <div class="bt">Racional de la secuencia</div>
+    <p style="margin-bottom:0">Cada fase entrega un sistema utilizable por sí mismo. Si el proyecto se detuviera al terminar la Fase 1, el cliente ya habría sustituido su proceso manual y recuperado años de histórico. Las fases siguientes suman capacidad sin rehacer lo anterior.</p>
+  </div>
+</div>

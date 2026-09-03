@@ -1,0 +1,62 @@
+<!-- ============ 6. PLAN ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">6</div><div class="tt"><h2>Plan de trabajo</h2><div class="dk">Secuencia, entregables y consideraciones</div></div></div>
+
+  <p class="lead">Cada etapa entrega un sistema utilizable por sí mismo. Si el proyecto se detuviera al terminar la primera, el cliente ya habría sustituido un proceso manual que realiza todos los días y recuperado su histórico.</p>
+
+  <div class="ph f1">
+    <div class="ph-h"><span class="pn">ETAPA 1</span><span class="pt">Dashboard de indicadores y metas</span><span class="ps">Puede arrancar de inmediato</span></div>
+    <div class="ph-b">
+      <p><strong>Objetivo.</strong> Sustituir el archivo Excel por completo y recuperar el histórico disponible.</p>
+      <p><strong>Incluye.</strong> Modelo de datos, formulario de carga diaria, motor de cálculo bimoneda con la metodología corregida, catálogo de indicadores, sistema de metas con proyección y alertas, las once gráficas, comparativa anual, importador del histórico, validaciones, reportes exportables, usuarios y permisos.</p>
+      <p><strong>Requisito para arrancar.</strong> Ninguno bloqueante. Los Excel de meses anteriores amplían el resultado pero no condicionan el inicio.</p>
+      <p style="margin-bottom:0"><strong>Entregable.</strong> Sistema en producción con el mes en curso cargado y el histórico disponible importado.</p>
+    </div>
+  </div>
+
+  <div class="ph">
+    <div class="ph-h"><span class="pn">ETAPA 2</span><span class="pt">Métricas de Chatwoot</span><span class="ps">Requiere los archivos reales</span></div>
+    <div class="ph-b">
+      <p><strong>Objetivo.</strong> Incorporar las métricas de atención al mismo tablero y acumular su histórico.</p>
+      <p><strong>Incluye.</strong> Importador de los reportes de Chatwoot con validación y control de duplicados, almacenamiento histórico por período, panel de atención, evolución por período, desempeño por agente y vista combinada con los indicadores de venta.</p>
+      <p><strong>Requisito para arrancar.</strong> Los reportes reales descritos en la sección 5.1 y la definición de cuáles informes se incorporan.</p>
+      <p style="margin-bottom:0"><strong>Entregable.</strong> Panel de atención operativo, acumulando histórico desde la primera carga.</p>
+    </div>
+  </div>
+
+  <h3>Base técnica</h3>
+  <p>El sistema se construye sobre <strong>Laravel</strong> con base de datos <strong>MySQL</strong>, en una aplicación web única con un solo control de acceso. Cuatro decisiones de diseño sostienen todo lo anterior:</p>
+  <ul class="cl">
+    <li><strong>Los indicadores derivados se calculan, no se almacenan</strong>, de modo que nunca quedan desfasados de sus componentes</li>
+    <li><strong>Bimoneda desde el modelo:</strong> cada monto conserva su valor, la tasa aplicada y el momento; la conversión no se recalcula con una tasa posterior</li>
+    <li><strong>Todo cambio deja rastro:</strong> quién, cuándo, valor anterior y valor nuevo</li>
+    <li><strong>Configurable sin programar:</strong> metas, umbrales, periodicidad de inventario, sucursales y permisos se administran desde la interfaz</li>
+  </ul>
+
+  <h3>Riesgos y cómo se contienen</h3>
+  <table>
+    <thead><tr><th style="width:28%">Riesgo</th><th style="width:10%">Nivel</th><th>Contención</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Los reportes reales de Chatwoot difieren del formato verificado</strong></td><td><span class="pill p-warn">Medio</span></td><td>La cotización de la Etapa 2 queda condicionada a esa validación; el ajuste se acuerda antes de continuar</td></tr>
+      <tr><td>El histórico contiene errores de captura</td><td><span class="pill p-warn">Medio</span></td><td>El importador detecta anomalías y permite decidir caso por caso, en lugar de cargar a ciegas</td></tr>
+      <tr><td>La definición de la tasa resulta distinta a la supuesta</td><td><span class="pill p-warn">Medio</span></td><td>Se confirma antes de importar y se registra el origen de cada tasa cargada</td></tr>
+      <tr><td>Resistencia al cambio de formato del reporte</td><td><span class="pill p-neu">Bajo</span></td><td>El sistema exporta en el formato Excel actual: quienes reciben el reporte no están obligados a cambiar</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Supuestos de esta propuesta</h3>
+  <ul class="dash">
+    <li>El archivo auditado es representativo del formato usado en los demás meses</li>
+    <li>Los indicadores actuales siguen siendo los relevantes: se agregan otros, no se eliminan</li>
+    <li>Chatwoot continúa siendo la herramienta de atención; el sistema la complementa y no la sustituye</li>
+    <li>Las cifras citadas provienen exclusivamente de los archivos entregados y se usan para ilustrar el comportamiento del sistema</li>
+  </ul>
+
+  <h3>Una observación final</h3>
+  <p>Los defectos descritos en la sección 2 no son un señalamiento hacia quienes mantienen el archivo. Son la consecuencia previsible de sostener durante años un proceso manual sobre una plantilla que se copia mes a mes: <strong>ningún nivel de cuidado personal evita que una columna copiada quede desfasada, ni que un promedio de promedios se calcule mal</strong>.</p>
+  <p>Ese es precisamente el argumento del proyecto. En el sistema propuesto el día de la semana se deriva de la fecha, los ratios se ponderan por definición y los totales no conviven con los datos. <strong>No son errores que se corrigen: son errores que dejan de ser posibles.</strong></p>
+
+  <div class="endnote">
+    Documento elaborado a partir de la auditoría técnica del cuadro de indicadores de septiembre y de los reportes de Chatwoot entregados como muestra. Versión 2.0 &mdash; sujeto a revisión tras la entrega de los archivos indicados en la sección 5.
+  </div>
+</div>

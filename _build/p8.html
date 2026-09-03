@@ -1,0 +1,108 @@
+<!-- ============ 12. ANEXOS ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="num">12</div><div class="tt"><h2>Anexos</h2><div class="dk">Mapeos, verificación y glosario</div></div></div>
+
+  <h3 class="first">Anexo A &nbsp;&mdash;&nbsp; Correspondencia entre el archivo actual y el sistema</h3>
+  <p>Trazabilidad entre cada elemento del Excel y su destino en el nuevo modelo, para verificar que nada se pierde en la transición.</p>
+
+  <table>
+    <thead><tr><th style="width:28%">Elemento del archivo</th><th style="width:32%">Destino en el sistema</th><th>Tratamiento</th></tr></thead>
+    <tbody>
+      <tr><td>Columna A &mdash; día de semana</td><td>Derivado de la fecha</td><td>Se elimina como campo capturable</td></tr>
+      <tr><td>Columna B &mdash; fecha</td><td>Registro diario &middot; fecha</td><td>Clave junto con la sucursal</td></tr>
+      <tr><td>Columna C &mdash; venta Bs</td><td>Registro diario &middot; venta</td><td>Dato primario</td></tr>
+      <tr><td>Columna D &mdash; venta $</td><td>Indicador calculado</td><td>No se almacena</td></tr>
+      <tr><td>Columna E &mdash; tasa</td><td>Entidad tasa de cambio</td><td>Con fuente y origen registrados</td></tr>
+      <tr><td>Columna F &mdash; transacciones</td><td>Registro diario &middot; transacciones</td><td>Dato primario</td></tr>
+      <tr><td>Columna G &mdash; unidades</td><td>Registro diario &middot; unidades</td><td>Dato primario</td></tr>
+      <tr><td>Columnas H, I, J &mdash; promedios</td><td>Indicadores calculados</td><td>No se almacenan; ponderados a nivel de período</td></tr>
+      <tr><td>Columna K &mdash; unidades en inventario</td><td>Registro diario &middot; inventario</td><td>Periodicidad configurable</td></tr>
+      <tr><td>Columna L &mdash; valuación</td><td>Registro diario &middot; valuación</td><td>Se documenta si es a costo o a precio</td></tr>
+      <tr><td>Columna M &mdash; TRN por jornada</td><td>Indicador calculado</td><td>No se almacena</td></tr>
+      <tr><td>Columna N &mdash; jornadas</td><td>Registro diario &middot; jornadas</td><td>Dato primario con valor por defecto</td></tr>
+      <tr><td>Fila de totales</td><td>Agregado de presentación</td><td>Calculado con metodología ponderada; nunca almacenado junto a los datos</td></tr>
+      <tr><td>Tabla anual vacía</td><td>Pantalla de comparativa anual</td><td>Se llena automáticamente</td></tr>
+      <tr><td>Siete hojas de gráficos</td><td>Pantalla de gráficas</td><td>Reconstruidas con los defectos corregidos</td></tr>
+      <tr><td>Celda de cálculo residual</td><td>&mdash;</td><td>No se migra</td></tr>
+      <tr><td>Contenido publicitario incrustado</td><td>&mdash;</td><td>No se migra</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Anexo B &nbsp;&mdash;&nbsp; Verificación de la auditoría</h3>
+  <p>Resumen de lo comprobado sobre la estructura interna del archivo, para respaldo de las afirmaciones de la sección 2.</p>
+
+  <table>
+    <thead><tr><th style="width:52%">Verificación</th><th style="width:14%">Resultado</th><th>Observación</th></tr></thead>
+    <tbody>
+      <tr><td>Correspondencia entre día de semana declarado y fecha real</td><td><span class="pill p-crit">30 de 30 erróneos</span></td><td>Desfase constante de cuatro días</td></tr>
+      <tr><td>Coincidencia de la cadena de cálculo con el modelo deducido</td><td><span class="pill p-ok">Exacta</span></td><td>163 fórmulas, sin fórmulas ocultas</td></tr>
+      <tr><td>Totales del mes contra valores almacenados</td><td><span class="pill p-ok">Cuadran</span></td><td>Ventas, transacciones, unidades y jornadas</td></tr>
+      <tr><td>Gráficos con eje de categorías definido</td><td><span class="pill p-crit">1 de 7</span></td><td>Y el único que lo tiene apunta a la columna defectuosa</td></tr>
+      <tr><td>Días sin registro de inventario</td><td><span class="pill p-warn">5 de 30</span></td><td>Cuatro son los cuatro sábados del mes</td></tr>
+      <tr><td>Valores atípicos por prueba estadística</td><td><span class="pill p-warn">1 día</span></td><td>Muy por debajo del límite inferior</td></tr>
+      <tr><td>Comportamiento de la tasa en fines de semana</td><td><span class="pill p-acc">8 de 9 casos</span></td><td>Compatible con tasa oficial</td></tr>
+      <tr><td>Desvío del método de promedio de promedios</td><td><span class="pill p-warn">0,35&#37; a 0,52&#37;</span></td><td>Originado casi por completo en el día atípico</td></tr>
+      <tr><td>Filas y columnas ocultas</td><td><span class="pill p-ok">Ninguna</span></td><td>Verificado hoja por hoja</td></tr>
+      <tr><td>Celdas combinadas</td><td><span class="pill p-ok">Ninguna</span></td><td>Facilita la importación</td></tr>
+      <tr><td>Validación de datos y formato condicional</td><td><span class="pill p-crit">Ninguna</span></td><td>En ninguna de las ocho hojas</td></tr>
+      <tr><td>Protección de hoja o libro</td><td><span class="pill p-crit">Ninguna</span></td><td>Cualquier usuario puede alterar fórmulas</td></tr>
+      <tr><td>Macros o código incrustado</td><td><span class="pill p-ok">Ninguno</span></td><td>Formato sin macros</td></tr>
+      <tr><td>Contenido ajeno al reporte</td><td><span class="pill p-neu">Detectado</span></td><td>Anuncio con imágenes e hipervínculos; sin riesgo de seguridad</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Anexo C &nbsp;&mdash;&nbsp; Glosario</h3>
+  <table>
+    <thead><tr><th style="width:26%">Término</th><th>Definición en el contexto de este documento</th></tr></thead>
+    <tbody>
+      <tr><td><strong>TRN</strong></td><td>Transacción. Cada operación de venta registrada, equivalente a un ticket o factura</td></tr>
+      <tr><td><strong>Jornada</strong></td><td>Turno de trabajo del día. El histórico muestra tres como norma y cuatro de forma ocasional</td></tr>
+      <tr><td><strong>Ticket promedio</strong></td><td>Venta dividida entre transacciones: cuánto gasta un cliente por visita</td></tr>
+      <tr><td><strong>Ratio ponderado</strong></td><td>Cociente entre la suma de numeradores y la suma de denominadores del período. Es el método correcto, frente a promediar los cocientes diarios</td></tr>
+      <tr><td><strong>Bimoneda</strong></td><td>Propiedad del sistema de conservar y mostrar todo monto en bolívares y en divisa simultáneamente, con la tasa del momento de la operación</td></tr>
+      <tr><td><strong>Venta deflactada</strong></td><td>Venta expresada eliminando el efecto de la variación cambiaria, para medir crecimiento real</td></tr>
+      <tr><td><strong>Rotación de inventario</strong></td><td>Número de veces que el inventario se renueva en un período. Requiere costo de ventas, no venta a precio de venta</td></tr>
+      <tr><td><strong>Días de inventario</strong></td><td>Cuántos días de venta cubre el inventario actual</td></tr>
+      <tr><td><strong>Embudo o pipeline</strong></td><td>Secuencia de etapas por las que atraviesa un pedido desde la solicitud hasta el cierre</td></tr>
+      <tr><td><strong>Tiempo de ciclo</strong></td><td>Tiempo transcurrido entre la entrada y la salida de un pedido, total o por etapa</td></tr>
+      <tr><td><strong>Tasa de conversión</strong></td><td>Proporción de conversaciones que terminan en pedido, o de pedidos que avanzan de una etapa a la siguiente</td></tr>
+      <tr><td><strong>Primera respuesta</strong></td><td>Tiempo entre el mensaje del cliente y la primera contestación de un agente</td></tr>
+      <tr><td><strong>Aplicación de panel</strong></td><td>Capacidad de Chatwoot de mostrar una aplicación web propia dentro de la vista de conversación</td></tr>
+      <tr><td><strong>Webhook</strong></td><td>Notificación automática que Chatwoot envía al sistema cuando ocurre un evento</td></tr>
+      <tr><td><strong>Día atípico</strong></td><td>Jornada marcada por una incidencia, excluible de promedios y proyecciones sin borrarla del histórico</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============ CIERRE ============ -->
+<div class="sec pg">
+  <div class="sec-hd"><div class="tt"><h2>Próximos pasos</h2><div class="dk">Cómo avanzar desde este documento</div></div></div>
+
+  <p class="lead">Este documento cumple dos funciones: describe el sistema propuesto y delimita con precisión lo que todavía no está definido. Ambas cosas son necesarias para avanzar con seriedad.</p>
+
+  <h3 class="first">Lo que ya puede decidirse</h3>
+  <ul class="cl">
+    <li><strong>El Módulo A puede cotizarse y comenzarse de inmediato.</strong> Su alcance está cerrado porque el archivo auditado funciona como especificación completa, y no depende de accesos ni definiciones de terceros</li>
+    <li><strong>La secuencia de fases</strong> propuesta en la sección 9 puede aprobarse tal como está, ya que cada fase entrega un sistema utilizable por sí mismo</li>
+  </ul>
+
+  <h3>Lo que requiere una sesión de trabajo</h3>
+  <ul class="cl">
+    <li><strong>Las cinco preguntas bloqueantes</strong> de la sección 10. Dos de ellas &mdash;la disponibilidad del catálogo de productos y la modalidad de Chatwoot&mdash; determinan por sí solas si el Módulo C es un desarrollo acotado o un proyecto del doble de tamaño</li>
+    <li><strong>El detalle del embudo y de la analítica</strong>, sobre los cuales el cliente ya manifestó disposición a explicar en profundidad</li>
+  </ul>
+
+  <h3>Recomendación</h3>
+  <div class="box o">
+    <p>Iniciar con una <strong>Fase 0 de descubrimiento</strong> acotada, cuyo entregable sea el alcance cerrado y firmado, y en paralelo <strong>arrancar el Módulo A</strong>, que no depende de ninguna de las respuestas pendientes.</p>
+    <p style="margin-bottom:0">De este modo el cliente ve resultados desde las primeras semanas &mdash;sustituyendo un proceso manual que realiza todos los días&mdash; mientras se define con rigor la parte del proyecto que hoy no puede estimarse de forma responsable.</p>
+  </div>
+
+  <h3>Una observación final sobre el diagnóstico</h3>
+  <p>Los defectos documentados en la sección 2 no son un señalamiento hacia el equipo que mantiene el archivo. Son la consecuencia previsible de sostener durante años un proceso manual sobre una plantilla que se copia mes a mes: <strong>ningún nivel de cuidado personal evita que una columna copiada quede desfasada, ni que un promedio de promedios se calcule mal</strong>.</p>
+  <p>Ese es precisamente el argumento del proyecto. En el sistema propuesto, el día de la semana se deriva de la fecha, los ratios se ponderan por definición y los totales no conviven con los datos. <strong>No son errores que se corrigen: son errores que dejan de ser posibles.</strong></p>
+
+  <div class="endnote">
+    Documento elaborado a partir de la auditoría técnica del archivo <span style="font-family:var(--mono);font-size:7.6pt">CUADRO DE INDICADORES MES SEPTIEMBRE GUADALUPE.xlsx</span>, analizado sobre su estructura interna. Las cifras citadas corresponden exclusivamente a ese archivo y se emplean para ilustrar el comportamiento esperado del sistema. Versión 1.0 &mdash; sujeto a revisión tras la sesión de descubrimiento.
+  </div>
+</div>
