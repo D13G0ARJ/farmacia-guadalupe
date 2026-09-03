@@ -6,8 +6,8 @@
 | **Alcance** | Etapa 1: dashboard de indicadores y metas (sin Chatwoot, sin pedidos) |
 | **Stack** | Laravel 13 · PHP 8.4 · MySQL 8 (SQLite en desarrollo y pruebas) · Livewire 4 · Tailwind 3 · Alpine · ECharts 6 |
 | **Tasa** | BCV (Banco Central de Venezuela), con arrastre en días no publicados |
-| **Versión del plan** | 8 (Fases 0 y 1 implementadas; ver §20) |
-| **Fecha** | 25-08-2026 |
+| **Versión del plan** | 11 (Fases 0 a 4 implementadas y probadas; hoja de ruta restante en §17 y estado por caso de uso en §21) |
+| **Fecha** | 03-09-2026 |
 
 ---
 
@@ -33,6 +33,7 @@
 18. Matriz de cobertura
 19. Preguntas pendientes al cliente y supuestos de construcción
 20. Registro de iteraciones del plan
+21. Estado del producto al 03-09-2026 (hecho y pendiente por caso de uso)
 
 ---
 
@@ -72,6 +73,8 @@ Una aplicación web que **reemplaza por completo** el archivo `CUADRO DE INDICAD
 | Ampliación B | Activación multi-sede: selector, consolidado, permisos por sede | US$ 150 |
 
 El plan cubre **todo**; §17 marca qué entra en cada fase. La arquitectura es la misma en todas: no se construye nada dos veces.
+
+> **Criterio de entrega (03-09-2026).** El cliente contrató solo el dashboard, pero se entrega como un sistema completo, funcional y amigable: todo lo de la Ampliación A (importador, año, PDF), las pantallas de administración y tasa BCV y la capa de amigabilidad de §13.8 forman parte de la entrega. Solo la Ampliación B (multi-sede) queda condicionada a que activen la segunda sede.
 
 ---
 
@@ -1182,7 +1185,7 @@ Orden de construcción pensado para tener algo usable lo antes posible y para qu
 - Formatter es-VE + pruebas. Configuración de zona horaria y locale.
 - CI mínimo (GitHub Actions: pint, larastan, pest).
 
-### Fase 1 — Núcleo de datos (día 3–6) — **MVP**
+### Fase 1 — Núcleo de datos (día 3–6) — **MVP** — **IMPLEMENTADA** (ver §20, iteraciones 10 y 11)
 - Enum `Indicator`, DTOs, `IndicatorCalculator`, `WeekdayPattern` con pruebas de valores dorados.
 - `ExchangeRate` + `RateResolver` + `BcvProvider` + job programado.
 - `DailyRecord` + Actions (registrar, editar, atípico, cerrado, borrar) + Policies + Observer de cache.
@@ -1202,16 +1205,27 @@ Orden de construcción pensado para tener algo usable lo antes posible y para qu
 - `CloseMonth`/`ReopenMonth`, candados en UI, permisos por rol, bitácora visible.
 - Pruebas funcionales de UC-02…UC-09, UC-11, UC-12. Despliegue a producción.
 
-### Fase 5 — Ampliación A (día 15–20)
-- Importador (§10) con wizard y pruebas contra el archivo real.
-- Comparativa anual (UC-13) y G11.
-- G8 heatmap, G10 tasa vs venta.
-- PDF con gráficas, envío programado.
+### Fase 5 — Administración y tasa BCV (día 15–17) — **PENDIENTE** (siguiente)
+- **Administración (UC-17)**: usuarios (crear, desactivar, rol, sede, restablecer contraseña), sedes (nombre, jornadas por defecto, días de inventario) y parámetros (`settings`: umbrales de advertencia, ventana de edición del operador, crecimiento sugerido de metas). Sin esto el cliente no puede dar acceso a su gente.
+- **Tasa BCV (UC-16, §9.4)**: historial de tasas con origen, corrección manual, consulta forzada al BCV y recálculo del mes con vista previa del efecto.
+- Perfil de usuario con la identidad y en español (hoy sigue con el diseño de Breeze).
+- Menú: "Tasa BCV" y "Administración" dejan de estar en "Próximamente".
 
-### Fase 6 — Ampliación B (día 21–23)
-- Activar selector de sede, consolidado, metas de consolidado, comparación entre sedes (UC-18), permisos por sede en UI.
+### Fase 6 — Histórico, año y PDF (día 18–23) — **PENDIENTE** (era "Ampliación A")
+- **Importador (UC-15, §10)** con asistente de tres pasos y pruebas contra el archivo real; alimenta la comparación interanual, el patrón semanal y las sugerencias de meta.
+- **Año (UC-13)**: tabla anual del Excel (§2.4), G11 comparativa interanual, G10 tasa vs venta, pestañas "Tasa" y "Año" en Gráficas y hoja "Anual" en la exportación (§11.1).
+- **Reporte PDF mensual (§11.2)** con cuadro, KPI y gráficas; envío programado opcional.
+- G8 ya está construido (Fase 2).
 
-> Los días son de dedicación completa y sirven para ordenar el trabajo, no como compromiso contractual (el plazo pactado es 2–3 semanas para el MVP teniendo todos los insumos).
+### Fase 7 — Amigabilidad y entrega (día 24–28) — **PENDIENTE**
+- Pendientes de §13.5 y §13.8: ayuda contextual ("¿Cómo se calcula?" y panel "?" con glosario), borrador automático del formulario por fecha, sesión vencida y red caída con mensaje amable, carga en secuencia de los días atrasados, hoja de impresión para Mes y Panel, atajos de teclado, tabla de metas apilada en móvil, "Ampliar" en las gráficas.
+- Entrega: despliegue con `.env.production.example`, correo SMTP del cliente, respaldo diario de MySQL, cabeceras de seguridad, prueba real del BCV en el servidor, limpiar los datos de demostración, manual breve con capturas y capacitación. 2FA opcional para dirección (requiere Fortify).
+- Reunión de arranque con las preguntas de §19 y ajuste de supuestos.
+
+### Fase 8 — Multi-sede (día 29–31) — **CONDICIONADA** (Ampliación B, US$ 150)
+- Activar selector de sede, consolidado por gráfica, metas de consolidado, comparación entre sedes (UC-18), permisos por sede en UI.
+
+> Los días son de dedicación completa y sirven para ordenar el trabajo, no como compromiso contractual (el plazo pactado es 2–3 semanas para el MVP teniendo todos los insumos). Estado al 03-09-2026: Fases 0 a 4 terminadas en 14 días de trabajo; faltan unos 14 días para las Fases 5 a 7.
 
 ---
 
@@ -1569,4 +1583,33 @@ Pendiente (fuera del MVP): 2FA, tabla de metas apilada en móvil, perfil de usua
 
 ### Estado final
 
-El plan cubre las 14 columnas, las 163 fórmulas, los 7 gráficos, la tabla anual, los 13 hechos verificados y los 3 pedidos del cliente (digitalizar, estadística y gráficas, KPIs con metas), más la preparación multi-sede. Cada requerimiento tiene componente, caso de uso y prueba asignados (§18). Las decisiones que dependen del cliente están aisladas en §19.
+El plan cubre las 14 columnas, las 163 fórmulas, los 7 gráficos, la tabla anual, los 13 hechos verificados y los 3 pedidos del cliente (digitalizar, estadística y gráficas, KPIs con metas), más la preparación multi-sede. El estado de construcción por caso de uso está en §21.
+
+---
+
+## 21. Estado del producto al 03-09-2026
+
+Qué hay construido y probado (209 pruebas Pest, Larastan nivel 6, recorrido Playwright de 29 pasos) y qué falta, por caso de uso. "Hecho" significa implementado, con pruebas y verificado en navegador.
+
+| UC | Caso de uso | Estado | Falta |
+|---|---|---|---|
+| 01 | Iniciar sesión | Hecho | 2FA opcional (Fase 7) |
+| 02 | Cargar el día | Hecho | Borrador automático, red caída, carga en secuencia (Fase 7) |
+| 03 | Editar un día | Hecho | — |
+| 04 | Marcar día atípico | Hecho | Deshacer del marcado (Fase 7) |
+| 05 | Registrar día cerrado | Hecho | — |
+| 06 | Ver días faltantes | Hecho | — |
+| 07 | Cerrar y reabrir mes | Hecho | Recordatorio por correo el día 1 (Fase 7) |
+| 08 | Panel principal | Hecho | Ayuda contextual "¿Cómo se calcula?" (Fase 7) |
+| 09 | Cuadro de indicadores | Hecho | Ordenar por columna y buscar por fecha (Fase 7) |
+| 10 | Gráficas | Hecho G1–G9 | G10 tasa vs venta y G11 interanual, "Ampliar" (Fase 6) |
+| 11 | Definir metas | Hecho | Cuadrícula apilada en móvil (Fase 7) |
+| 12 | Seguir metas | Hecho | — |
+| 13 | Comparativa anual | **Pendiente** | Tabla anual, G11, hoja Anual del export (Fase 6) |
+| 14 | Exportar | Hecho Excel del mes | Hoja Anual y PDF mensual (Fase 6) |
+| 15 | Importar histórico | **Pendiente** | Asistente completo (Fase 6) |
+| 16 | Gestionar tasa BCV | Parcial: consulta automática, arrastre, manual en el formulario | Pantalla de historial y corrección (Fase 5) |
+| 17 | Administración | **Pendiente**: solo el admin sembrado | Usuarios, sedes y parámetros (Fase 5) |
+| 18 | Consolidado multi-sede | Preparado en el modelo | Selector y consolidado en UI (Fase 8, condicionada) |
+
+Transversal hecho: identidad visual completa (menos el perfil de usuario), acceso en español, roles y políticas, bitácora, cache, tasa BCV automática programada, exportación Excel, seeders de demostración (septiembre real, agosto sintético, metas). Transversal pendiente: despliegue, correo SMTP, respaldo, manual y capacitación (Fase 7). Cada requerimiento tiene componente, caso de uso y prueba asignados (§18). Las decisiones que dependen del cliente están aisladas en §19.
