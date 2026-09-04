@@ -4,141 +4,37 @@ declare(strict_types=1);
 
 namespace App\Exports;
 
-use App\Domain\Indicators\DailyMetrics;
 use App\Domain\Shared\Formatter;
+use App\Models\ExchangeRate;
+use App\Queries\AnnualView;
 use App\Queries\MonthView;
-use Brick\Math\BigDecimal;
-use Maatwebsite\Excel\Concerns\FromArray;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Maatwebsite\Excel\Concerns\WithColumnFormatting;
-use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithTitle;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Concerns\Export;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
 /**
- * Exportación básica del mes en el formato del cuadro actual (§11.1): mismas columnas y orden,
- * día de la semana correcto, derivados como valores y totales ponderados separados por una fila.
+ * Libro del mes (§11.1): hojas Indicadores (el cuadro), Anual (la tabla del año) y Tasas.
  */
-final class MonthWorkbookExport implements FromArray, ShouldAutoSize, WithColumnFormatting, WithStyles, WithTitle
+final class MonthWorkbookExport implements Export, WithMultipleSheets
 {
-    private const HEADINGS = [
-        'Día', 'Fecha', 'Venta Bs', 'Venta en $', 'Tasa $', 'TRN', 'Unidades', 'Ticket promedio',
-        'Unidades promedio x compra', 'Ticket promedio en $', 'Unidades cargadas (inventario)',
-        'Valuación de inventario costo', 'Transacciones / jornadas', 'Jornada',
-    ];
-
+    /** @param  Collection<int, ExchangeRate>  $rates */
     public function __construct(
         private readonly MonthView $view,
         private readonly string $legalName,
         private readonly Formatter $formatter,
+        private readonly AnnualView $annual,
+        private readonly Collection $rates,
     ) {}
 
-    public function title(): string
-    {
-        return 'Indicadores';
-    }
-
     /**
-     * @return list<list<mixed>>
+     * @return list<IndicatorsSheet|AnnualSheet|RatesSheet>
      */
-    public function array(): array
-    {
-        $rows = [
-            [null, $this->view->period->monthNameUpper(), $this->legalName],
-            [],
-            self::HEADINGS,
-        ];
-
-        foreach ($this->view->rows as $m) {
-            $rows[] = $this->row($m);
-        }
-
-        $rows[] = [];
-        $rows[] = $this->totals();
-
-        return $rows;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public function columnFormats(): array
+    public function sheets(): array
     {
         return [
-            'C' => '#,##0.00', 'D' => '0', 'E' => '#,##0.00', 'H' => '#,##0', 'I' => '0.0', 'J' => '0.0',
-            'K' => '#,##0', 'L' => '#,##0', 'M' => '0',
+            new IndicatorsSheet($this->view, $this->legalName, $this->formatter),
+            new AnnualSheet($this->annual),
+            new RatesSheet($this->rates),
         ];
-    }
-
-    /**
-     * @return array<int|string, array<string, mixed>>
-     */
-    public function styles(Worksheet $sheet): array
-    {
-        $lastRow = 3 + count($this->view->rows) + 2;
-
-        return [
-            1 => ['font' => ['bold' => true, 'size' => 12]],
-            3 => [
-                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1D6FE5']],
-                'alignment' => ['horizontal' => 'center', 'vertical' => 'center', 'wrapText' => true],
-            ],
-            $lastRow => ['font' => ['bold' => true]],
-        ];
-    }
-
-    /**
-     * @return list<mixed>
-     */
-    private function row(DailyMetrics $m): array
-    {
-        return [
-            $this->formatter->weekday($m->data->date),
-            $m->data->date->format('d/m/Y'),
-            self::num($m->data->salesBs),
-            self::num($m->salesUsd),
-            self::num($m->data->rate),
-            $m->data->transactions,
-            $m->data->units,
-            self::num($m->avgTicketBs),
-            self::num($m->unitsPerTransaction),
-            self::num($m->avgTicketUsd),
-            $m->data->inventoryUnits,
-            self::num($m->data->inventoryValueUsd),
-            self::num($m->transactionsPerShift),
-            $m->data->shifts,
-        ];
-    }
-
-    /**
-     * @return list<mixed>
-     */
-    private function totals(): array
-    {
-        $s = $this->view->summary;
-
-        return [
-            null, 'Total del mes (ponderado)',
-            self::num($s->sumsAll['salesBs']),
-            self::num($s->sumsAll['salesUsd']),
-            self::num($s->avgRate),
-            $s->sumsAll['transactions'],
-            $s->sumsAll['units'],
-            self::num($s->avgTicketBs),
-            self::num($s->unitsPerTransaction),
-            self::num($s->avgTicketUsd),
-            self::num($s->inventoryAvgUnits),
-            self::num($s->inventoryAvgValueUsd),
-            self::num($s->transactionsPerShift),
-            $s->sumsAll['shifts'],
-        ];
-    }
-
-    private static function num(?BigDecimal $value): ?float
-    {
-        // Solo para la celda de Excel: el dominio nunca usa float (RN-19).
-        return $value?->toFloat();
     }
 }

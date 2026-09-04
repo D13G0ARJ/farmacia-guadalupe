@@ -32,6 +32,9 @@ export default function chartPanel(id) {
             if (this.handle || !this.$refs.canvas?.isConnected) return;
             this.handle = mountChart(this.$refs.canvas, spec);
             this.ready = true;
+            // Registro global: el reporte PDF recoge las gráficas en pantalla como PNG (§11.2).
+            window.__charts = window.__charts || {};
+            window.__charts[this.id] = this.handle;
         },
 
         apply(spec) {
@@ -49,10 +52,10 @@ export default function chartPanel(id) {
         },
 
         /** PNG a 2× con el nombre de la gráfica y el mes (§14). */
-        png() {
+        async png() {
             if (!this.handle) return;
             const link = document.createElement('a');
-            link.href = this.handle.toPng();
+            link.href = await this.handle.toPng();
             link.download = `${this.$wire.specs?.[this.id]?.slug ?? this.id}.png`;
             link.click();
         },
@@ -61,6 +64,7 @@ export default function chartPanel(id) {
             this.handle?.destroy();
             this.handle = null;
             this.ready = false;
+            if (window.__charts) delete window.__charts[this.id];
         },
 
         destroy() {

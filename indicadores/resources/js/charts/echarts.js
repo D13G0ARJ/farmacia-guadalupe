@@ -97,9 +97,27 @@ export function mountChart(el, spec) {
         update(next) {
             chart.setOption(toOption(next), { notMerge: true });
         },
-        /** PNG a 2× para el PDF (§11.2). */
-        toPng() {
-            return chart.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: '#fff' });
+        /**
+         * PNG a 2× para la descarga (§14) y el PDF (§11.2). El lienzo es SVG, así que se
+         * rasteriza en un canvas con fondo blanco; el resultado es siempre `data:image/png`.
+         */
+        async toPng() {
+            const svg = chart.getDataURL({ type: 'svg' });
+            const image = new Image();
+            await new Promise((resolve, reject) => {
+                image.onload = resolve;
+                image.onerror = () => reject(new Error('No se pudo rasterizar la gráfica.'));
+                image.src = svg;
+            });
+            const canvas = document.createElement('canvas');
+            canvas.width = chart.getWidth() * 2;
+            canvas.height = chart.getHeight() * 2;
+            const context = canvas.getContext('2d');
+            context.fillStyle = '#fff';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+            return canvas.toDataURL('image/png');
         },
         destroy() {
             observer.disconnect();

@@ -12,6 +12,7 @@ use App\Models\Branch;
 use App\Models\DailyRecord;
 use App\Models\ExchangeRate;
 use App\Models\Goal;
+use App\Models\ImportBatch;
 use App\Models\PeriodEvent;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -110,6 +111,7 @@ final class ActivityDescriber
             'deactivated' => 'desactivó el acceso de',
             'password_reset' => 'cambió la contraseña de',
             'settings_updated' => 'cambió',
+            'imported' => 'importó',
             default => $event,
         };
 
@@ -120,6 +122,7 @@ final class ActivityDescriber
             PeriodEvent::class => 'el mes '.$this->period($subject?->getAttribute('period') ?? $attributes['period'] ?? null),
             User::class => (string) ($subject?->getAttribute('name') ?? $attributes['name'] ?? 'un usuario'),
             Branch::class => 'la sede '.($subject?->getAttribute('name') ?? $attributes['name'] ?? ''),
+            ImportBatch::class => 'el mes '.$this->period($attributes['period'] ?? $subject?->getAttribute('period')).' desde el archivo '.($subject?->getAttribute('original_filename') ?? '').(isset($attributes['created']) ? ' ('.((int) $attributes['created'] + (int) ($attributes['updated'] ?? 0)).' días)' : ''),
             default => $event === 'settings_updated' ? 'los parámetros' : 'un registro',
         };
 

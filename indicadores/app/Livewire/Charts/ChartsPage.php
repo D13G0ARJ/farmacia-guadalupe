@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Livewire\Charts;
 
+use App\Domain\Charts\ChartSpecBuilder;
+use App\Domain\Indicators\Indicator;
 use App\Domain\Shared\Period;
 use App\Models\DailyRecord;
+use App\Queries\AnnualComparisonQuery;
 use App\Queries\ChartSeriesQuery;
 use App\Support\CurrencyContext;
 use App\Support\CurrentBranch;
@@ -33,13 +36,16 @@ class ChartsPage extends Component
         'ventas' => ['label' => 'Ventas', 'charts' => ['g2', 'g1', 'g8']],
         'operacion' => ['label' => 'Operación', 'charts' => ['g3', 'g6', 'g4', 'g5']],
         'inventario' => ['label' => 'Inventario', 'charts' => ['g7']],
+        'tasa' => ['label' => 'Tasa', 'charts' => ['g10']],
+        'anio' => ['label' => 'Año', 'charts' => ['g11']],
     ];
-
-    /** Familias que llegan en fases posteriores (G10 tasa, G11 año). */
-    public const SOON = ['tasa' => 'Tasa', 'anio' => 'Año'];
 
     #[Url]
     public string $tab = 'ventas';
+
+    /** Indicador de la comparativa interanual (G11). */
+    #[Url(as: 'indicador')]
+    public string $annualIndicator = 'sales_usd';
 
     public string $period = '';
 
@@ -50,12 +56,17 @@ class ChartsPage extends Component
     {
         $this->authorize('viewAny', DailyRecord::class);
         $this->period = app(PeriodContext::class)->current()->key();
-        $this->normalizeTab();
+        $this->normalize();
     }
 
     public function updatedTab(): void
     {
-        $this->normalizeTab();
+        $this->normalize();
+    }
+
+    public function updatedAnnualIndicator(): void
+    {
+        $this->normalize();
     }
 
     #[On('context-changed')]
@@ -64,19 +75,31 @@ class ChartsPage extends Component
         $this->period = app(PeriodContext::class)->current()->key();
     }
 
-    public function render(ChartSeriesQuery $query, CurrencyContext $currency): View
+    public function render(ChartSeriesQuery $query, AnnualComparisonQuery $annualQuery, ChartSpecBuilder $builder, CurrencyContext $currency): View
     {
         $user = auth()->user();
         $branch = app(CurrentBranch::class)->resolve($user);
         $period = Period::of($this->period);
 
-        $this->specs = $query->specs($branch?->id, $period, $this->chartsFor($this->tab, $currency));
+        if ($this->tab === 'anio') {
+            $indicator = Indicator::from($this->annualIndicator);
+            $annual = $annualQuery->run($branch?->id, $period->start->year);
+            $current = [];
+            $previous = [];
+            for ($m = 1; $m <= 12; $m++) {
+                $current[$m] = $annual->value($indicator, $m);
+                $previous[$m] = $annual->previousYearValue($indicator, $m);
+            }
+            $this->specs = ['g11' => $builder->annualComparison($annual->year, $current, $previous, $indicator)->toArray()];
+        } else {
+            $this->specs = $query->specs($branch?->id, $period, $this->chartsFor($this->tab, $currency));
+        }
 
         return view('livewire.charts.charts-page', [
             'branch' => $branch,
-            'periodLabel' => $period->label(),
+            'periodLabel' => $this->tab === 'anio' ? 'Año '.$period->start->year : $period->label(),
             'tabs' => self::TABS,
-            'soon' => self::SOON,
+            'annualIndicators' => Indicator::annualOrder(),
         ]);
     }
 
@@ -95,10 +118,13 @@ class ChartsPage extends Component
         return $charts;
     }
 
-    private function normalizeTab(): void
+    private function normalize(): void
     {
         if (! array_key_exists($this->tab, self::TABS)) {
             $this->tab = 'ventas';
+        }
+        if (Indicator::tryFrom($this->annualIndicator) === null || ! in_array(Indicator::from($this->annualIndicator), Indicator::annualOrder(), true)) {
+            $this->annualIndicator = Indicator::SalesUsd->value;
         }
     }
 }

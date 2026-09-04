@@ -6,8 +6,8 @@
 | **Alcance** | Etapa 1: dashboard de indicadores y metas (sin Chatwoot, sin pedidos) |
 | **Stack** | Laravel 13 · PHP 8.4 · MySQL 8 (SQLite en desarrollo y pruebas) · Livewire 4 · Tailwind 3 · Alpine · ECharts 6 |
 | **Tasa** | BCV (Banco Central de Venezuela), con arrastre en días no publicados |
-| **Versión del plan** | 11 (Fases 0 a 4 implementadas y probadas; hoja de ruta restante en §17 y estado por caso de uso en §21) |
-| **Fecha** | 03-09-2026 |
+| **Versión del plan** | 12 (Fases 0 a 6 implementadas y probadas; hoja de ruta restante en §17 y estado por caso de uso en §21) |
+| **Fecha** | 04-09-2026 |
 
 ---
 
@@ -1211,14 +1211,14 @@ Orden de construcción pensado para tener algo usable lo antes posible y para qu
 - Perfil de usuario con la identidad y en español (hoy sigue con el diseño de Breeze).
 - Menú: "Tasa BCV" y "Administración" dejan de estar en "Próximamente".
 
-### Fase 6 — Histórico, año y PDF (día 18–23) — **PENDIENTE** (siguiente; era "Ampliación A")
+### Fase 6 — Histórico, año y PDF (día 18–23) — **IMPLEMENTADA** (ver §20, iteración 16; era "Ampliación A")
 - **Importador (UC-15, §10)** con asistente de tres pasos y pruebas contra el archivo real; alimenta la comparación interanual, el patrón semanal y las sugerencias de meta.
-- **Año (UC-13)**: tabla anual del Excel (§2.4), G11 comparativa interanual, G10 tasa vs venta, pestañas "Tasa" y "Año" en Gráficas y hoja "Anual" en la exportación (§11.1).
-- **Reporte PDF mensual (§11.2)** con cuadro, KPI y gráficas; envío programado opcional.
+- **Año (UC-13)**: tabla anual del Excel (§2.4), G11 comparativa interanual, G10 tasa vs venta, pestañas "Tasa" y "Año" en Gráficas y hojas "Anual" y "Tasas" en la exportación (§11.1).
+- **Reporte PDF mensual (§11.2)** con cuadro, KPI, metas y gráficas. El envío programado por correo pasa a la Fase 7 (necesita SMTP).
 - G8 ya está construido (Fase 2).
 
-### Fase 7 — Amigabilidad y entrega (día 24–28) — **PENDIENTE**
-- Pendientes de §13.5 y §13.8: ayuda contextual ("¿Cómo se calcula?" y panel "?" con glosario), borrador automático del formulario por fecha, sesión vencida y red caída con mensaje amable, carga en secuencia de los días atrasados, hoja de impresión para Mes y Panel, atajos de teclado, tabla de metas apilada en móvil, "Ampliar" en las gráficas.
+### Fase 7 — Amigabilidad y entrega (día 24–28) — **PENDIENTE** (siguiente)
+- Pendientes de §13.5 y §13.8: ayuda contextual ("¿Cómo se calcula?" y panel "?" con glosario), borrador automático del formulario por fecha, sesión vencida y red caída con mensaje amable, carga en secuencia de los días atrasados, hoja de impresión para Mes y Panel, atajos de teclado, tabla de metas apilada en móvil, "Ampliar" en las gráficas, envío programado del reporte PDF por correo.
 - Entrega: despliegue con `.env.production.example`, correo SMTP del cliente, respaldo diario de MySQL, cabeceras de seguridad, prueba real del BCV en el servidor, limpiar los datos de demostración, manual breve con capturas y capacitación. 2FA opcional para dirección (requiere Fortify).
 - Reunión de arranque con las preguntas de §19 y ajuste de supuestos.
 
@@ -1607,15 +1607,46 @@ Hallazgos del code review y del recorrido en navegador (corregidos):
 | 15.4 | Comillas dobles dentro de una expresión Blade en un atributo de componente rompían la compilación de la pantalla de tasas | La edición en línea recibe solo la fecha y el componente busca la tasa vigente |
 | 15.5 | Limpiar el último error del proveedor intentaba guardar `null` en una columna obligatoria | `Setting::forget()` borra la fila y la lectura vuelve al defecto |
 
+### Iteración 16 — Implementación de la Fase 6 (importador, año y reporte PDF) con code review y pruebas en navegador
+
+Entregado en `indicadores/`:
+
+- **Importador de histórico (UC-15, §10)** en `/importar` para `imports.run`, en tres pasos. **Archivos**: sede, zona de arrastre, hasta 24 `.xlsx` de 5 MB, sin macros; el mes se lee del contenido, no del nombre. **Revisión**: por cada archivo, mes detectado, filas, razón social y las anomalías agrupadas por gravedad (debe resolverse, revisar, aviso, información), cada una con su decisión en palabras del negocio (omitir el día, registrarlo como cerrado, usar la primera o la última fila, marcar atípico, conservar la tasa registrada, reemplazar el mes ya cargado, no importar el archivo), vista previa con los derivados recalculados y casilla "No importar" por archivo. Las anomalías altas no traen decisión por defecto: el botón dice "Faltan N anomalías por resolver" hasta que la persona elige. **Confirmación**: resumen por archivo (días nuevos, actualizados, cerrados, atípicos, filas omitidas), enlace al mes y opción de cerrar los meses al importar. El `WorkbookParser` lee el archivo real del cliente (hoja "indicadores", mes en B2, razón social en C2, fila de encabezados por su texto, filas hasta la primera sin fecha) y el `AnomalyDetector` aplica el catálogo de §10.3 con el contexto de la base (meses ya cargados, tasas registradas, umbrales). Reimportar el mismo archivo exige decidir entre reemplazar u omitir; un mes cerrado no se toca (RN-13): pide reabrirlo. Todo queda en bitácora ("Ana importó el mes Septiembre 2025 desde el archivo CUADRO.xlsx (30 días)").
+- **Año (UC-13)** en `/anio`: la tabla anual del Excel (§2.4) con los 12 indicadores en su orden, doce meses, columna "Año" ponderada sobre todos los días (nunca promedio de promedios), meses sin datos en gris, variación frente al mes anterior y frente al año pasado al pasar el cursor, selector de año con flechas, conmutador de moneda respetado y exportación a Excel. **Gráficas**: pestañas "Tasa" (G10, venta en dólares en barras y tasa en línea sobre un segundo eje) y "Año" (G11, barras del año y del anterior por mes, con selector de indicador en la URL); desaparece "Próximamente".
+- **Exportación (UC-14, §11.1)**: el libro del mes trae ahora tres hojas: Indicadores (el cuadro), Anual (la tabla del año, 12×12 más "Total / Prom. año") y Tasas (fecha, tasa, origen, quién la fijó). Libro del año aparte desde la pantalla Año.
+- **Reporte PDF mensual (§11.2)**: A4 apaisado con encabezado (mes, sede, días cargados, tasa de inicio a fin), tarjetas de KPI con variación y meta, gráficas del panel, cuadro de 14 columnas con totales ponderados, tabla de metas y observaciones de días atípicos o cerrados. El navegador manda las gráficas en pantalla como PNG justo antes de pedir el PDF (validadas: solo PNG, hasta 12 y 1 MB cada una, guardadas 10 minutos por usuario y mes, consumidas al generar); si no llegan, el PDF sale igual con una nota.
+- **Pruebas**: 258 Pest (lector del archivo real, detector con cada anomalía, acciones de importar y confirmar con sus decisiones, asistente con subida real, consulta y pantalla anual, G10 y G11, exportación multi-hoja y anual, PDF con imágenes válidas e inválidas), Larastan nivel 6 en cero, Pint limpio. Recorrido Playwright ampliado a 39 pasos (cinco nuevos: pestañas Tasa y Año, pantalla Año con exportación y navegación, descarga del PDF con las gráficas enviadas, e importación del cuadro real con decisión de reemplazo y verificación en bitácora).
+
+Desvíos respecto al plan y su motivo:
+
+| # | Planificado | Real | Motivo |
+|---|---|---|---|
+| 16.1 | El archivo se guarda en `storage/app/imports/{batch}` y se procesa en cola | Se lee al subirlo, sin cola ni copia guardada; solo queda el hash y el contenido interpretado (`parsed_payload`) | Los cuadros pesan menos de 100 KB y se leen en menos de un segundo; el hosting compartido no tiene worker de cola |
+| 16.2 | Las gráficas del PDF se renderizan en el servidor | El navegador envía las gráficas que ya tiene dibujadas | Evita instalar un navegador sin cabeza en el hosting; el PDF sale igual sin ellas |
+| 16.3 | Envío programado del PDF por correo | Pasa a la Fase 7 | Necesita el SMTP del cliente |
+
+Hallazgos del code review y del recorrido en navegador (corregidos):
+
+| # | Hallazgo | Corrección |
+|---|---|---|
+| 16.4 | El nombre temporal de Livewire lleva metadatos codificados y el lector de Excel no lo reconocía | El asistente lee desde una copia limpia con extensión `.xlsx` |
+| 16.5 | El archivo real no guarda los valores calculados de las fórmulas, así que los derivados del archivo llegan vacíos | El detector compara derivados solo cuando el archivo los trae; los derivados siempre se recalculan (RN-04) |
+| 16.6 | Confirmar una importación sobre un mes cerrado lo modificaba sin aviso | `ConfirmImport` rechaza el mes cerrado y explica que dirección debe reabrirlo |
+| 16.7 | Un año fuera de rango en la URL o por las flechas dejaba la pantalla Año en blanco | Vuelve al año del período activo |
+| 16.8 | La suite completa agotaba la memoria por defecto de PHP al generar tres PDF en un solo proceso | `memory_limit` de 512 MB para las pruebas; un PDF solo cabe en 64 MB, así que producción sigue con 128 MB |
+| 16.9 | Las gráficas se dibujan en SVG, así que "PNG" descargaba un SVG con extensión `.png` y el PDF rechazaba las imágenes (llegaban cero) | La gráfica se rasteriza en el navegador a un PNG real a 2× con fondo blanco, tanto para la descarga como para el PDF |
+| 16.10 | Reemplazar un mes ya cargado borraba la marca de atípico y la nota puestas a mano (el recorrido lo detectó al perder el día atípico de la demostración) | Al reemplazar se conservan estado y nota; solo un día cerrado que ahora trae venta pasa a normal |
+| 16.11 | En el PDF, el título "Gráficas" quedaba solo al pie de la primera página y el acumulado se veía diminuto a media página | Las gráficas van en su propia página y el acumulado ocupa el ancho completo |
+
 ### Estado final
 
 El plan cubre las 14 columnas, las 163 fórmulas, los 7 gráficos, la tabla anual, los 13 hechos verificados y los 3 pedidos del cliente (digitalizar, estadística y gráficas, KPIs con metas), más la preparación multi-sede. El estado de construcción por caso de uso está en §21.
 
 ---
 
-## 21. Estado del producto al 03-09-2026
+## 21. Estado del producto al 04-09-2026
 
-Qué hay construido y probado (209 pruebas Pest, Larastan nivel 6, recorrido Playwright de 29 pasos) y qué falta, por caso de uso. "Hecho" significa implementado, con pruebas y verificado en navegador.
+Qué hay construido y probado (258 pruebas Pest, Larastan nivel 6, recorrido Playwright de 39 pasos) y qué falta, por caso de uso. "Hecho" significa implementado, con pruebas y verificado en navegador.
 
 | UC | Caso de uso | Estado | Falta |
 |---|---|---|---|
@@ -1628,14 +1659,14 @@ Qué hay construido y probado (209 pruebas Pest, Larastan nivel 6, recorrido Pla
 | 07 | Cerrar y reabrir mes | Hecho | Recordatorio por correo el día 1 (Fase 7) |
 | 08 | Panel principal | Hecho | Ayuda contextual "¿Cómo se calcula?" (Fase 7) |
 | 09 | Cuadro de indicadores | Hecho | Ordenar por columna y buscar por fecha (Fase 7) |
-| 10 | Gráficas | Hecho G1–G9 | G10 tasa vs venta y G11 interanual, "Ampliar" (Fase 6) |
+| 10 | Gráficas | Hecho G1–G11 | "Ampliar" (Fase 7) |
 | 11 | Definir metas | Hecho | Cuadrícula apilada en móvil (Fase 7) |
 | 12 | Seguir metas | Hecho | — |
-| 13 | Comparativa anual | **Pendiente** | Tabla anual, G11, hoja Anual del export (Fase 6) |
-| 14 | Exportar | Hecho Excel del mes | Hoja Anual y PDF mensual (Fase 6) |
-| 15 | Importar histórico | **Pendiente** | Asistente completo (Fase 6) |
+| 13 | Comparativa anual | Hecho | — |
+| 14 | Exportar | Hecho (Excel de tres hojas, Excel del año, PDF mensual) | Envío programado por correo (Fase 7, con SMTP) |
+| 15 | Importar histórico | Hecho | — |
 | 16 | Gestionar tasa BCV | Hecho | Correo al administrador cuando el BCV se desvía (Fase 7, con SMTP) |
 | 17 | Administración | Hecho | — |
 | 18 | Consolidado multi-sede | Preparado en el modelo | Selector y consolidado en UI (Fase 8, condicionada) |
 
-Transversal hecho: identidad visual completa (perfil incluido), acceso en español, roles y políticas, bitácora visible, cache, tasa BCV automática programada, exportación Excel, seeders de demostración (septiembre real, agosto sintético, metas, usuarios por rol). Transversal pendiente: despliegue, correo SMTP, respaldo, manual y capacitación (Fase 7). Cada requerimiento tiene componente, caso de uso y prueba asignados (§18). Las decisiones que dependen del cliente están aisladas en §19.
+Transversal hecho: identidad visual completa (perfil incluido), acceso en español, roles y políticas, bitácora visible, cache, tasa BCV automática programada, exportación Excel y PDF, importación del histórico, seeders de demostración (septiembre real, agosto sintético, metas, usuarios por rol). Transversal pendiente: despliegue, correo SMTP, respaldo, manual y capacitación (Fase 7). Cada requerimiento tiene componente, caso de uso y prueba asignados (§18). Las decisiones que dependen del cliente están aisladas en §19.

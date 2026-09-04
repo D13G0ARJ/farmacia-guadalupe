@@ -264,6 +264,65 @@ with sync_playwright() as p:
             expect(page.locator("section[aria-labelledby='chart-g2-title'] [x-ref='canvas'] svg")).to_be_visible(timeout=20000)
     step("gráficas: un mes vacío muestra el estado vacío y vuelve a dibujar al cambiar de mes", charts_empty_month)
 
+    # ---------- 3b. Fase 6: Tasa/Año en gráficas, pantalla Año y reporte PDF ----------
+    def charts_rate_and_year_tabs():
+        page.get_by_role("tab", name="Tasa").click()
+        expect(page.get_by_role("tab", name="Tasa")).to_have_attribute("aria-selected", "true", timeout=10000)
+        expect(page.get_by_text("Tasa BCV frente a la venta en dólares")).to_be_visible()
+        expect(page.locator("section[aria-labelledby='chart-g10-title'] [x-ref='canvas'] svg")).to_be_visible(timeout=15000)
+        shot(page, "05d-graficas-tasa")
+        page.get_by_role("tab", name="Año").click()
+        expect(page.get_by_role("tab", name="Año")).to_have_attribute("aria-selected", "true", timeout=10000)
+        expect(page.get_by_role("heading", name="Venta en dólares por mes")).to_be_visible()
+        expect(page.get_by_text("2025 frente a 2024")).to_be_visible()
+        expect(page.locator("section[aria-labelledby='chart-g11-title'] [x-ref='canvas'] svg")).to_be_visible(timeout=15000)
+        page.select_option("#annual-indicator", "transactions")
+        expect(page.get_by_role("heading", name="Transacciones por mes")).to_be_visible(timeout=15000)
+        assert "indicador=transactions" in page.url, page.url
+        shot(page, "05e-graficas-anio")
+        page.get_by_role("tab", name="Ventas").click()
+        expect(page.get_by_role("tab", name="Ventas")).to_have_attribute("aria-selected", "true", timeout=10000)
+    step("gráficas: pestañas Tasa (G10) y Año (G11) con selector de indicador en la URL", charts_rate_and_year_tabs)
+
+    def annual_page():
+        page.click("aside a[href$='/anio']")
+        page.wait_for_load_state("networkidle")
+        expect(page.get_by_role("heading", name="Año 2025")).to_be_visible()
+        expect(page.get_by_text(re.compile(r"\d+ meses con datos"))).to_be_visible()
+        expect(page.get_by_text("Venta en bolívares", exact=True)).to_be_visible()
+        expect(page.get_by_text("Bs 3.012.771")).to_be_visible()
+        expect(page.get_by_text("$ 18.611")).to_be_visible()
+        cell = page.get_by_text("$ 18.611")
+        assert "vs mes anterior" in (cell.get_attribute("title") or ""), cell.get_attribute("title")
+        shot(page, "05f-anio")
+        with page.expect_download(timeout=20000) as dl:
+            page.get_by_role("link", name="Exportar a Excel").click()
+        assert dl.value.suggested_filename == "indicadores-anual-2025.xlsx", dl.value.suggested_filename
+        page.get_by_role("button", name="Año anterior").click()
+        expect(page.get_by_text("Aún no hay meses cargados en 2024.")).to_be_visible(timeout=15000)
+        assert "anio=2024" in page.url, page.url
+        page.get_by_role("button", name="Año siguiente").click()
+        expect(page.get_by_role("heading", name="Año 2025")).to_be_visible(timeout=15000)
+    step("año: tabla del Excel con 12 meses, columna Año, variaciones al pasar el cursor, exportación y navegación", annual_page)
+
+    def pdf_report():
+        page.goto(f"{BASE}/dashboard", wait_until="networkidle")
+        expect(page.locator("section[aria-labelledby='chart-g2-title'] [x-ref='canvas'] svg")).to_be_visible(timeout=20000)
+        with page.expect_response(lambda r: r.url.endswith("/graficas") and r.request.method == "POST", timeout=20000) as resp:
+            with page.expect_download(timeout=30000) as dl:
+                page.get_by_role("button", name="Descargar PDF").click()
+        assert resp.value.status == 200 and resp.value.json()["stored"] >= 2, resp.value.text()
+        d = dl.value
+        path = os.path.join(SHOTS, d.suggested_filename)
+        d.save_as(path)
+        assert d.suggested_filename == "reporte-2025-09.pdf", d.suggested_filename
+        with open(path, "rb") as fh:
+            head = fh.read(4)
+        assert head == b"%PDF", head
+        assert os.path.getsize(path) > 20000, os.path.getsize(path)
+        expect(page.get_by_role("button", name="Descargar PDF")).to_be_enabled(timeout=10000)
+    step("panel: 'Descargar PDF' envía las gráficas en pantalla y descarga reporte-2025-09.pdf", pdf_report)
+
     # ---------- 4. Mes: calendario y cuadro ----------
     def month_page():
         page.click("aside a[href$='/mes']")
@@ -624,6 +683,35 @@ with sync_playwright() as p:
     step("el usuario nuevo entra con su rol; al desactivarlo pierde la sesión y no puede volver a entrar", new_user_login_and_deactivation)
 
     # ---------- 6. Móvil ----------
+    # ---------- 5c. Fase 6: importador ----------
+    def importer():
+        page.goto(f"{BASE}/importar", wait_until="networkidle")
+        expect(page.get_by_role("heading", name="Importar meses anteriores")).to_be_visible()
+        expect(page.get_by_text("Arrastra aquí los archivos")).to_be_visible()
+        fixture = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "Fixtures", "cuadro-septiembre-2025.xlsx"))
+        page.set_input_files("#import-files", fixture)
+        expect(page.get_by_text("cuadro-septiembre-2025.xlsx")).to_be_visible(timeout=15000)
+        shot(page, "18-importar-archivos")
+        page.get_by_role("button", name="Analizar archivo").click()
+        expect(page.get_by_text("Septiembre 2025 · 30 filas")).to_be_visible(timeout=30000)
+        # Septiembre ya existe: la anomalía alta exige decidir antes de poder importar
+        expect(page.get_by_role("button", name="Falta 1 anomalía por resolver")).to_be_disabled()
+        expect(page.get_by_text("Vista previa (30 días")).to_be_visible()
+        shot(page, "19-importar-revision")
+        page.get_by_label(re.compile(r"^Decisión: ")).first.select_option("replace")
+        expect(page.get_by_role("button", name="Importar 1 mes")).to_be_enabled(timeout=15000)
+        page.get_by_role("button", name="Importar 1 mes").click()
+        expect(page.get_by_text("Septiembre 2025 importado.")).to_be_visible(timeout=30000)
+        expect(page.get_by_text("30 actualizados")).to_be_visible()
+        expect(page.get_by_text("Mes importado.")).to_be_visible()
+        shot(page, "20-importar-confirmacion")
+        page.get_by_role("link", name="Ver el mes").click()
+        expect(page.get_by_role("heading", name="Septiembre 2025")).to_be_visible(timeout=20000)
+        expect(page.get_by_text("Bs 3.012.770,86")).to_be_visible()
+        page.goto(f"{BASE}/administracion?tab=bitacora", wait_until="networkidle")
+        expect(page.get_by_text(re.compile(r"importó el mes septiembre 2025 desde el archivo cuadro-septiembre-2025\.xlsx \(30 días\)")).first).to_be_visible(timeout=15000)
+    step("importar: subir el cuadro real, revisar anomalías, decidir 'reemplazar', confirmar y verlo en bitácora", importer)
+
     def mobile():
         m = browser.new_context(viewport={"width": 360, "height": 740}, locale="es-VE", device_scale_factor=2)
         mp = m.new_page()

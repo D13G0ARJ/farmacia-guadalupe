@@ -4,6 +4,16 @@
             <h1 class="text-title text-brand-800">{{ $view->period->label() }}</h1>
             <p class="text-ink-600">{{ $branch?->name ?? 'Todas las sedes' }}</p>
         </div>
+        @unless ($dashboard->isEmpty())
+            {{-- Reporte PDF (UC-14): el navegador envía primero las gráficas en pantalla; si no puede, el PDF sale sin ellas --}}
+            <div x-data="{ busy: false }">
+                <x-btn variant="secondary" icon="download" data-images-url="{{ route('exports.charts', ['period' => $view->period->key()]) }}" data-pdf-url="{{ route('exports.pdf', ['period' => $view->period->key()]) }}"
+                       x-on:click="busy = true; window.downloadReport($el.dataset.imagesUrl, $el.dataset.pdfUrl).finally(() => setTimeout(() => busy = false, 3000))" x-bind:disabled="busy">
+                    <span x-show="! busy">Descargar PDF</span>
+                    <span x-cloak x-show="busy">Generando…</span>
+                </x-btn>
+            </div>
+        @endunless
     </div>
 
     @if ($dashboard->isEmpty())

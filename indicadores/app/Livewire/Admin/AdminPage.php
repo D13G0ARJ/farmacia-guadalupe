@@ -19,6 +19,7 @@ use App\Models\Branch;
 use App\Models\DailyRecord;
 use App\Models\ExchangeRate;
 use App\Models\Goal;
+use App\Models\ImportBatch;
 use App\Models\PeriodEvent;
 use App\Models\User;
 use App\Support\ActivityDescriber;
@@ -48,6 +49,7 @@ class AdminPage extends Component
         'meses' => 'Cierres de mes',
         'usuarios' => 'Usuarios',
         'sedes' => 'Sedes',
+        'importaciones' => 'Importaciones',
         'parametros' => 'Parámetros',
     ];
 
@@ -297,6 +299,7 @@ class AdminPage extends Component
             'meses' => PeriodEvent::class,
             'usuarios' => User::class,
             'sedes' => Branch::class,
+            'importaciones' => ImportBatch::class,
             default => null,
         };
         if ($type !== null) {

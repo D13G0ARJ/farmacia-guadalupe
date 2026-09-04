@@ -22,7 +22,9 @@ use InvalidArgumentException;
  */
 final class ChartSpecBuilder
 {
-    public const IDS = ['g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7', 'g8', 'g9'];
+    public const IDS = ['g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7', 'g8', 'g9', 'g10'];
+
+    private const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
     private const ACCENT = '#6C4FD8';
 
@@ -80,8 +82,54 @@ final class ChartSpecBuilder
             'g5' => $this->cartesian($id, $title, $subtitle, $slug, $period, $byDate, [[Indicator::UnitsPerTransaction, 'line', 0], [Indicator::AvgTicketUsd, 'line', 1]]),
             'g6' => $this->cartesian($id, $title, $subtitle, $slug, $period, $byDate, [[Indicator::TransactionsPerShift, 'line', 0]]),
             'g7' => $this->cartesian($id, $title, $subtitle, $slug, $period, $byDate, [[Indicator::InventoryUnits, 'bar', 0], [Indicator::InventoryValueUsd, 'line', 1]]),
+            'g10' => $this->cartesian($id, $title, $subtitle, $slug, $period, $byDate, [[Indicator::SalesUsd, 'bar', 0], [Indicator::AvgRate, 'line', 1]]),
             default => $this->heatmap($id, $title, $subtitle, $slug, $period, $byDate),
         };
+    }
+
+    /**
+     * G11: comparativa interanual de un indicador, barras agrupadas por mes (§14).
+     *
+     * @param  array<int, BigDecimal|null>  $current  1..12 del año
+     * @param  array<int, BigDecimal|null>  $previous  1..12 del año anterior
+     */
+    public function annualComparison(int $year, array $current, array $previous, Indicator $indicator): ChartSpec
+    {
+        $title = $indicator->label().' por mes';
+        $subtitle = "{$year} frente a ".($year - 1);
+        $slug = 'g11-'.$indicator->value.'-'.$year;
+
+        $hasCurrent = array_filter($current, fn (?BigDecimal $v) => $v !== null) !== [];
+        $hasPrevious = array_filter($previous, fn (?BigDecimal $v) => $v !== null) !== [];
+        if (! $hasCurrent && ! $hasPrevious) {
+            return $this->emptySpec('g11', $title, $subtitle, $slug, "Aún no hay meses cargados en {$year} ni en ".($year - 1).'.');
+        }
+
+        $format = fn (?BigDecimal $v): string => $this->format($indicator, $v);
+        $dataCurrent = [];
+        $dataPrevious = [];
+        $tooltips = [];
+        $rows = [];
+        foreach (self::MONTHS as $i => $abbr) {
+            $m = $i + 1;
+            $dataCurrent[] = ($current[$m] ?? null)?->toFloat();
+            $dataPrevious[] = ($previous[$m] ?? null)?->toFloat();
+            $tooltips[] = $abbr.' · '.$year.': '.$format($current[$m] ?? null).' · '.($year - 1).': '.$format($previous[$m] ?? null);
+            $rows[] = [$abbr, $format($current[$m] ?? null), $format($previous[$m] ?? null)];
+        }
+
+        $option = [
+            'legend' => ['data' => [(string) $year, (string) ($year - 1)]],
+            'grid' => ['left' => 8, 'right' => 8, 'top' => 40, 'bottom' => 8, 'containLabel' => true],
+            'xAxis' => ['type' => 'category', 'data' => self::MONTHS],
+            'yAxis' => [['type' => 'value']],
+            'series' => [
+                ['name' => (string) $year, 'type' => 'bar', 'data' => $dataCurrent, 'color' => self::BRAND, 'barGap' => '10%'],
+                ['name' => (string) ($year - 1), 'type' => 'bar', 'data' => $dataPrevious, 'color' => self::INK400],
+            ],
+        ];
+
+        return new ChartSpec('g11', $title, $subtitle, $slug, $option, ['tooltips' => $tooltips, 'axes' => [$this->axisMeta($indicator)], 'trigger' => 'axis'], ['head' => ['Mes', (string) $year, (string) ($year - 1)], 'rows' => $rows], false);
     }
 
     /**
@@ -153,12 +201,14 @@ final class ChartSpecBuilder
             'g6' => 'Transacciones por jornada',
             'g7' => 'Inventario: unidades y valuación',
             'g8' => 'Mapa de calor semanal',
+            'g10' => 'Tasa BCV frente a la venta en dólares',
             default => 'Acumulado frente a la meta',
         };
         $suffix = match ($id) {
             'g2' => isset($goal?->dailyExpected['sales_usd']) ? ' · Meta diaria en morado' : ' · Sin meta definida',
             'g7' => ' · Los sábados no se cuenta',
             'g8' => ' · Venta en dólares por día de la semana',
+            'g10' => ' · Venta en barras, tasa en línea',
             'g9' => ' · Venta en dólares'.(($goal?->cumulative['method'] ?? null) === 'weekday' ? ' · proyección por patrón semanal' : (($goal?->cumulative['method'] ?? null) === 'linear' ? ' · proyección lineal' : '')),
             default => '',
         };

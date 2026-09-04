@@ -19,11 +19,11 @@
             ['title' => 'Análisis', 'items' => [
                 ['label' => 'Gráficas', 'icon' => 'chart', 'route' => 'charts', 'active' => request()->routeIs('charts')],
                 ['label' => 'Metas', 'icon' => 'target', 'route' => 'goals', 'active' => request()->routeIs('goals'), 'hidden' => ! $user->can('goals.view')],
-                ['label' => 'Año', 'icon' => 'year', 'soon' => true],
+                ['label' => 'Año', 'icon' => 'year', 'route' => 'annual', 'active' => request()->routeIs('annual')],
             ]],
             ['title' => 'Configuración', 'items' => [
                 ['label' => 'Tasa BCV', 'icon' => 'rate', 'route' => 'rates', 'active' => request()->routeIs('rates'), 'hidden' => ! $user->can('rates.manage')],
-                ['label' => 'Importar', 'icon' => 'upload', 'soon' => true, 'hidden' => ! $user->can('imports.run')],
+                ['label' => 'Importar', 'icon' => 'upload', 'route' => 'imports', 'active' => request()->routeIs('imports'), 'hidden' => ! $user->can('imports.run')],
                 ['label' => 'Administración', 'icon' => 'settings', 'route' => 'admin', 'active' => request()->routeIs('admin'), 'hidden' => ! $user->can('admin.manage')],
             ]],
         ];

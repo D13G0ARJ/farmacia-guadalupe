@@ -6,7 +6,7 @@
         </div>
     </div>
 
-    {{-- Pestañas por familia (§13.7). Las familias futuras se ven, pero no se pueden abrir. --}}
+    {{-- Pestañas por familia (§13.7) --}}
     <div class="flex gap-1 overflow-x-auto border-b border-line" role="tablist" aria-label="Familias de gráficas">
         @foreach ($tabs as $key => $family)
             <button type="button" role="tab" id="tab-{{ $key }}" wire:click="$set('tab', '{{ $key }}')"
@@ -15,13 +15,23 @@
                 {{ $family['label'] }}
             </button>
         @endforeach
-        @foreach ($soon as $key => $label)
-            <span class="-mb-px whitespace-nowrap border-b-2 border-transparent px-4 py-2.5 text-body text-ink-400" aria-disabled="true" title="Próximamente">{{ $label }}</span>
-        @endforeach
     </div>
 
+    @if ($tab === 'anio')
+        {{-- G11: el indicador se elige aquí; el año es el del período de la barra de contexto --}}
+        <x-field label="Indicador" for="annual-indicator" class="max-w-xs" help="Cada barra es un mes; el año anterior en gris.">
+            <select id="annual-indicator" wire:model.live="annualIndicator" class="block w-full rounded-control border-line bg-surface px-3 py-2.5 text-body focus:border-brand-500 focus:ring-2 focus:ring-brand-500">
+                @foreach ($annualIndicators as $ind)
+                    <option value="{{ $ind->value }}">{{ $ind->label() }}</option>
+                @endforeach
+            </select>
+        </x-field>
+    @endif
+
+    {{-- Una sola gráfica en la pestaña (Inventario, Tasa, Año): ocupa todo el ancho --}}
+    @php $columns = count($specs) === 1 ? '' : 'lg:grid-cols-2 lg:[&>section:nth-child(2n)]:border-l lg:[&>section:nth-child(n+3)]:border-t lg:[&>section:nth-child(2)]:border-t-0'; @endphp
     <div id="panel-{{ $tab }}" role="tabpanel" aria-labelledby="tab-{{ $tab }}" wire:loading.class="opacity-60" wire:target="tab"
-         class="grid rounded-card border border-line bg-surface transition-opacity lg:grid-cols-2 [&>section+section]:border-t [&>section+section]:border-line lg:[&>section:nth-child(2n)]:border-l lg:[&>section:nth-child(n+3)]:border-t lg:[&>section:nth-child(2)]:border-t-0">
+         class="grid rounded-card border border-line bg-surface transition-opacity [&>section+section]:border-t [&>section+section]:border-line {{ $columns }}">
         @foreach ($specs as $id => $spec)
             <x-chart-panel :spec="$spec" wire:key="chart-{{ $tab }}-{{ $id }}" />
         @endforeach

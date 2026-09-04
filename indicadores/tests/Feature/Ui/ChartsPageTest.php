@@ -11,6 +11,7 @@ use App\Support\CurrencyContext;
 use App\Support\PeriodContext;
 use Carbon\CarbonImmutable;
 use Database\Seeders\DatabaseSeeder;
+use Database\Seeders\DemoHistorySeeder;
 use Database\Seeders\DemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -39,7 +40,8 @@ it('abre en Ventas con sus tres gráficas y cambia de pestaña con una sola peti
         ->assertSee('Venta en bolívares por día')
         ->assertSee('Mapa de calor semanal')
         ->assertSee('Tasa')
-        ->assertSee('Año');
+        ->assertSee('Año')
+        ->assertDontSee('Próximamente');
 
     expect(array_keys($component->get('specs')))->toBe(['g2', 'g1', 'g8']);
 
@@ -52,6 +54,36 @@ it('abre en Ventas con sus tres gráficas y cambia de pestaña con una sola peti
 
     $component->set('tab', 'inventario');
     expect(array_keys($component->get('specs')))->toBe(['g7']);
+});
+
+it('las pestañas Tasa y Año traen G10 y G11, y el indicador de G11 se elige', function (): void {
+    $this->seed([DatabaseSeeder::class, DemoSeeder::class, DemoHistorySeeder::class]);
+    app(PeriodContext::class)->set(Period::of('2025-09'));
+    $admin = User::query()->where('email', 'admin@guadalupe.local')->firstOrFail();
+
+    $component = Livewire::actingAs($admin)->test(ChartsPage::class)->set('tab', 'tasa')
+        ->assertSee('Tasa BCV frente a la venta en dólares');
+    expect(array_keys($component->get('specs')))->toBe(['g10'])
+        ->and($component->get('specs')['g10']['option']['series'])->toHaveCount(2)
+        ->and($component->get('specs')['g10']['meta']['tooltips'][0])->toContain('$ 614', 'tasa 148,44');
+
+    $component->set('tab', 'anio')
+        ->assertSee('Venta en dólares por mes')
+        ->assertSee('2025 frente a 2024')
+        ->assertSee('Indicador');
+    $spec = $component->get('specs')['g11'];
+    expect(array_keys($component->get('specs')))->toBe(['g11'])
+        ->and($spec['option']['xAxis']['data'])->toHaveCount(12)
+        ->and($spec['option']['series'][0]['data'][8])->toBeGreaterThan(18000.0) // septiembre
+        ->and($spec['option']['series'][0]['data'][7])->toBeGreaterThan(18000.0) // agosto sintético
+        ->and($spec['option']['series'][0]['data'][0])->toBeNull()
+        ->and($spec['option']['series'][1]['data'][8])->toBeNull()
+        ->and($spec['meta']['tooltips'][8])->toContain('sep · 2025: $ 18.611 · 2024: —');
+
+    $component->set('annualIndicator', 'transactions')->assertSee('Transacciones por mes');
+    expect($component->get('specs')['g11']['option']['series'][0]['data'][8])->toBe(3853.0);
+
+    $component->set('annualIndicator', 'inexistente')->assertSet('annualIndicator', 'sales_usd');
 });
 
 it('una pestaña inválida en la URL vuelve a Ventas', function (): void {
