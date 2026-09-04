@@ -11,6 +11,7 @@ use App\Domain\Shared\Formatter;
 use App\Domain\Shared\Period;
 use App\Enums\Currency;
 use Brick\Math\BigDecimal;
+use Carbon\CarbonImmutable;
 use InvalidArgumentException;
 
 /**
@@ -81,6 +82,63 @@ final class ChartSpecBuilder
             'g7' => $this->cartesian($id, $title, $subtitle, $slug, $period, $byDate, [[Indicator::InventoryUnits, 'bar', 0], [Indicator::InventoryValueUsd, 'line', 1]]),
             default => $this->heatmap($id, $title, $subtitle, $slug, $period, $byDate),
         };
+    }
+
+    /**
+     * Tasa BCV del mes (§9.4): línea con un punto por día, origen en el tooltip.
+     *
+     * @param  list<array{date: CarbonImmutable, rate: float|null, source: string|null}>  $points
+     */
+    public function rateHistory(array $points, Period $period): ChartSpec
+    {
+        $title = 'Tasa BCV del mes';
+        $subtitle = $period->label().' · Bs por dólar';
+        $slug = 'tasa-'.$period->key();
+
+        $loaded = array_filter($points, fn (array $p) => $p['rate'] !== null);
+        if ($loaded === []) {
+            return new ChartSpec('rate', $title, $subtitle, $slug, [], ['tooltips' => [], 'axes' => [], 'trigger' => 'axis'], ['head' => [], 'rows' => []], true, 'Aún no hay tasas en '.mb_strtolower($period->label()).'.');
+        }
+
+        $categories = [];
+        $data = [];
+        $tooltips = [];
+        $rows = [];
+        foreach ($points as $p) {
+            $categories[] = $this->formatter->weekday($p['date']).' '.$p['date']->day;
+            $data[] = $p['rate'];
+            $label = $this->formatter->date($p['date'], 'weekday');
+            $value = $p['rate'] === null ? '—' : $this->formatter->number($p['rate'], 2);
+            $origin = match ($p['source']) {
+                'bcv' => 'BCV',
+                'manual' => 'Manual',
+                'carried' => 'Arrastrada',
+                default => 'Sin tasa',
+            };
+            $tooltips[] = $label.' · '.$value.' Bs/$ · '.$origin;
+            if ($p['rate'] !== null) {
+                $rows[] = [$label, $value, $origin];
+            }
+        }
+
+        $option = [
+            'legend' => ['show' => false],
+            'grid' => ['left' => 8, 'right' => 8, 'top' => 16, 'bottom' => 8, 'containLabel' => true],
+            'xAxis' => ['type' => 'category', 'data' => $categories, 'axisLabel' => ['interval' => 'auto']],
+            'yAxis' => [['type' => 'value', 'scale' => true]],
+            'series' => [[
+                'name' => 'Tasa BCV',
+                'type' => 'line',
+                'data' => $data,
+                'color' => self::BRAND,
+                'symbol' => 'circle',
+                'symbolSize' => 5,
+                'connectNulls' => true,
+                'areaStyle' => ['color' => 'rgba(29,111,229,0.08)'],
+            ]],
+        ];
+
+        return new ChartSpec('rate', $title, $subtitle, $slug, $option, ['tooltips' => $tooltips, 'axes' => [['format' => 'num', 'precision' => 2]], 'trigger' => 'axis'], ['head' => ['Día', 'Tasa', 'Origen'], 'rows' => $rows], false);
     }
 
     /** @return array{0: string, 1: string} título y subtítulo */

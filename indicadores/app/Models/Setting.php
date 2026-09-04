@@ -58,4 +58,10 @@ class Setting extends Model
     {
         return static::query()->updateOrCreate(['key' => $key, 'branch_id' => $branchId], ['value' => $value]);
     }
+
+    /** Borra la fila: la lectura vuelve al valor global o al defecto. */
+    public static function forget(string $key, ?int $branchId = null): void
+    {
+        static::query()->where('key', $key)->where('branch_id', $branchId)->delete();
+    }
 }

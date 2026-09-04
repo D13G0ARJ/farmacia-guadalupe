@@ -22,9 +22,9 @@
                 ['label' => 'Año', 'icon' => 'year', 'soon' => true],
             ]],
             ['title' => 'Configuración', 'items' => [
-                ['label' => 'Tasa BCV', 'icon' => 'rate', 'soon' => true, 'hidden' => ! $user->can('rates.manage')],
+                ['label' => 'Tasa BCV', 'icon' => 'rate', 'route' => 'rates', 'active' => request()->routeIs('rates'), 'hidden' => ! $user->can('rates.manage')],
                 ['label' => 'Importar', 'icon' => 'upload', 'soon' => true, 'hidden' => ! $user->can('imports.run')],
-                ['label' => 'Administración', 'icon' => 'settings', 'soon' => true, 'hidden' => ! $user->can('admin.manage')],
+                ['label' => 'Administración', 'icon' => 'settings', 'route' => 'admin', 'active' => request()->routeIs('admin'), 'hidden' => ! $user->can('admin.manage')],
             ]],
         ];
     @endphp

@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\ExportController;
+use App\Livewire\Admin\AdminPage;
 use App\Livewire\Charts\ChartsPage;
 use App\Livewire\Dashboard\Overview;
 use App\Livewire\Goals\GoalsManager;
+use App\Livewire\Rates\RatesPage;
 use App\Livewire\Records\DailyForm;
 use App\Livewire\Records\MonthOverview;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
 
-Route::middleware(['auth', 'verified'])->group(function (): void {
+Route::middleware(['auth', 'verified', 'active'])->group(function (): void {
     Route::get('dashboard', Overview::class)->name('dashboard');
+    Route::get('tasas', RatesPage::class)->name('rates');
+    Route::get('administracion', AdminPage::class)->name('admin');
     Route::get('cargar/{date?}', DailyForm::class)->name('records.create');
     Route::get('mes/{period?}', MonthOverview::class)->name('month');
     Route::get('graficas', ChartsPage::class)->name('charts');

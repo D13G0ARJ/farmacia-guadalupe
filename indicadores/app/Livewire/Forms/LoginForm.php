@@ -38,6 +38,15 @@ class LoginForm extends Form
             ]);
         }
 
+        // Un acceso desactivado desde Administración no entra aunque la contraseña sea correcta (UC-17).
+        if (! Auth::user()?->is_active) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'form.email' => 'Tu acceso está desactivado. Habla con el administrador.',
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

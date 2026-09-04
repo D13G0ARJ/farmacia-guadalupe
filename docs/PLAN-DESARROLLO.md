@@ -1205,13 +1205,13 @@ Orden de construcción pensado para tener algo usable lo antes posible y para qu
 - `CloseMonth`/`ReopenMonth`, candados en UI, permisos por rol, bitácora visible.
 - Pruebas funcionales de UC-02…UC-09, UC-11, UC-12. Despliegue a producción.
 
-### Fase 5 — Administración y tasa BCV (día 15–17) — **PENDIENTE** (siguiente)
+### Fase 5 — Administración y tasa BCV (día 15–17) — **IMPLEMENTADA** (ver §20, iteración 15)
 - **Administración (UC-17)**: usuarios (crear, desactivar, rol, sede, restablecer contraseña), sedes (nombre, jornadas por defecto, días de inventario) y parámetros (`settings`: umbrales de advertencia, ventana de edición del operador, crecimiento sugerido de metas). Sin esto el cliente no puede dar acceso a su gente.
 - **Tasa BCV (UC-16, §9.4)**: historial de tasas con origen, corrección manual, consulta forzada al BCV y recálculo del mes con vista previa del efecto.
 - Perfil de usuario con la identidad y en español (hoy sigue con el diseño de Breeze).
 - Menú: "Tasa BCV" y "Administración" dejan de estar en "Próximamente".
 
-### Fase 6 — Histórico, año y PDF (día 18–23) — **PENDIENTE** (era "Ampliación A")
+### Fase 6 — Histórico, año y PDF (día 18–23) — **PENDIENTE** (siguiente; era "Ampliación A")
 - **Importador (UC-15, §10)** con asistente de tres pasos y pruebas contra el archivo real; alimenta la comparación interanual, el patrón semanal y las sugerencias de meta.
 - **Año (UC-13)**: tabla anual del Excel (§2.4), G11 comparativa interanual, G10 tasa vs venta, pestañas "Tasa" y "Año" en Gráficas y hoja "Anual" en la exportación (§11.1).
 - **Reporte PDF mensual (§11.2)** con cuadro, KPI y gráficas; envío programado opcional.
@@ -1581,6 +1581,32 @@ Hallazgos del code review y del recorrido en navegador (corregidos):
 
 Pendiente (fuera del MVP): 2FA, tabla de metas apilada en móvil, perfil de usuario con la identidad, Ampliaciones A y B (§17).
 
+### Iteración 15 — Implementación de la Fase 5 (administración, tasa BCV y perfil) con code review y pruebas en navegador
+
+Entregado en `indicadores/`:
+
+- **Administración (UC-17, §15.1)** en `/administracion`, solo `admin.manage`, con cuatro pestañas. **Usuarios**: crear y editar (nombre, correo, rol con explicación en palabras del negocio, sedes), contraseña inicial sugerida y legible (sin 0/O ni 1/l) o escrita a mano, credenciales mostradas una sola vez con botón de copiar, cambiar contraseña, desactivar y reactivar. Reglas: nadie se desactiva a sí mismo, nunca queda el sistema sin administrador activo, los usuarios nacen verificados (no dependen del correo). Un usuario desactivado no entra aunque su contraseña sea correcta y, si tenía sesión abierta, la pierde en la siguiente petición con la explicación en pantalla. **Sedes**: nombre, código, razón social, jornadas por defecto, días con conteo de inventario, umbral propio de venta, activa o inactiva (siempre queda una activa). **Parámetros**: umbrales de advertencia, ventana del operador, crecimiento sugerido, umbrales de metas, moneda de metas, margen bruto y nombre del sistema, cada uno con su ayuda; solo se guarda lo que cambia. **Bitácora**: quién hizo qué, a qué y con qué cambios, en frases ("Ana editó el día 03/09/2025", "Luis cerró el mes septiembre 2025"), con filtros por familia y por persona y carga progresiva.
+- **Tasa BCV (UC-16, §9.4)** en `/tasas` para `rates.manage`: tabla del mes con origen (BCV, Manual, Arrastrada del vie 05/09), variación diaria y quién la fijó; edición en línea con Enter y Esc; gráfica del mes; estado del proveedor (última consulta, último éxito, último error) que ahora persiste; "Consultar ahora" (hoy y el siguiente día hábil) y "Recalcular el mes" con confirmación que anticipa cuántos días cambiarían (RN-06). Aviso permanente cuando hay días cargados con una tasa distinta a la de la tabla.
+- **Perfil** con la identidad y en español: el usuario cambia su nombre y su contraseña; el correo y el rol los gestiona Administración (evita quedarse fuera por una verificación pendiente). Se retiró el borrado de la propia cuenta.
+- **Menú**: "Tasa BCV" y "Administración" dejan de estar en "Próximamente"; solo aparecen a quien tiene el permiso.
+- **Demo**: `DemoUsersSeeder` con un usuario por rol (operador, supervisión, dirección; contraseña `password`).
+- **Pruebas**: 228 Pest (acciones de administración y sus reglas; pantalla de administración con creación, validación, credenciales, sedes, parámetros y bitácora; pantalla de tasas con edición en línea, proveedor simulado y recálculo; usuario desactivado; perfil), Larastan nivel 6 en cero, Pint limpio. Recorrido Playwright ampliado a 35 pasos (seis nuevos: usuarios, contraseñas y activación, sedes y parámetros, bitácora, tasas, perfil, y un segundo navegador que entra con el usuario nuevo y pierde la sesión al desactivarlo).
+
+Desvíos respecto al plan y su motivo:
+
+| # | Planificado | Real | Motivo |
+|---|---|---|---|
+| 15.1 | El usuario cambia su correo desde el perfil | Solo Administración cambia correos | Cambiar el correo obliga a verificarlo de nuevo; sin SMTP configurado dejaría al usuario fuera |
+| 15.2 | Notificación al administrador cuando el BCV se desvía más del umbral | Se registra en el estado del proveedor y en la bitácora de la tasa; el correo llega con la Fase 7 (SMTP) | No hay correo configurado todavía |
+
+Hallazgos del code review y del recorrido en navegador (corregidos):
+
+| # | Hallazgo | Corrección |
+|---|---|---|
+| 15.3 | El middleware de acceso activo cerraba la sesión de usuarios creados por factory (atributo ausente en memoria) | Comprueba `false` explícito y la factory declara `is_active` |
+| 15.4 | Comillas dobles dentro de una expresión Blade en un atributo de componente rompían la compilación de la pantalla de tasas | La edición en línea recibe solo la fecha y el componente busca la tasa vigente |
+| 15.5 | Limpiar el último error del proveedor intentaba guardar `null` en una columna obligatoria | `Setting::forget()` borra la fila y la lectura vuelve al defecto |
+
 ### Estado final
 
 El plan cubre las 14 columnas, las 163 fórmulas, los 7 gráficos, la tabla anual, los 13 hechos verificados y los 3 pedidos del cliente (digitalizar, estadística y gráficas, KPIs con metas), más la preparación multi-sede. El estado de construcción por caso de uso está en §21.
@@ -1608,8 +1634,8 @@ Qué hay construido y probado (209 pruebas Pest, Larastan nivel 6, recorrido Pla
 | 13 | Comparativa anual | **Pendiente** | Tabla anual, G11, hoja Anual del export (Fase 6) |
 | 14 | Exportar | Hecho Excel del mes | Hoja Anual y PDF mensual (Fase 6) |
 | 15 | Importar histórico | **Pendiente** | Asistente completo (Fase 6) |
-| 16 | Gestionar tasa BCV | Parcial: consulta automática, arrastre, manual en el formulario | Pantalla de historial y corrección (Fase 5) |
-| 17 | Administración | **Pendiente**: solo el admin sembrado | Usuarios, sedes y parámetros (Fase 5) |
+| 16 | Gestionar tasa BCV | Hecho | Correo al administrador cuando el BCV se desvía (Fase 7, con SMTP) |
+| 17 | Administración | Hecho | — |
 | 18 | Consolidado multi-sede | Preparado en el modelo | Selector y consolidado en UI (Fase 8, condicionada) |
 
-Transversal hecho: identidad visual completa (menos el perfil de usuario), acceso en español, roles y políticas, bitácora, cache, tasa BCV automática programada, exportación Excel, seeders de demostración (septiembre real, agosto sintético, metas). Transversal pendiente: despliegue, correo SMTP, respaldo, manual y capacitación (Fase 7). Cada requerimiento tiene componente, caso de uso y prueba asignados (§18). Las decisiones que dependen del cliente están aisladas en §19.
+Transversal hecho: identidad visual completa (perfil incluido), acceso en español, roles y políticas, bitácora visible, cache, tasa BCV automática programada, exportación Excel, seeders de demostración (septiembre real, agosto sintético, metas, usuarios por rol). Transversal pendiente: despliegue, correo SMTP, respaldo, manual y capacitación (Fase 7). Cada requerimiento tiene componente, caso de uso y prueba asignados (§18). Las decisiones que dependen del cliente están aisladas en §19.

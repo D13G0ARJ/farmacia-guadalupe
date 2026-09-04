@@ -22,6 +22,25 @@ final class RecalculateMonthRates
         private readonly PeriodSummaryCache $cache,
     ) {}
 
+    /** Cuántos registros del mes cambiarían de tasa si se recalcula (vista previa para la confirmación, UC-16). */
+    public function preview(int $branchId, Period $period): int
+    {
+        $pending = 0;
+        $records = DailyRecord::query()->forBranch($branchId)->forPeriod($period)->orderBy('date')->get();
+
+        foreach ($records as $record) {
+            $resolution = $this->resolver->forDate($record->date);
+            if ($resolution === null) {
+                continue;
+            }
+            if (! $resolution->rate->isEqualTo($record->exchange_rate) || $resolution->source !== $record->exchange_rate_source) {
+                $pending++;
+            }
+        }
+
+        return $pending;
+    }
+
     public function handle(int $branchId, Period $period, User $user): int
     {
         return DB::transaction(function () use ($branchId, $period, $user): int {

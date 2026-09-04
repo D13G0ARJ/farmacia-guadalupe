@@ -27,11 +27,19 @@ final class FetchBcvRate
 
     public function handle(CarbonImmutable $effectiveDate): ?ExchangeRate
     {
+        // Estado del proveedor para la pantalla Tasa BCV (§9.4): última consulta, último éxito, último error.
+        Setting::put('rates_last_attempt_at', CarbonImmutable::now()->toIso8601String());
+
         $quote = $this->provider->fetch();
 
         if ($quote === null || ! $quote->rate->isPositive()) {
+            Setting::put('rates_last_error', 'El proveedor no devolvió una cotización válida ('.CarbonImmutable::now()->format('d/m H:i').').');
+
             return null;
         }
+
+        Setting::put('rates_last_success_at', CarbonImmutable::now()->toIso8601String());
+        Setting::forget('rates_last_error');
 
         $previous = ExchangeRate::query()
             ->where('date', '<', $effectiveDate->toDateString())

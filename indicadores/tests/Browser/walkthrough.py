@@ -41,6 +41,9 @@ os.makedirs(SHOTS, exist_ok=True)
 
 results = []
 
+# El servidor de desarrollo atiende una petición a la vez: las esperas cubren un cálculo de mes en frío.
+expect.set_options(timeout=15000)
+
 
 def step(name, fn):
     started = time.time()
@@ -460,6 +463,165 @@ with sync_playwright() as p:
         assert "cargado" in page.locator(f"a[aria-label*='{heading(1)[1:]}']").get_attribute("aria-label")
         shot(page, "12f-dia-restaurado")
     step("formulario: borrar día con confirmación y 'Deshacer' desde el aviso lo restaura", delete_day_and_undo)
+
+    # ---------- 5g. Fase 5: administración, tasa BCV y perfil ----------
+    NEW_EMAIL = f"prueba-{int(time.time())}@guadalupe.local"
+
+    def admin_users():
+        page.goto(f"{BASE}/administracion", wait_until="networkidle")
+        expect(page.get_by_role("heading", name="Administración")).to_be_visible()
+        expect(page.get_by_role("tab", name="Usuarios")).to_have_attribute("aria-selected", "true")
+        page.get_by_role("button", name="Nuevo usuario").click()
+        dialog = page.get_by_role("dialog")
+        expect(dialog.get_by_text("Nuevo usuario")).to_be_visible()
+        # La contraseña inicial viene sugerida y la explicación del rol acompaña al selector
+        assert len(page.input_value("#user-password")) == 10
+        expect(dialog.get_by_text("Carga los días y corrige los recientes")).to_be_visible()
+        dialog.get_by_role("button", name="Crear usuario").click()
+        expect(dialog.get_by_text("Escribe el nombre.")).to_be_visible(timeout=10000)
+        page.fill("#user-name", "Prueba Recorrido")
+        page.fill("#user-email", NEW_EMAIL)
+        page.select_option("#user-role", "supervision")
+        expect(dialog.get_by_text("Además borra días, cierra el mes")).to_be_visible(timeout=10000)
+        page.fill("#user-password", "ClaveTemporal9")
+        dialog.get_by_role("button", name="Crear usuario").click()
+        expect(page.get_by_text("Usuario creado.")).to_be_visible(timeout=10000)
+        expect(page.get_by_text("Entrégale estos datos a Prueba Recorrido")).to_be_visible()
+        expect(page.get_by_test_id("issued-password")).to_have_text("ClaveTemporal9")
+        expect(page.get_by_role("row", name=re.compile("Prueba Recorrido"))).to_contain_text("Supervisión")
+        shot(page, "17-admin-usuario-creado")
+    step("administración: crear usuario con rol explicado, contraseña sugerida y credenciales para entregar", admin_users)
+
+    def admin_toggle_and_password():
+        row = page.get_by_role("row", name=re.compile("Prueba Recorrido"))
+        row.get_by_role("button", name="Desactivar").click()
+        expect(page.get_by_text("Acceso desactivado para Prueba Recorrido.")).to_be_visible(timeout=10000)
+        expect(row).to_contain_text("Desactivado")
+        row.get_by_role("button", name="Activar").click()
+        expect(row).to_contain_text("Activo", timeout=10000)
+        row.get_by_role("button", name="Contraseña").click()
+        dialog = page.get_by_role("dialog")
+        page.fill("#new-password", "OtraClave2025")
+        dialog.get_by_role("button", name="Cambiar contraseña").click()
+        expect(page.get_by_text("Contraseña cambiada para Prueba Recorrido.")).to_be_visible(timeout=10000)
+        expect(page.get_by_test_id("issued-password")).to_have_text("OtraClave2025")
+        # El propio administrador no puede desactivarse: el botón no aparece en su fila
+        me = page.get_by_role("row", name=re.compile(r"\(tú\)"))
+        assert me.get_by_role("button", name="Desactivar").count() == 0
+    step("administración: desactivar, reactivar y cambiar la contraseña de un usuario", admin_toggle_and_password)
+
+    def admin_branches_and_settings():
+        page.get_by_role("tab", name="Sedes").click()
+        # La pestaña anterior también dice "Sede Principal" y tiene botones "Editar": se espera al panel de sedes
+        panel = page.locator("#panel-sedes")
+        expect(panel).to_be_visible()
+        expect(page.locator("#panel-usuarios")).to_have_count(0)
+        panel.get_by_role("button", name="Editar").first.click()
+        dialog = page.get_by_role("dialog")
+        expect(dialog.get_by_text("Editar sede")).to_be_visible()
+        page.fill("#branch-shifts", "4")
+        dialog.get_by_role("button", name="Guardar cambios").click()
+        expect(page.get_by_text("Sede actualizada.")).to_be_visible(timeout=10000)
+        expect(panel.locator("dd", has_text="4").first).to_be_visible()
+        panel.get_by_role("button", name="Editar").first.click()
+        page.fill("#branch-shifts", "3")
+        page.get_by_role("dialog").get_by_role("button", name="Guardar cambios").click()
+        expect(page.get_by_text("Sede actualizada.").first).to_be_visible(timeout=10000)
+
+        page.get_by_role("tab", name="Parámetros").click()
+        expect(page.get_by_text("Desvío de la venta (%)")).to_be_visible(timeout=10000)
+        page.fill("#s-ontrack", "80")
+        page.get_by_role("button", name="Guardar parámetros").click()
+        expect(page.get_by_text('debe ser mayor que el de "en riesgo"')).to_be_visible(timeout=10000)
+        page.fill("#s-ontrack", "100")
+        page.get_by_role("button", name="Guardar parámetros").click()
+        expect(page.get_by_text(re.compile("Parámetros guardados|Sin cambios en los parámetros"))).to_be_visible(timeout=10000)
+        shot(page, "18-admin-parametros")
+
+        page.get_by_role("tab", name="Bitácora").click()
+        expect(page.get_by_text("creó al usuario Prueba Recorrido")).to_be_visible(timeout=10000)
+        page.select_option("#log-type", "usuarios")
+        expect(page.get_by_text("cambió la contraseña de Prueba Recorrido")).to_be_visible(timeout=10000)
+        shot(page, "19-admin-bitacora")
+    step("administración: editar sede, validar parámetros y leer la bitácora en palabras del negocio", admin_branches_and_settings)
+
+    def rates_page():
+        page.goto(f"{BASE}/tasas", wait_until="networkidle")
+        page.select_option("#context-period", "2025-09")
+        expect(page.get_by_text("Septiembre 2025 · bolívares por dólar")).to_be_visible(timeout=10000)
+        expect(page.locator("section[aria-labelledby='chart-rate-title'] [x-ref='canvas'] svg")).to_be_visible(timeout=15000)
+        row = page.locator("tr[wire\\:key='rate-2025-09-15']")
+        expect(row).to_contain_text("158,92")
+        row.get_by_role("button", name="Editar").click()
+        edit = row.get_by_role("textbox")
+        expect(edit).to_have_value("158,92")
+        edit.fill("abc")
+        edit.press("Enter")
+        expect(row.get_by_text("por ejemplo 177,61")).to_be_visible(timeout=10000)
+        edit.fill("160,00")
+        edit.press("Enter")
+        expect(page.get_by_text("Tasa del 15/09/2025 guardada.")).to_be_visible(timeout=10000)
+        expect(row).to_contain_text("160,00")
+        expect(row).to_contain_text("Manual")
+        expect(page.get_by_text("1 día cargado tiene una tasa distinta")).to_be_visible()
+        shot(page, "20-tasas-editada")
+        page.get_by_role("button", name="Recalcular el mes").first.click()
+        dialog = page.get_by_role("dialog")
+        expect(dialog.get_by_text("Cambiaría 1 día.")).to_be_visible()
+        dialog.get_by_role("button", name="Recalcular").click()
+        expect(page.get_by_text("1 día actualizado con su tasa.")).to_be_visible(timeout=10000)
+        assert page.get_by_text("tiene una tasa distinta").count() == 0
+        # Se deja la tasa como estaba y se recalcula de vuelta para no alterar el mes de demostración
+        row.get_by_role("button", name="Editar").click()
+        row.get_by_role("textbox").fill("158,92")
+        row.get_by_role("textbox").press("Enter")
+        expect(page.get_by_text("1 día cargado tiene una tasa distinta")).to_be_visible(timeout=10000)
+        page.get_by_role("button", name="Recalcular el mes").first.click()
+        page.get_by_role("dialog").get_by_role("button", name="Recalcular").click()
+        expect(page.get_by_text("1 día actualizado con su tasa.").first).to_be_visible(timeout=10000)
+    step("tasa BCV: gráfica, edición en línea con validación, aviso de recálculo y recálculo confirmado", rates_page)
+
+    def profile_page():
+        page.goto(f"{BASE}/profile", wait_until="networkidle")
+        expect(page.get_by_role("heading", name="Tu perfil")).to_be_visible()
+        assert page.locator("#email").is_disabled()
+        page.fill("#name", "A")
+        page.get_by_role("button", name="Guardar nombre").click()
+        expect(page.get_by_text("El nombre es muy corto.")).to_be_visible(timeout=10000)
+        page.fill("#name", "Administrador")
+        page.get_by_role("button", name="Guardar nombre").click()
+        expect(page.get_by_text("Nombre guardado.")).to_be_visible(timeout=10000)
+        page.fill("#update_password_current_password", "incorrecta")
+        page.fill("#update_password_password", "NuevaClave2025")
+        page.fill("#update_password_password_confirmation", "NuevaClave2025")
+        page.get_by_role("button", name="Cambiar contraseña").click()
+        expect(page.get_by_text("La contraseña actual no es correcta.")).to_be_visible(timeout=10000)
+        shot(page, "21-perfil")
+    step("perfil: nombre editable, correo gestionado por administración y errores claros", profile_page)
+
+    def new_user_login_and_deactivation():
+        other = browser.new_context(viewport={"width": 1366, "height": 768}, locale="es-VE")
+        op = other.new_page()
+        op.goto(f"{BASE}/login", wait_until="networkidle")
+        op.fill("input[type=email]", NEW_EMAIL)
+        op.fill("input[type=password]", "OtraClave2025")
+        op.click("button[type=submit]")
+        op.wait_for_url(f"{BASE}/dashboard", timeout=15000)
+        expect(op.get_by_text("Prueba Recorrido").first).to_be_visible()
+        assert op.locator("aside a[href$='/administracion']").count() == 0, "supervisión no debe ver Administración"
+        expect(op.locator("aside a[href$='/tasas']")).to_be_visible()
+        # El administrador la desactiva mientras tiene la sesión abierta
+        page.goto(f"{BASE}/administracion", wait_until="networkidle")
+        page.get_by_role("row", name=re.compile("Prueba Recorrido")).get_by_role("button", name="Desactivar").click()
+        expect(page.get_by_text("Acceso desactivado para Prueba Recorrido.")).to_be_visible(timeout=10000)
+        op.goto(f"{BASE}/mes", wait_until="networkidle")
+        expect(op.get_by_text("Tu acceso está desactivado. Habla con el administrador.")).to_be_visible()
+        op.fill("input[type=email]", NEW_EMAIL)
+        op.fill("input[type=password]", "OtraClave2025")
+        op.click("button[type=submit]")
+        expect(op.get_by_text("Tu acceso está desactivado. Habla con el administrador.").first).to_be_visible(timeout=10000)
+        other.close()
+    step("el usuario nuevo entra con su rol; al desactivarlo pierde la sesión y no puede volver a entrar", new_user_login_and_deactivation)
 
     # ---------- 6. Móvil ----------
     def mobile():

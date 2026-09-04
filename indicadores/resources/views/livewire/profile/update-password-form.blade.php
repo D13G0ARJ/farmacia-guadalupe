@@ -9,19 +9,26 @@ use Livewire\Volt\Component;
 new class extends Component
 {
     public string $current_password = '';
+
     public string $password = '';
+
     public string $password_confirmation = '';
 
-    /**
-     * Update the password for the currently authenticated user.
-     */
     public function updatePassword(): void
     {
         try {
-            $validated = $this->validate([
-                'current_password' => ['required', 'string', 'current_password'],
-                'password' => ['required', 'string', Password::defaults(), 'confirmed'],
-            ]);
+            $validated = $this->validate(
+                [
+                    'current_password' => ['required', 'string', 'current_password'],
+                    'password' => ['required', 'string', Password::defaults(), 'confirmed'],
+                ],
+                [
+                    'current_password.required' => 'Escribe tu contraseña actual.',
+                    'current_password.current_password' => 'La contraseña actual no es correcta.',
+                    'password.required' => 'Escribe la contraseña nueva.',
+                    'password.confirmed' => 'Las dos contraseñas nuevas no coinciden.',
+                ],
+            );
         } catch (ValidationException $e) {
             $this->reset('current_password', 'password', 'password_confirmation');
 
@@ -35,45 +42,29 @@ new class extends Component
         $this->reset('current_password', 'password', 'password_confirmation');
 
         $this->dispatch('password-updated');
+        $this->dispatch('toast', type: 'success', message: 'Contraseña cambiada.');
     }
 }; ?>
 
-<section>
-    <header>
-        <h2 class="text-lg font-medium text-gray-900">
-            {{ __('Update Password') }}
-        </h2>
+<div>
+    <h2 id="profile-password-title" class="text-sub font-semibold text-ink-900">Tu contraseña</h2>
+    <p class="mt-1 text-label text-ink-600">Al menos 8 caracteres. Si el administrador te dio una temporal, cámbiala aquí.</p>
 
-        <p class="mt-1 text-sm text-gray-600">
-            {{ __('Ensure your account is using a long, random password to stay secure.') }}
-        </p>
-    </header>
+    <form wire:submit="updatePassword" class="mt-5 space-y-5">
+        <x-field label="Contraseña actual" for="update_password_current_password" :error="$errors->first('current_password')">
+            <x-input id="update_password_current_password" type="password" wire:model="current_password" autocomplete="current-password" :invalid="$errors->has('current_password')" />
+        </x-field>
 
-    <form wire:submit="updatePassword" class="mt-6 space-y-6">
-        <div>
-            <x-input-label for="update_password_current_password" :value="__('Current Password')" />
-            <x-text-input wire:model="current_password" id="update_password_current_password" name="current_password" type="password" class="mt-1 block w-full" autocomplete="current-password" />
-            <x-input-error :messages="$errors->get('current_password')" class="mt-2" />
-        </div>
+        <x-field label="Contraseña nueva" for="update_password_password" :error="$errors->first('password')">
+            <x-input id="update_password_password" type="password" wire:model="password" autocomplete="new-password" :invalid="$errors->has('password')" />
+        </x-field>
 
-        <div>
-            <x-input-label for="update_password_password" :value="__('New Password')" />
-            <x-text-input wire:model="password" id="update_password_password" name="password" type="password" class="mt-1 block w-full" autocomplete="new-password" />
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
+        <x-field label="Repite la contraseña nueva" for="update_password_password_confirmation">
+            <x-input id="update_password_password_confirmation" type="password" wire:model="password_confirmation" autocomplete="new-password" />
+        </x-field>
 
-        <div>
-            <x-input-label for="update_password_password_confirmation" :value="__('Confirm Password')" />
-            <x-text-input wire:model="password_confirmation" id="update_password_password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full" autocomplete="new-password" />
-            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-        </div>
-
-        <div class="flex items-center gap-4">
-            <x-primary-button>{{ __('Save') }}</x-primary-button>
-
-            <x-action-message class="me-3" on="password-updated">
-                {{ __('Saved.') }}
-            </x-action-message>
+        <div class="flex justify-end">
+            <x-btn type="submit" wire:loading.attr="disabled" wire:target="updatePassword">Cambiar contraseña</x-btn>
         </div>
     </form>
-</section>
+</div>

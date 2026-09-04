@@ -1,115 +1,54 @@
 <?php
 
-use App\Models\User;
+use App\Enums\Role;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Validation\Rule;
 use Livewire\Volt\Component;
 
 new class extends Component
 {
     public string $name = '';
-    public string $email = '';
 
-    /**
-     * Mount the component.
-     */
     public function mount(): void
     {
         $this->name = Auth::user()->name;
-        $this->email = Auth::user()->email;
     }
 
-    /**
-     * Update the profile information for the currently authenticated user.
-     */
+    /** Solo el nombre: el correo lo cambia Administración para no dejar a nadie fuera por una verificación pendiente. */
     public function updateProfileInformation(): void
     {
         $user = Auth::user();
 
-        $validated = $this->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($user->id)],
-        ]);
+        $validated = $this->validate(
+            ['name' => ['required', 'string', 'min:3', 'max:80']],
+            ['name.required' => 'Escribe tu nombre.', 'name.min' => 'El nombre es muy corto.'],
+        );
 
         $user->fill($validated);
-
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
-        }
-
         $user->save();
 
-        $this->dispatch('profile-updated', name: $user->name);
-    }
-
-    /**
-     * Send an email verification notification to the current user.
-     */
-    public function sendVerification(): void
-    {
-        $user = Auth::user();
-
-        if ($user->hasVerifiedEmail()) {
-            $this->redirectIntended(default: route('dashboard', absolute: false));
-
-            return;
-        }
-
-        $user->sendEmailVerificationNotification();
-
-        Session::flash('status', 'verification-link-sent');
+        $this->dispatch('toast', type: 'success', message: 'Nombre guardado.');
     }
 }; ?>
 
-<section>
-    <header>
-        <h2 class="text-lg font-medium text-gray-900">
-            {{ __('Profile Information') }}
-        </h2>
+<div>
+    <h2 id="profile-info-title" class="text-sub font-semibold text-ink-900">Tus datos</h2>
+    <p class="mt-1 text-label text-ink-600">Así te ven los demás en la bitácora y en los cierres de mes.</p>
 
-        <p class="mt-1 text-sm text-gray-600">
-            {{ __("Update your account's profile information and email address.") }}
-        </p>
-    </header>
+    <form wire:submit="updateProfileInformation" class="mt-5 space-y-5">
+        <x-field label="Nombre" for="name" :error="$errors->first('name')">
+            <x-input id="name" type="text" wire:model="name" required autocomplete="name" :invalid="$errors->has('name')" />
+        </x-field>
 
-    <form wire:submit="updateProfileInformation" class="mt-6 space-y-6">
-        <div>
-            <x-input-label for="name" :value="__('Name')" />
-            <x-text-input wire:model="name" id="name" name="name" type="text" class="mt-1 block w-full" required autofocus autocomplete="name" />
-            <x-input-error class="mt-2" :messages="$errors->get('name')" />
-        </div>
+        <x-field label="Correo" for="email" help="Para cambiarlo, pídeselo al administrador.">
+            <x-input id="email" type="email" :value="auth()->user()->email" disabled />
+        </x-field>
 
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input wire:model="email" id="email" name="email" type="email" class="mt-1 block w-full" required autocomplete="username" />
-            <x-input-error class="mt-2" :messages="$errors->get('email')" />
+        <x-field label="Rol" for="role" help="Lo asigna el administrador.">
+            <x-input id="role" type="text" :value="Role::tryFrom((string) auth()->user()->getRoleNames()->first())?->label() ?? 'Sin rol'" disabled />
+        </x-field>
 
-            @if (auth()->user() instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! auth()->user()->hasVerifiedEmail())
-                <div>
-                    <p class="text-sm mt-2 text-gray-800">
-                        {{ __('Your email address is unverified.') }}
-
-                        <button wire:click.prevent="sendVerification" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            {{ __('Click here to re-send the verification email.') }}
-                        </button>
-                    </p>
-
-                    @if (session('status') === 'verification-link-sent')
-                        <p class="mt-2 font-medium text-sm text-green-600">
-                            {{ __('A new verification link has been sent to your email address.') }}
-                        </p>
-                    @endif
-                </div>
-            @endif
-        </div>
-
-        <div class="flex items-center gap-4">
-            <x-primary-button>{{ __('Save') }}</x-primary-button>
-
-            <x-action-message class="me-3" on="profile-updated">
-                {{ __('Saved.') }}
-            </x-action-message>
+        <div class="flex justify-end">
+            <x-btn type="submit" wire:loading.attr="disabled" wire:target="updateProfileInformation">Guardar nombre</x-btn>
         </div>
     </form>
-</section>
+</div>
