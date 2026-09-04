@@ -40,7 +40,7 @@ it('supervisión y dirección gestionan tasas; el operador no ve la pantalla', f
 
     $this->actingAs(userWithRole(Role::Supervision, $branch))->get(route('rates'))->assertOk()->assertSee('Tasa BCV');
     $this->actingAs(userWithRole(Role::Operador, $branch))->get(route('rates'))->assertForbidden();
-    $this->actingAs(userWithRole(Role::Operador, $branch))->get(route('month'))->assertOk()->assertDontSee('Tasa BCV');
+    $this->actingAs(userWithRole(Role::Operador, $branch))->get(route('month'))->assertOk()->assertDontSee('href="'.route('rates').'"', false);
 });
 
 it('lista el mes con origen, variación y estado del proveedor (§9.4)', function (): void {

@@ -1,5 +1,9 @@
+@php
+    // Borrador por fecha en el navegador (§13.8): clave por sede y fecha; el día recién guardado limpia el suyo.
+    $draftClear = session('saved_date') ? 'draft:'.$branchId.':'.session('saved_date') : '';
+@endphp
 <div class="space-y-6"
-     x-data="dailyPreview($wire)">
+     x-data="dailyPreview($wire, { branch: {{ $branchId }}, edit: {{ $isEdit ? 'true' : 'false' }}, clear: '{{ $draftClear }}' })">
 
     {{-- Título: la fecha con su día de la semana, derivado (RN-02) --}}
     <div class="flex flex-wrap items-end justify-between gap-3">
@@ -8,6 +12,38 @@
             <h1 class="text-title text-brand-800">{{ ucfirst($weekdayLabel) }}</h1>
         </div>
         <a href="{{ route('month', ['period' => $period->key()]) }}" wire:navigate class="text-body text-brand-700 hover:underline">Ver el mes</a>
+    </div>
+
+    {{-- Carga en secuencia de los días atrasados (§13.8): posición, anterior y siguiente --}}
+    @if ($sequenceInfo !== null)
+        <div class="flex flex-wrap items-center gap-3 rounded-card border border-brand-100 bg-brand-100/60 px-4 py-3" role="status">
+            <x-lucide name="list" class="h-5 w-5 text-brand-700" />
+            <p class="flex-1 text-ink-900">
+                @if ($sequenceInfo['total'] === 0)
+                    No quedan días por cargar en {{ mb_strtolower($period->label()) }}.
+                @elseif ($sequenceInfo['position'] !== null)
+                    <span class="tnum font-medium">Faltante {{ $sequenceInfo['position'] }} de {{ $sequenceInfo['total'] }}</span> en {{ mb_strtolower($period->label()) }}.
+                @else
+                    {{ $sequenceInfo['total'] === 1 ? 'Queda 1 día por cargar' : 'Quedan '.$sequenceInfo['total'].' días por cargar' }} en {{ mb_strtolower($period->label()) }}.
+                @endif
+            </p>
+            <div class="flex items-center gap-1">
+                @if ($sequenceInfo['previous'])
+                    <x-btn variant="ghost" :href="route('records.create', ['date' => $sequenceInfo['previous'], 'faltantes' => 1])" icon="chevron-left" class="min-h-[36px] px-2.5 text-label">Anterior</x-btn>
+                @endif
+                @if ($sequenceInfo['next'])
+                    <x-btn variant="ghost" :href="route('records.create', ['date' => $sequenceInfo['next'], 'faltantes' => 1])" class="min-h-[36px] px-2.5 text-label">Siguiente <x-lucide name="chevron-right" class="h-4 w-4" /></x-btn>
+                @endif
+                <x-btn variant="ghost" :href="route('records.create', ['date' => $form->date])" class="min-h-[36px] px-2.5 text-label">Salir</x-btn>
+            </div>
+        </div>
+    @endif
+
+    {{-- Borrador recuperado (§13.8): lo escrito antes de cerrar la pestaña o perder la sesión --}}
+    <div x-cloak x-show="draftRestored" class="flex flex-wrap items-center gap-3 rounded-card border border-line bg-panel px-4 py-3" role="status">
+        <x-lucide name="history" class="h-5 w-5 text-ink-600" />
+        <p class="flex-1 text-ink-900">Recuperamos lo que escribiste para este día<span x-text="draftSavedAt ? ' (' + draftSavedAt + ')' : ''"></span>. Revísalo antes de guardar.</p>
+        <x-btn variant="ghost" class="min-h-[36px] px-2.5 text-label" x-on:click="discardDraft()">Descartar</x-btn>
     </div>
 
     @if ($periodClosed)
@@ -92,10 +128,10 @@
                 @if ($showInventory)
                     <div class="grid gap-5 sm:grid-cols-2">
                         <x-field label="Unidades en inventario" for="inventory_units" :error="$errors->first('form.inventory_units')" :warning="collect($warnings)->firstWhere('field', 'inventory_units')['message'] ?? null" :reference="$reference['inventory_units'] ?? null">
-                            <x-input id="inventory_units" numeric inputmode="numeric" wire:model.live.debounce.500ms="form.inventory_units" placeholder="0" :invalid="$errors->has('form.inventory_units')" />
+                            <x-input id="inventory_units" numeric inputmode="numeric" wire:model.live.debounce.500ms="form.inventory_units" x-on:input="inventoryUnits = $event.target.value" placeholder="0" :invalid="$errors->has('form.inventory_units')" />
                         </x-field>
                         <x-field label="Valuación del inventario ($)" for="inventory_value_usd" :error="$errors->first('form.inventory_value_usd')" :reference="$reference['inventory_value_usd'] ?? null">
-                            <x-input id="inventory_value_usd" numeric suffix="$" wire:model.live.debounce.500ms="form.inventory_value_usd" placeholder="0,00" :invalid="$errors->has('form.inventory_value_usd')" />
+                            <x-input id="inventory_value_usd" numeric suffix="$" wire:model.live.debounce.500ms="form.inventory_value_usd" x-on:input="inventoryValue = $event.target.value" placeholder="0,00" :invalid="$errors->has('form.inventory_value_usd')" />
                         </x-field>
                     </div>
                 @else
@@ -106,7 +142,7 @@
             {{-- Observación y día atípico (UC-04) --}}
             <section class="space-y-4">
                 <x-field label="Observación del día" for="notes" :error="$errors->first('form.notes')" help="Opcional. Obligatoria si marcas el día como atípico.">
-                    <textarea id="notes" wire:model.live.debounce.500ms="form.notes" rows="2" maxlength="500" class="block w-full rounded-control border-line bg-surface px-3 py-2.5 text-body focus:border-brand-500 focus:ring-2 focus:ring-brand-500" placeholder="Por ejemplo: corte de luz de 10 a 12, media jornada"></textarea>
+                    <textarea id="notes" wire:model.live.debounce.500ms="form.notes" x-on:input="notes = $event.target.value" rows="2" maxlength="500" class="block w-full rounded-control border-line bg-surface px-3 py-2.5 text-body focus:border-brand-500 focus:ring-2 focus:ring-brand-500" placeholder="Por ejemplo: corte de luz de 10 a 12, media jornada"></textarea>
                 </x-field>
                 <label class="flex items-start gap-3">
                     <input type="checkbox" wire:model.live="form.atypical" class="mt-1 h-5 w-5 rounded border-line text-accent-600 focus:ring-accent-600">

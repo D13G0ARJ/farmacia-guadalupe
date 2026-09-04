@@ -6,7 +6,7 @@
 | **Alcance** | Etapa 1: dashboard de indicadores y metas (sin Chatwoot, sin pedidos) |
 | **Stack** | Laravel 13 · PHP 8.4 · MySQL 8 (SQLite en desarrollo y pruebas) · Livewire 4 · Tailwind 3 · Alpine · ECharts 6 |
 | **Tasa** | BCV (Banco Central de Venezuela), con arrastre en días no publicados |
-| **Versión del plan** | 12 (Fases 0 a 6 implementadas y probadas; hoja de ruta restante en §17 y estado por caso de uso en §21) |
+| **Versión del plan** | 13 (Fases 0 a 7 implementadas y probadas; entrega en `DESPLIEGUE.md` y `MANUAL-USUARIO.md`; estado por caso de uso en §21) |
 | **Fecha** | 04-09-2026 |
 
 ---
@@ -1217,10 +1217,10 @@ Orden de construcción pensado para tener algo usable lo antes posible y para qu
 - **Reporte PDF mensual (§11.2)** con cuadro, KPI, metas y gráficas. El envío programado por correo pasa a la Fase 7 (necesita SMTP).
 - G8 ya está construido (Fase 2).
 
-### Fase 7 — Amigabilidad y entrega (día 24–28) — **PENDIENTE** (siguiente)
-- Pendientes de §13.5 y §13.8: ayuda contextual ("¿Cómo se calcula?" y panel "?" con glosario), borrador automático del formulario por fecha, sesión vencida y red caída con mensaje amable, carga en secuencia de los días atrasados, hoja de impresión para Mes y Panel, atajos de teclado, tabla de metas apilada en móvil, "Ampliar" en las gráficas, envío programado del reporte PDF por correo.
-- Entrega: despliegue con `.env.production.example`, correo SMTP del cliente, respaldo diario de MySQL, cabeceras de seguridad, prueba real del BCV en el servidor, limpiar los datos de demostración, manual breve con capturas y capacitación. 2FA opcional para dirección (requiere Fortify).
-- Reunión de arranque con las preguntas de §19 y ajuste de supuestos.
+### Fase 7 — Amigabilidad y entrega (día 24–28) — **IMPLEMENTADA** (ver §20, iteración 17; queda lo que depende del cliente)
+- Pendientes de §13.5 y §13.8: ayuda contextual ("¿Cómo se calcula?" y panel "?" con glosario), borrador automático del formulario por fecha, sesión vencida y red caída con mensaje amable, carga en secuencia de los días atrasados, hoja de impresión para Mes y Panel, atajos de teclado, tabla de metas apilada en móvil, "Ampliar" en las gráficas, envío programado del reporte PDF por correo, deshacer del marcado atípico, ordenar y buscar en el cuadro del mes.
+- Entrega: guía `DESPLIEGUE.md` (requisitos, instalación, comprobaciones, tareas programadas, respaldo, seguridad, actualización), respaldo diario (`db:backup`), cabeceras de seguridad, prueba del BCV (`rates:fetch`, verificada desde desarrollo contra las fuentes reales), limpieza de la demostración (`demo:clear`), `MANUAL-USUARIO.md` con capturas. 2FA para dirección no se incluye (requiere Fortify; queda como opción).
+- **Depende del cliente**: hosting y dominio, cuenta SMTP, ejecutar el despliegue, capacitación y la reunión de arranque con las preguntas de §19.
 
 ### Fase 8 — Multi-sede (día 29–31) — **CONDICIONADA** (Ampliación B, US$ 150)
 - Activar selector de sede, consolidado por gráfica, metas de consolidado, comparación entre sedes (UC-18), permisos por sede en UI.
@@ -1638,6 +1638,37 @@ Hallazgos del code review y del recorrido en navegador (corregidos):
 | 16.10 | Reemplazar un mes ya cargado borraba la marca de atípico y la nota puestas a mano (el recorrido lo detectó al perder el día atípico de la demostración) | Al reemplazar se conservan estado y nota; solo un día cerrado que ahora trae venta pasa a normal |
 | 16.11 | En el PDF, el título "Gráficas" quedaba solo al pie de la primera página y el acumulado se veía diminuto a media página | Las gráficas van en su propia página y el acumulado ocupa el ancho completo |
 
+### Iteración 17 — Implementación de la Fase 7 (amigabilidad y entrega) con code review y pruebas en navegador
+
+Entregado en `indicadores/`:
+
+- **Ayuda contextual (§13.5)**: botón "?" en la barra (o la tecla `?`) abre un panel lateral con la ayuda de la pantalla activa, las fórmulas en palabras de los 12 indicadores, el glosario de siete términos y los atajos; nunca navega. En cada tarjeta KPI, "¿Cómo se calcula?" abre un popover con la fórmula y el valor del último día cargado.
+- **Formulario (§13.8)**: borrador automático por sede y fecha en el navegador (se recupera con aviso y "Descartar"; se limpia al guardar), sesión vencida y red caída con mensaje amable en lugar de la pantalla de error, indicador "Sin conexión", carga en secuencia de los días atrasados ("Cargar los 3 faltantes" → "Faltante 1 de 3", anterior/siguiente/salir; al guardar sigue con el próximo), y "Deshacer" de 10 s al marcar un día como atípico (conserva la observación).
+- **Mes (UC-09)**: ordenar por cualquier columna (clic en el encabezado, `aria-sort`), buscar por fecha ("16", "16/09", "mar") sin tocar los totales, flechas para moverse por el calendario, botón "Imprimir" y hoja de impresión (sin menús ni barras) también en el Panel.
+- **Gráficas**: "Ampliar" abre la gráfica a pantalla completa (segundo lienzo, Esc cierra). **Metas**: la cuadrícula anual se apila en móvil (una tarjeta por indicador con sus doce meses). Atajos `Alt+N` y `?`.
+- **Correo (§11.2, §13.8, RN-16)**: Administración › Correo define el día del reporte mensual (0 apaga) y sus destinatarios, y el recordatorio de cierre. `reports:send-monthly` (a diario, actúa solo ese día) envía el PDF del mes anterior por sede con el resumen en el cuerpo; `periods:remind-close` (día 1) avisa a quien puede cerrar si el mes anterior tiene faltantes o sigue abierto; la tasa BCV desviada más del umbral avisa por correo a quien gestiona tasas.
+- **Entrega (§15.2, §4.6)**: cabeceras de seguridad en toda respuesta (`nosniff`, `SAMEORIGIN`, `Referrer-Policy`, `Permissions-Policy`, HSTS con HTTPS); `db:backup` diario (mysqldump comprimido o `VACUUM INTO` en SQLite, 30 días de retención); `demo:clear` para dejar el sistema listo para la carga real; `rates:fetch` para probar el BCV en el servidor (probado desde desarrollo: la API responde 807,39 al 04-09-2026); `docs/DESPLIEGUE.md` y `docs/MANUAL-USUARIO.md` con capturas.
+- **Pruebas**: 274 Pest (ayuda por pantalla, orden y búsqueda del cuadro, deshacer atípico, secuencia de faltantes, borrador, correo programado y sus reglas, recordatorio de cierre, aviso de tasa, `rates:fetch`, cabeceras, respaldo, limpieza), Larastan nivel 6 en cero, Pint limpio. Recorrido Playwright ampliado a 46 pasos (siete nuevos: ayuda y atajos, gráfica ampliada, orden y búsqueda con flechas en el calendario, borrador recuperado, atípico con deshacer, secuencia de faltantes, parámetros de correo).
+
+Desvíos respecto al plan y su motivo:
+
+| # | Planificado | Real | Motivo |
+|---|---|---|---|
+| 17.1 | 2FA opcional para dirección con Fortify | No incluida | Es una dependencia nueva del stack de acceso; se decide con el cliente si la quiere |
+| 17.2 | Respaldo con `spatie/laravel-backup` | Comando propio `db:backup` | Evita una dependencia más; el hosting copia la carpeta de respaldos afuera |
+| 17.3 | Persistencia del contexto (mes, sede, moneda) en el perfil | Se mantiene en la sesión | Con sesión de base de datos dura semanas; guardarlo en el perfil no cambia la experiencia |
+| 17.4 | Gráficas del reporte por correo con Browsershot | El PDF del correo va sin gráficas y con enlace al panel | Chrome no suele estar en hosting compartido; el PDF descargado desde el panel sí las lleva |
+
+Hallazgos del code review y del recorrido en navegador (corregidos):
+
+| # | Hallazgo | Corrección |
+|---|---|---|
+| 17.5 | El texto "Faltante 2 de 3" quedaba partido en dos nodos y no se podía leer como frase | Toda la frase en un solo elemento |
+| 17.6 | Un viernes con conteo de inventario detiene el guardado con el aviso de inventario vacío; la secuencia debía continuar tras "Guardar de todos modos" | La secuencia se mantiene en ambos caminos de guardado |
+| 17.7 | `VACUUM INTO` no corre dentro de una transacción (la de las pruebas) y la ruta de Windows necesitaba barras normales | Opción `--connection` para respaldar cualquier conexión y ruta normalizada |
+| 17.8 | El panel de ayuda oculto seguía en el DOM y duplicaba textos de la pantalla ("Avisos del mes", nombres de indicadores) para lectores de pantalla, "buscar en la página" y el recorrido automatizado | El panel solo existe en el DOM mientras está abierto |
+| 17.9 | El borrador restaurado se muestra ya formateado ("12.345,00") aunque se escribió "12345" | Comportamiento esperado: el campo formatea al perder el foco; el recorrido acepta ambos |
+
 ### Estado final
 
 El plan cubre las 14 columnas, las 163 fórmulas, los 7 gráficos, la tabla anual, los 13 hechos verificados y los 3 pedidos del cliente (digitalizar, estadística y gráficas, KPIs con metas), más la preparación multi-sede. El estado de construcción por caso de uso está en §21.
@@ -1646,27 +1677,27 @@ El plan cubre las 14 columnas, las 163 fórmulas, los 7 gráficos, la tabla anua
 
 ## 21. Estado del producto al 04-09-2026
 
-Qué hay construido y probado (258 pruebas Pest, Larastan nivel 6, recorrido Playwright de 39 pasos) y qué falta, por caso de uso. "Hecho" significa implementado, con pruebas y verificado en navegador.
+Qué hay construido y probado (274 pruebas Pest, Larastan nivel 6, recorrido Playwright de 46 pasos) y qué falta, por caso de uso. "Hecho" significa implementado, con pruebas y verificado en navegador.
 
 | UC | Caso de uso | Estado | Falta |
 |---|---|---|---|
-| 01 | Iniciar sesión | Hecho | 2FA opcional (Fase 7) |
-| 02 | Cargar el día | Hecho | Borrador automático, red caída, carga en secuencia (Fase 7) |
+| 01 | Iniciar sesión | Hecho | 2FA opcional (requiere Fortify; a decidir con el cliente) |
+| 02 | Cargar el día | Hecho (borrador, red caída, secuencia de faltantes) | — |
 | 03 | Editar un día | Hecho | — |
-| 04 | Marcar día atípico | Hecho | Deshacer del marcado (Fase 7) |
+| 04 | Marcar día atípico | Hecho (con Deshacer) | — |
 | 05 | Registrar día cerrado | Hecho | — |
 | 06 | Ver días faltantes | Hecho | — |
-| 07 | Cerrar y reabrir mes | Hecho | Recordatorio por correo el día 1 (Fase 7) |
-| 08 | Panel principal | Hecho | Ayuda contextual "¿Cómo se calcula?" (Fase 7) |
-| 09 | Cuadro de indicadores | Hecho | Ordenar por columna y buscar por fecha (Fase 7) |
-| 10 | Gráficas | Hecho G1–G11 | "Ampliar" (Fase 7) |
-| 11 | Definir metas | Hecho | Cuadrícula apilada en móvil (Fase 7) |
+| 07 | Cerrar y reabrir mes | Hecho (recordatorio por correo el día 1) | — |
+| 08 | Panel principal | Hecho (con "¿Cómo se calcula?" e impresión) | — |
+| 09 | Cuadro de indicadores | Hecho (ordenar, buscar, imprimir) | — |
+| 10 | Gráficas | Hecho G1–G11 (con "Ampliar") | — |
+| 11 | Definir metas | Hecho (cuadrícula apilada en móvil) | — |
 | 12 | Seguir metas | Hecho | — |
 | 13 | Comparativa anual | Hecho | — |
-| 14 | Exportar | Hecho (Excel de tres hojas, Excel del año, PDF mensual) | Envío programado por correo (Fase 7, con SMTP) |
+| 14 | Exportar | Hecho (Excel de tres hojas, Excel del año, PDF mensual, envío programado por correo) | SMTP del cliente para activarlo |
 | 15 | Importar histórico | Hecho | — |
-| 16 | Gestionar tasa BCV | Hecho | Correo al administrador cuando el BCV se desvía (Fase 7, con SMTP) |
+| 16 | Gestionar tasa BCV | Hecho (con aviso por correo si se desvía) | SMTP del cliente para activarlo |
 | 17 | Administración | Hecho | — |
 | 18 | Consolidado multi-sede | Preparado en el modelo | Selector y consolidado en UI (Fase 8, condicionada) |
 
-Transversal hecho: identidad visual completa (perfil incluido), acceso en español, roles y políticas, bitácora visible, cache, tasa BCV automática programada, exportación Excel y PDF, importación del histórico, seeders de demostración (septiembre real, agosto sintético, metas, usuarios por rol). Transversal pendiente: despliegue, correo SMTP, respaldo, manual y capacitación (Fase 7). Cada requerimiento tiene componente, caso de uso y prueba asignados (§18). Las decisiones que dependen del cliente están aisladas en §19.
+Transversal hecho: identidad visual completa (perfil incluido), acceso en español, roles y políticas, bitácora visible, cache, tasa BCV automática programada, exportación Excel y PDF, importación del histórico, seeders de demostración (septiembre real, agosto sintético, metas, usuarios por rol). Transversal hecho en la Fase 7: ayuda contextual y atajos, cabeceras de seguridad, respaldo diario, limpieza de la demostración, guía de despliegue y manual con capturas. Transversal pendiente (depende del cliente): hosting, SMTP, ejecutar el despliegue y capacitación. Cada requerimiento tiene componente, caso de uso y prueba asignados (§18). Las decisiones que dependen del cliente están aisladas en §19.

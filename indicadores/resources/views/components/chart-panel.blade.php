@@ -16,9 +16,32 @@
                         class="inline-flex min-h-[36px] items-center gap-1.5 rounded-control px-2.5 text-label font-medium text-ink-600 transition-colors hover:bg-panel focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-50">
                     <x-lucide name="image" class="h-4 w-4" />PNG
                 </button>
+                <button type="button" x-on:click="expand()" x-bind:disabled="! ready"
+                        class="inline-flex min-h-[36px] items-center gap-1.5 rounded-control px-2.5 text-label font-medium text-ink-600 transition-colors hover:bg-panel focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-50">
+                    <x-lucide name="maximize" class="h-4 w-4" />Ampliar
+                </button>
             </div>
         @endunless
     </div>
+
+    @unless ($spec['empty'])
+        {{-- Gráfica ampliada (§13.5): pantalla completa, Esc o clic fuera cierra; solo existe en el DOM mientras está abierta --}}
+        <template x-if="expanded">
+        <div x-on:keydown.escape.window="collapse()" class="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8" role="dialog" aria-modal="true" aria-label="{{ $spec['title'] }} ampliada">
+            <div class="absolute inset-0 bg-ink-900/50" x-on:click="collapse()" aria-hidden="true"></div>
+            <div class="relative flex h-full w-full max-w-[1400px] flex-col rounded-hero border border-line bg-surface p-5 shadow-overlay" x-trap.noscroll="expanded">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <h3 class="text-sub font-semibold text-ink-900">{{ $spec['title'] }}</h3>
+                        <p class="text-label text-ink-600">{{ $spec['subtitle'] }}</p>
+                    </div>
+                    <button type="button" x-on:click="collapse()" class="rounded-control p-2 text-ink-600 hover:bg-panel" aria-label="Cerrar"><x-lucide name="x" /></button>
+                </div>
+                <div x-ref="big" wire:ignore class="mt-4 min-h-0 flex-1" role="img" aria-label="{{ $spec['title'] }}, {{ $spec['subtitle'] }}"></div>
+            </div>
+        </div>
+        </template>
+    @endunless
 
     @if ($spec['empty'])
         <div class="mt-4 flex h-[220px] items-center justify-center rounded-card border border-dashed border-line md:h-[280px]">

@@ -1,4 +1,4 @@
-@props(['label', 'value', 'secondary' => null, 'explanation' => null, 'delta' => null, 'yearDelta' => null, 'sparkline' => [], 'goal' => null, 'goalHref' => null])
+@props(['label', 'value', 'secondary' => null, 'explanation' => null, 'hint' => null, 'delta' => null, 'yearDelta' => null, 'sparkline' => [], 'goal' => null, 'goalHref' => null])
 @php
     // Tarjeta KPI silenciosa (§13.5): blanca, hairline, sin sombra; delta con flecha y color, sparkline a la derecha,
     // barra de meta de 4 px con la marca "esperado hoy" (§8.3).
@@ -10,11 +10,24 @@
     $pctTarget = $hasGoal ? min(100, max(0, (float) ($goal->pctOfTarget()?->toFloat() ?? 0) * 100)) : 0;
     $expectedMark = $hasGoal && $goal->accumulates() ? min(100, max(0, (float) ($goal->expectedShare()?->toFloat() ?? 0) * 100)) : null;
 @endphp
+@php $popoverId = 'kpi-help-'.\Illuminate\Support\Str::slug($label); @endphp
 <div {{ $attributes->merge(['class' => 'rounded-card border border-line bg-surface p-5']) }}>
     <div class="flex items-start justify-between gap-2">
         <p class="text-label text-ink-600">{{ $label }}</p>
         @if ($explanation)
-            <span class="text-ink-400" title="{{ $explanation }}" aria-label="{{ $explanation }}"><x-lucide name="info" class="h-4 w-4" /></span>
+            {{-- "¿Cómo se calcula?" (§13.5): popover en línea con la fórmula en palabras y el último día; nunca navega --}}
+            <div class="relative" x-data="{ open: false }" x-on:keydown.escape.window="open = false">
+                <button type="button" x-on:click="open = ! open" x-bind:aria-expanded="open" aria-controls="{{ $popoverId }}" class="rounded-full p-0.5 text-ink-400 hover:text-brand-700 focus-visible:ring-2 focus-visible:ring-brand-500" aria-label="¿Cómo se calcula {{ mb_strtolower($label) }}?" title="¿Cómo se calcula?">
+                    <x-lucide name="info" class="h-4 w-4" />
+                </button>
+                <div x-cloak x-show="open" x-on:click.outside="open = false" id="{{ $popoverId }}" role="note" class="absolute right-0 z-20 mt-1 w-64 rounded-card border border-line bg-surface p-3 text-left shadow-overlay">
+                    <p class="text-label font-medium text-ink-900">¿Cómo se calcula?</p>
+                    <p class="mt-1 text-label text-ink-600">{{ $explanation }}</p>
+                    @if ($hint)
+                        <p class="mt-2 text-label tnum text-ink-600">{{ $hint }}</p>
+                    @endif
+                </div>
+            </div>
         @endif
     </div>
     <div class="mt-2 flex items-end justify-between gap-3">

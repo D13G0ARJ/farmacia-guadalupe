@@ -7,6 +7,8 @@ namespace App\Livewire\Records;
 use App\Actions\Periods\CloseMonth;
 use App\Actions\Periods\ReopenMonth;
 use App\Actions\Records\UndoDeleteDailyRecord;
+use App\Actions\Records\UnmarkAtypical;
+use App\Domain\Indicators\DailyMetrics;
 use App\Domain\Indicators\Indicator;
 use App\Domain\Periods\Exceptions\PeriodStateException;
 use App\Domain\Records\Exceptions\RecordException;
@@ -48,6 +50,14 @@ class MonthOverview extends Component
     public bool $confirmMissing = false;
 
     public string $reopenReason = '';
+
+    /** Orden del cuadro (UC-09): 'date' o el valor de un indicador. */
+    public string $sort = 'date';
+
+    public string $dir = 'asc';
+
+    /** Búsqueda por fecha en el cuadro: "16", "16/09" o "mar". */
+    public string $search = '';
 
     public function mount(?string $period = null): void
     {
@@ -115,6 +125,37 @@ class MonthOverview extends Component
         $this->dispatch('toast', type: 'success', message: $period->label().' reabierto.');
     }
 
+    /** Clic en un encabezado del cuadro: ordena por esa columna; el segundo clic invierte. */
+    public function sortBy(string $key): void
+    {
+        if ($key !== 'date' && Indicator::tryFrom($key) === null) {
+            return;
+        }
+        if ($this->sort === $key) {
+            $this->dir = $this->dir === 'asc' ? 'desc' : 'asc';
+
+            return;
+        }
+        $this->sort = $key;
+        $this->dir = $key === 'date' ? 'asc' : 'desc';
+    }
+
+    /** "Deshacer" del marcado atípico desde el aviso (§13.8). */
+    #[On('undo-atypical')]
+    public function undoAtypical(UnmarkAtypical $action, int $record): void
+    {
+        $model = DailyRecord::query()->findOrFail($record);
+        $this->authorize('markAtypical', $model);
+
+        if (! $action->handle($model, auth()->user())) {
+            $this->dispatch('toast', type: 'warning', message: 'Ese día ya no está marcado como atípico.');
+
+            return;
+        }
+
+        $this->dispatch('toast', type: 'success', message: 'Marca de atípico retirada del '.app(Formatter::class)->date($model->date, 'short').'.');
+    }
+
     /** "Deshacer" del aviso tras borrar un día (§13.8): recrea el registro desde la bitácora. */
     #[On('undo-delete')]
     public function undoDelete(UndoDeleteDailyRecord $action, int $activity): void
@@ -151,6 +192,7 @@ class MonthOverview extends Component
 
         return view('livewire.records.month-overview', [
             'view' => $view,
+            'rows' => $this->filterAndSort($view->rows, $formatter),
             'branch' => $branch,
             'weeks' => $this->weeks($view),
             'columns' => $this->columns($currency),
@@ -162,6 +204,54 @@ class MonthOverview extends Component
             'closedEvent' => $view->isClosed && $lastEvent?->action === PeriodAction::Closed ? $lastEvent : null,
             'events' => $events,
         ]);
+    }
+
+    /**
+     * Filas del cuadro filtradas por la búsqueda y ordenadas por la columna elegida (UC-09).
+     * Los totales no cambian: se calculan sobre el mes completo.
+     *
+     * @param  list<DailyMetrics>  $rows
+     * @return list<DailyMetrics>
+     */
+    private function filterAndSort(array $rows, Formatter $formatter): array
+    {
+        $needle = mb_strtolower(trim($this->search));
+        if ($needle !== '') {
+            $rows = array_values(array_filter($rows, function (DailyMetrics $m) use ($needle, $formatter): bool {
+                $date = $m->data->date;
+                $candidates = [(string) $date->day, $date->format('d'), $date->format('d/m'), $date->format('d/m/Y'), $formatter->date($date, 'weekday'), $formatter->weekday($date)];
+                foreach ($candidates as $candidate) {
+                    if (str_starts_with(mb_strtolower($candidate), $needle)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }));
+        }
+
+        $indicator = Indicator::tryFrom($this->sort);
+        usort($rows, function (DailyMetrics $a, DailyMetrics $b) use ($indicator): int {
+            if ($indicator === null) {
+                $cmp = $a->data->date <=> $b->data->date;
+            } else {
+                $va = $a->value($indicator);
+                $vb = $b->value($indicator);
+                // Sin valor (día cerrado, inventario sin conteo) siempre al final
+                $cmp = match (true) {
+                    $va === null && $vb === null => 0,
+                    $va === null => 1,
+                    $vb === null => -1,
+                    default => $va->compareTo($vb) * ($this->dir === 'asc' ? 1 : -1),
+                };
+
+                return $cmp !== 0 ? $cmp : $a->data->date <=> $b->data->date;
+            }
+
+            return $this->dir === 'asc' ? $cmp : -$cmp;
+        });
+
+        return $rows;
     }
 
     private function branchOrFail(): Branch

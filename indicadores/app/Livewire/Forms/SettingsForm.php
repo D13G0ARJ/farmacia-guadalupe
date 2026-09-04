@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Livewire\Forms;
 
+use App\Console\Commands\SendMonthlyReport;
 use App\Models\Setting;
+use Closure;
 use Illuminate\Validation\Rule;
 use Livewire\Form;
 
@@ -29,8 +31,17 @@ class SettingsForm extends Form
 
     public string $app_name = '';
 
+    public int $report_email_day = 0;
+
+    public string $report_recipients = '';
+
+    public bool $close_reminder_enabled = true;
+
     public function fillFromSettings(): void
     {
+        $this->report_email_day = (int) Setting::get('report_email_day');
+        $this->report_recipients = (string) Setting::get('report_recipients');
+        $this->close_reminder_enabled = (bool) Setting::get('close_reminder_enabled');
         $this->sales_deviation_pct = (int) Setting::get('sales_deviation_pct');
         $this->rate_deviation_pct = (int) Setting::get('rate_deviation_pct');
         $this->operator_edit_window_days = (int) Setting::get('operator_edit_window_days');
@@ -56,6 +67,15 @@ class SettingsForm extends Form
             'goal_currency' => ['required', Rule::in(['USD', 'BS'])],
             'gross_margin_pct' => ['nullable', 'numeric', 'between:1,95'],
             'app_name' => ['required', 'string', 'min:3', 'max:80'],
+            'report_email_day' => ['required', 'integer', 'between:0,28'],
+            'report_recipients' => ['nullable', 'string', 'max:500', function (string $attribute, mixed $value, Closure $fail): void {
+                foreach (preg_split('/[\s,;]+/', (string) $value) ?: [] as $email) {
+                    if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+                        $fail("\"{$email}\" no es un correo válido.");
+                    }
+                }
+            }],
+            'close_reminder_enabled' => ['boolean'],
         ];
     }
 
@@ -84,6 +104,9 @@ class SettingsForm extends Form
             'goal_currency' => $this->goal_currency,
             'gross_margin_pct' => $this->gross_margin_pct === '' ? null : (float) $this->gross_margin_pct,
             'app_name' => trim($this->app_name),
+            'report_email_day' => $this->report_email_day,
+            'report_recipients' => implode(', ', SendMonthlyReport::recipients($this->report_recipients)),
+            'close_reminder_enabled' => $this->close_reminder_enabled,
         ];
     }
 }

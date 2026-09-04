@@ -27,6 +27,28 @@ Schedule::call(function (): void {
     ->withoutOverlapping(30);
 
 /*
+ * Correo (§11.2, §13.8): el reporte mensual corre a diario y solo envía el día configurado;
+ * el recordatorio de cierre, el día 1. Ambos se apagan desde Administración › Correo.
+ */
+Schedule::command('reports:send-monthly')
+    ->dailyAt('07:00')
+    ->timezone(config('app.timezone'))
+    ->withoutOverlapping(30);
+
+Schedule::command('periods:remind-close')
+    ->monthlyOn(1, '08:30')
+    ->timezone(config('app.timezone'))
+    ->withoutOverlapping(30);
+
+/*
+ * Respaldo diario de la base de datos (§15.2) a storage/app/backups, 30 días de retención.
+ */
+Schedule::command('db:backup')
+    ->dailyAt('02:00')
+    ->timezone(config('app.timezone'))
+    ->withoutOverlapping(30);
+
+/*
  * Colas sin worker supervisado (§4.6): el scheduler procesa lo pendiente cada minuto.
  */
 Schedule::command('queue:work --stop-when-empty --max-time=50')

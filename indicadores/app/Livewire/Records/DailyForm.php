@@ -7,6 +7,7 @@ namespace App\Livewire\Records;
 use App\Actions\Records\DeleteDailyRecord;
 use App\Actions\Records\RegisterClosedDay;
 use App\Actions\Records\RegisterDailyRecord;
+use App\Actions\Records\UnmarkAtypical;
 use App\Actions\Records\UpdateDailyRecord;
 use App\Domain\Rates\RateResolver;
 use App\Domain\Records\Exceptions\RecordException;
@@ -14,6 +15,7 @@ use App\Domain\Records\WarningDetector;
 use App\Domain\Shared\Formatter;
 use App\Domain\Shared\Period;
 use App\Enums\Currency;
+use App\Enums\DayStatus;
 use App\Livewire\Forms\DailyRecordForm;
 use App\Models\Branch;
 use App\Models\DailyRecord;
@@ -30,6 +32,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Spatie\Activitylog\Models\Activity;
 
@@ -90,6 +93,10 @@ class DailyForm extends Component
     public array $reference = [];
 
     public string $weekdayLabel = '';
+
+    /** Carga en secuencia de los días atrasados (§13.8): al guardar sigue con el siguiente faltante. */
+    #[Url(as: 'faltantes')]
+    public bool $sequence = false;
 
     public function mount(?string $date = null): void
     {
@@ -225,17 +232,19 @@ class DailyForm extends Component
         $branch = Branch::query()->findOrFail($this->branchId);
         $input = $this->form->toInput($branch->id, $formatter, includeRate: $this->rateEdited);
         $user = auth()->user();
+        $wasAtypical = false;
 
         try {
             if ($this->recordId !== null) {
                 $record = DailyRecord::query()->findOrFail($this->recordId);
                 $this->authorize('update', $record);
+                $wasAtypical = $record->status === DayStatus::Atypical;
                 $expected = $this->expectedUpdatedAt === null ? null : CarbonImmutable::parse($this->expectedUpdatedAt);
-                $update->handle($record, $input, $user, $expected);
+                $saved = $update->handle($record, $input, $user, $expected);
                 $message = 'Día actualizado.';
             } else {
                 $this->authorize('create', [DailyRecord::class, $branch]);
-                $register->handle($input, $user);
+                $saved = $register->handle($input, $user);
                 $message = 'Día guardado.';
             }
         } catch (RecordException $e) {
@@ -244,7 +253,33 @@ class DailyForm extends Component
             return;
         }
 
-        $this->finish($branch, $input->date, $message);
+        // Deshacer del marcado atípico (§13.8): 10 s desde el aviso, sin volver a abrir el día.
+        $undo = null;
+        if ($saved->status === DayStatus::Atypical && ! $wasAtypical) {
+            $message = 'Día marcado como atípico. No se usará en la proyección.';
+            $undo = ['label' => 'Deshacer', 'event' => 'undo-atypical', 'params' => ['record' => $saved->id]];
+        }
+
+        $this->finish($branch, $input->date, $message, $undo);
+    }
+
+    /** "Deshacer" del aviso: el día vuelve a normal y conserva su observación. */
+    #[On('undo-atypical')]
+    public function undoAtypical(UnmarkAtypical $action, int $record): void
+    {
+        $model = DailyRecord::query()->findOrFail($record);
+        $this->authorize('markAtypical', $model);
+
+        if (! $action->handle($model, auth()->user())) {
+            $this->dispatch('toast', type: 'warning', message: 'Ese día ya no está marcado como atípico.');
+
+            return;
+        }
+
+        if ($this->recordId === $model->id) {
+            $this->form->atypical = false;
+        }
+        $this->dispatch('toast', type: 'success', message: 'Marca de atípico retirada del '.app(Formatter::class)->date($model->date, 'short').'.');
     }
 
     public function saveAnyway(RegisterDailyRecord $register, UpdateDailyRecord $update, Formatter $formatter): void
@@ -277,10 +312,42 @@ class DailyForm extends Component
 
     public function render(): View
     {
+        $date = $this->form->date === '' ? CarbonImmutable::today() : CarbonImmutable::parse($this->form->date);
+
         return view('livewire.records.daily-form', [
             'isEdit' => $this->recordId !== null,
-            'period' => Period::of($this->form->date === '' ? CarbonImmutable::today() : CarbonImmutable::parse($this->form->date)),
+            'period' => Period::of($date),
+            'sequenceInfo' => $this->sequence ? $this->sequenceInfo($date) : null,
         ]);
+    }
+
+    /**
+     * Posición dentro de los días faltantes del mes, con el anterior y el siguiente (§13.8).
+     *
+     * @return array{position: int|null, total: int, previous: string|null, next: string|null}
+     */
+    private function sequenceInfo(CarbonImmutable $date): array
+    {
+        $missing = app(MonthRecordsQuery::class)->run($this->branchId, Period::of($date))->missingDates;
+        $keys = array_map(fn (CarbonImmutable $d) => $d->toDateString(), $missing);
+        $index = array_search($date->toDateString(), $keys, true);
+
+        $previous = null;
+        $next = null;
+        foreach ($keys as $key) {
+            if ($key < $date->toDateString()) {
+                $previous = $key;
+            } elseif ($key > $date->toDateString() && $next === null) {
+                $next = $key;
+            }
+        }
+
+        return [
+            'position' => $index === false ? null : $index + 1,
+            'total' => count($keys),
+            'previous' => $previous,
+            'next' => $next,
+        ];
     }
 
     private function resolveInitialDate(Branch $branch, ?string $date): CarbonImmutable
@@ -394,16 +461,17 @@ class DailyForm extends Component
         $this->warnings = array_map(fn ($w) => ['code' => $w->code, 'field' => $w->field, 'message' => $w->message], $warnings);
     }
 
-    private function finish(Branch $branch, CarbonImmutable $saved, string $message): void
+    /** @param  array{label: string, event: string, params: array<string, mixed>}|null  $undo */
+    private function finish(Branch $branch, CarbonImmutable $saved, string $message, ?array $undo = null): void
     {
         $next = app(MonthRecordsQuery::class)->run($branch->id, Period::of($saved))->firstMissingDate();
 
-        session()->flash('toast', ['type' => 'success', 'message' => $message]);
+        session()->flash('toast', ['type' => 'success', 'message' => $message, 'action' => $undo]);
         session()->flash('saved_date', $saved->toDateString());
 
         // Recarga completa (sin wire:navigate): garantiza que el aviso en sesión se muestre siempre.
         if ($next !== null) {
-            $this->redirectRoute('records.create', ['date' => $next->toDateString()]);
+            $this->redirectRoute('records.create', array_filter(['date' => $next->toDateString(), 'faltantes' => $this->sequence ? 1 : null]));
 
             return;
         }

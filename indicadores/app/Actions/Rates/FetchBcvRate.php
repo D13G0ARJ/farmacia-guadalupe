@@ -6,12 +6,18 @@ namespace App\Actions\Rates;
 
 use App\Domain\Rates\ExchangeRateProvider;
 use App\Domain\Shared\Decimal;
+use App\Domain\Shared\Formatter;
+use App\Enums\Permission;
 use App\Enums\RateSource;
 use App\Models\ExchangeRate;
 use App\Models\Setting;
+use App\Models\User;
+use App\Notifications\RateDeviationDetected;
 use Brick\Math\BigDecimal;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
+use Spatie\Permission\Exceptions\PermissionDoesNotExist;
 
 /**
  * Consulta al proveedor y guarda la tasa para la fecha de vigencia indicada (§9.2).
@@ -52,6 +58,7 @@ final class FetchBcvRate
                 'anterior' => (string) $previous->rate,
                 'nueva' => (string) $quote->rate,
             ]);
+            $this->notifyAdmins($effectiveDate, $previous->rate, $quote->rate);
         }
 
         return $this->upsert->handle($effectiveDate, $quote->rate, RateSource::Bcv, fetchedAt: $quote->fetchedAt);
@@ -66,6 +73,25 @@ final class FetchBcvRate
         }
 
         return $next;
+    }
+
+    /** Correo a quien administra (RN-16): la tasa se guardó, pero conviene revisarla. */
+    private function notifyAdmins(CarbonImmutable $date, BigDecimal $previous, BigDecimal $new): void
+    {
+        $formatter = app(Formatter::class);
+        try {
+            $admins = User::query()->where('is_active', true)->permission(Permission::RatesManage->value)->get();
+        } catch (PermissionDoesNotExist) {
+            // Base sin roles sembrados (instalación a medias): la tasa ya quedó guardada y registrada en el log.
+            return;
+        }
+
+        Notification::send($admins, new RateDeviationDetected(
+            $date->format('d/m/Y'),
+            $formatter->number($previous, 2),
+            $formatter->number($new, 2),
+            $formatter->pct(Decimal::variation($previous, $new)),
+        ));
     }
 
     private function deviatesTooMuch(BigDecimal $previous, BigDecimal $new): bool

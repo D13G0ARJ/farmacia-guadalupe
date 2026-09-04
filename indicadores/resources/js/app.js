@@ -52,5 +52,51 @@ document.addEventListener('alpine:init', () => {
     window.Alpine.data('goalGrid', goalGrid);
 });
 
+/** Aviso al usuario desde JavaScript, con el mismo toast del layout. */
+const toast = (detail) => window.dispatchEvent(new CustomEvent('toast', { detail }));
+
+const isTyping = (target) =>
+    target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
+
+/**
+ * Atajos de teclado (§13.8): Alt+N carga el día, "?" abre la ayuda de la pantalla.
+ * Enter y Esc los resuelven los formularios y los diálogos.
+ */
+document.addEventListener('keydown', (event) => {
+    if (event.altKey && ! event.ctrlKey && ! event.metaKey && event.code === 'KeyN') {
+        const url = document.body.dataset.shortcutNew;
+        if (url) {
+            event.preventDefault();
+            window.Livewire?.navigate ? window.Livewire.navigate(url) : (window.location.href = url);
+        }
+        return;
+    }
+    if (event.key === '?' && ! event.altKey && ! event.ctrlKey && ! event.metaKey && ! isTyping(event.target)) {
+        event.preventDefault();
+        window.dispatchEvent(new CustomEvent('toggle-help'));
+    }
+});
+
+/**
+ * Sesión vencida y red caída (§13.8, §13.6): mensaje amable en lugar de la pantalla de error.
+ * Lo escrito en el formulario sigue en el navegador (borrador por fecha).
+ */
+document.addEventListener('livewire:init', () => {
+    window.Livewire.hook('request', ({ fail }) => {
+        fail(({ status, preventDefault }) => {
+            if (status === 419 || status === 401) {
+                preventDefault();
+                toast({ type: 'warning', message: 'Tu sesión venció. Vuelve a entrar; lo que escribiste sigue guardado en este navegador.' });
+                setTimeout(() => window.location.reload(), 2500);
+                return;
+            }
+            if (status === 0 || status >= 502) {
+                preventDefault();
+                toast({ type: 'danger', message: 'No se pudo guardar. Tus datos siguen aquí; intenta de nuevo.' });
+            }
+        });
+    });
+});
+
 // Los toasts emitidos desde PHP con $this->dispatch('toast', ...) llegan como evento de navegador
 // `toast` en window (Livewire 3): el layout los escucha con x-on:toast.window. No hace falta puente.

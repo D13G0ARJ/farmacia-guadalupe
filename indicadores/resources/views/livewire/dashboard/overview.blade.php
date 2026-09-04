@@ -6,12 +6,13 @@
         </div>
         @unless ($dashboard->isEmpty())
             {{-- Reporte PDF (UC-14): el navegador envía primero las gráficas en pantalla; si no puede, el PDF sale sin ellas --}}
-            <div x-data="{ busy: false }">
+            <div x-data="{ busy: false }" class="flex flex-wrap items-center gap-2 print:hidden">
                 <x-btn variant="secondary" icon="download" data-images-url="{{ route('exports.charts', ['period' => $view->period->key()]) }}" data-pdf-url="{{ route('exports.pdf', ['period' => $view->period->key()]) }}"
                        x-on:click="busy = true; window.downloadReport($el.dataset.imagesUrl, $el.dataset.pdfUrl).finally(() => setTimeout(() => busy = false, 3000))" x-bind:disabled="busy">
                     <span x-show="! busy">Descargar PDF</span>
                     <span x-cloak x-show="busy">Generando…</span>
                 </x-btn>
+                <x-btn variant="secondary" icon="printer" class="print:hidden" x-on:click="window.print()">Imprimir</x-btn>
             </div>
         @endunless
     </div>
@@ -87,7 +88,7 @@
         {{-- KPI primarios con variación, sparkline y barra de meta (§13.5, §7.2, §8.3) --}}
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             @foreach ($primary as $ind)
-                <x-kpi :label="$ind->label()" :explanation="$ind->explanation()"
+                <x-kpi :label="$ind->label()" :explanation="$ind->explanation()" :hint="$hints[$ind->value] ?? null"
                        :value="$ind->format($formatter, $summary->value($ind), $ind === \App\Domain\Indicators\Indicator::SalesBs ? 0 : null)"
                        :secondary="match ($ind) {
                            \App\Domain\Indicators\Indicator::SalesUsd => $formatter->money($summary->value(\App\Domain\Indicators\Indicator::SalesBs), \App\Enums\Currency::Bs, 0),
@@ -108,7 +109,7 @@
             <summary class="cursor-pointer list-none text-body text-brand-700 hover:underline">Ver 4 indicadores más</summary>
             <div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 @foreach ($secondary as $ind)
-                    <x-kpi :label="$ind->label()" :explanation="$ind->explanation()"
+                    <x-kpi :label="$ind->label()" :explanation="$ind->explanation()" :hint="$hints[$ind->value] ?? null"
                            :value="$ind->format($formatter, $summary->value($ind), $ind === \App\Domain\Indicators\Indicator::SalesBs ? 0 : null)"
                            :secondary="$ind === \App\Domain\Indicators\Indicator::InventoryValueUsd && $summary->daysWithInventory > 0 ? 'promedio de '.$summary->daysWithInventory.' conteos' : null"
                            :delta="$dashboard->vsPrevious[$ind->value] ?? null"

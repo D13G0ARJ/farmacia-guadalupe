@@ -18,6 +18,7 @@ final class UpdateSettings
         'sales_deviation_pct', 'rate_deviation_pct', 'operator_edit_window_days',
         'goal_growth_pct', 'goal_on_track_pct', 'goal_at_risk_pct', 'goal_currency',
         'gross_margin_pct', 'app_name',
+        'report_email_day', 'report_recipients', 'close_reminder_enabled',
     ];
 
     /**

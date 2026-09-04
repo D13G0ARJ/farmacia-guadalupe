@@ -24,6 +24,10 @@ class Setting extends Model
         'operator_edit_window_days' => 7,
         'gross_margin_pct' => null,
         'app_name' => 'Indicadores · Farmacia Guadalupe',
+        // Correo (§11.2, §13.8): día del reporte mensual (0 = apagado), destinatarios y recordatorio de cierre.
+        'report_email_day' => 0,
+        'report_recipients' => '',
+        'close_reminder_enabled' => true,
     ];
 
     /**

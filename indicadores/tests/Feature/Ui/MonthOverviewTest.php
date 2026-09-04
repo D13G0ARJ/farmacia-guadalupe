@@ -56,8 +56,8 @@ it('con días faltantes muestra el contador y el acceso directo al primero', fun
 
     Livewire::actingAs($user)->test(MonthOverview::class, ['period' => '2025-09'])
         ->assertSee('Faltan 19 días')
-        ->assertSee('Cargar el primero')
-        ->assertSeeHtml(route('records.create', ['date' => '2025-09-02']));
+        ->assertSee('Cargar los 19 faltantes')
+        ->assertSeeHtml(route('records.create', ['date' => '2025-09-02', 'faltantes' => 1]));
 });
 
 it('un día cerrado se muestra con su insignia y sin ceros en la fila', function (): void {

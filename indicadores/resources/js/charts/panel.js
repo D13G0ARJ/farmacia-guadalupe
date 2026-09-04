@@ -51,6 +51,26 @@ export default function chartPanel(id) {
             this.$nextTick(() => (this.handle ? this.handle.update(next) : this.mount(next)));
         },
 
+        expanded: false,
+        bigHandle: null,
+
+        /** "Ampliar" (§13.5): la misma gráfica a pantalla completa, en un segundo lienzo que se destruye al cerrar. */
+        async expand() {
+            if (!this.handle) return;
+            this.expanded = true;
+            await this.$nextTick();
+            const { mountChart } = await window.loadCharts();
+            if (!this.expanded || !this.$refs.big) return;
+            this.bigHandle?.destroy();
+            this.bigHandle = mountChart(this.$refs.big, this.current());
+        },
+
+        collapse() {
+            this.expanded = false;
+            this.bigHandle?.destroy();
+            this.bigHandle = null;
+        },
+
         /** PNG a 2× con el nombre de la gráfica y el mes (§14). */
         async png() {
             if (!this.handle) return;
@@ -68,6 +88,7 @@ export default function chartPanel(id) {
         },
 
         destroy() {
+            this.collapse();
             this.unmount();
         },
     };

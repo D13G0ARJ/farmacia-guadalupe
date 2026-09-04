@@ -1,10 +1,37 @@
 /**
- * Vista previa de los derivados en el formulario diario (RN-26, §13.5).
- * Mismas fórmulas que App\Domain\Indicators\DailyMetrics; el servidor recalcula al guardar.
+ * Vista previa de los derivados en el formulario diario (RN-26, §13.5) y borrador por fecha en el
+ * navegador (§13.8). Mismas fórmulas que App\Domain\Indicators\DailyMetrics; el servidor recalcula al guardar.
  */
 import { fmt } from './charts/formatters';
 
-export default function dailyPreview($wire) {
+const DRAFT_FIELDS = ['sales', 'transactions', 'units', 'shifts', 'inventoryUnits', 'inventoryValue', 'notes'];
+
+const storage = {
+    get(key) {
+        try {
+            const raw = window.localStorage.getItem(key);
+            return raw ? JSON.parse(raw) : null;
+        } catch {
+            return null;
+        }
+    },
+    set(key, value) {
+        try {
+            window.localStorage.setItem(key, JSON.stringify(value));
+        } catch {
+            // Sin almacenamiento (modo privado o lleno): el formulario sigue funcionando sin borrador.
+        }
+    },
+    remove(key) {
+        try {
+            window.localStorage.removeItem(key);
+        } catch {
+            // Igual que arriba.
+        }
+    },
+};
+
+export default function dailyPreview($wire, options = {}) {
     return {
         // Enlazado a las propiedades Livewire: lo que escribe el usuario y lo que corrige el servidor
         // (tasa arrastrada, cambio de fecha) llegan aquí sin reiniciar el estado en cada morph.
@@ -13,6 +40,58 @@ export default function dailyPreview($wire) {
         transactions: $wire.entangle('form.transactions'),
         units: $wire.entangle('form.units'),
         shifts: $wire.entangle('form.shifts'),
+        inventoryUnits: $wire.entangle('form.inventory_units'),
+        inventoryValue: $wire.entangle('form.inventory_value_usd'),
+        notes: $wire.entangle('form.notes'),
+
+        draftRestored: false,
+        draftSavedAt: null,
+        draftTimer: null,
+
+        init() {
+            if (options.clear) storage.remove(options.clear);
+            if (! options.edit) this.restoreDraft();
+            DRAFT_FIELDS.forEach((field) => this.$watch(field, () => this.scheduleDraft()));
+        },
+
+        get draftKey() {
+            return `draft:${options.branch}:${$wire.form?.date ?? ''}`;
+        },
+
+        /** Al abrir un día nuevo sin nada escrito, vuelve lo que quedó en este navegador. */
+        restoreDraft() {
+            const draft = storage.get(this.draftKey);
+            if (! draft || this.sales !== '' || this.transactions !== '' || this.units !== '') return;
+            DRAFT_FIELDS.forEach((field) => {
+                if (typeof draft[field] === 'string' && draft[field] !== '') this[field] = draft[field];
+            });
+            this.draftRestored = true;
+            this.draftSavedAt = draft.at ? new Date(draft.at).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' }) : null;
+        },
+
+        scheduleDraft() {
+            clearTimeout(this.draftTimer);
+            this.draftTimer = setTimeout(() => this.saveDraft(), 400);
+        },
+
+        saveDraft() {
+            if (options.edit) return;
+            const values = Object.fromEntries(DRAFT_FIELDS.map((field) => [field, String(this[field] ?? '')]));
+            const empty = DRAFT_FIELDS.every((field) => field === 'shifts' || values[field] === '');
+            if (empty) {
+                storage.remove(this.draftKey);
+                return;
+            }
+            storage.set(this.draftKey, { ...values, at: Date.now() });
+        },
+
+        discardDraft() {
+            storage.remove(this.draftKey);
+            DRAFT_FIELDS.forEach((field) => {
+                if (field !== 'shifts') this[field] = '';
+            });
+            this.draftRestored = false;
+        },
 
         get salesUsd() {
             const s = fmt.parse(this.sales);

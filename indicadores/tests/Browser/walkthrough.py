@@ -264,8 +264,94 @@ with sync_playwright() as p:
             expect(page.locator("section[aria-labelledby='chart-g2-title'] [x-ref='canvas'] svg")).to_be_visible(timeout=20000)
     step("gráficas: un mes vacío muestra el estado vacío y vuelve a dibujar al cambiar de mes", charts_empty_month)
 
+    # ---------- 3a. Fase 7: ayuda contextual, atajos, ampliar, orden y búsqueda, borrador ----------
+    def help_and_shortcuts():
+        page.goto(f"{BASE}/graficas", wait_until="networkidle")
+        page.keyboard.press("?")
+        dialog = page.get_by_role("dialog", name=re.compile("Ayuda"))
+        expect(dialog.get_by_text("Ayuda · Gráficas")).to_be_visible()
+        dialog.get_by_text("¿Cómo se calcula cada indicador?").click()
+        expect(dialog.get_by_text("Suma de la venta de cada día convertida a dólares")).to_be_visible()
+        dialog.get_by_text("Glosario").click()
+        expect(dialog.get_by_text("Bolívares por dólar que publica el Banco Central")).to_be_visible()
+        shot(page, "03a-ayuda")
+        page.keyboard.press("Escape")
+        expect(dialog).to_be_hidden()
+        # Alt+N lleva a cargar día; el botón "?" de la barra también abre la ayuda
+        page.keyboard.press("Alt+n")
+        page.wait_for_url(re.compile(r"/cargar"), timeout=15000)
+        page.get_by_role("button", name="Ayuda de esta pantalla").click()
+        expect(page.get_by_text("Ayuda · Cargar día")).to_be_visible()
+        page.keyboard.press("Escape")
+        # "¿Cómo se calcula?" en la tarjeta KPI del panel, con el último día
+        page.goto(f"{BASE}/dashboard", wait_until="networkidle")
+        page.get_by_role("button", name="¿Cómo se calcula venta en dólares?").click()
+        note = page.locator("#kpi-help-venta-en-dolares")
+        expect(note).to_be_visible()
+        expect(note).to_contain_text("convertida a dólares")
+        expect(note).to_contain_text("Último día (mar 30/09)")
+        shot(page, "03b-como-se-calcula")
+        page.keyboard.press("Escape")
+        expect(note).to_be_hidden()
+    step("ayuda: panel '?' con fórmulas y glosario, Alt+N, y '¿Cómo se calcula?' en las tarjetas", help_and_shortcuts)
+
+    def chart_expand():
+        page.goto(f"{BASE}/graficas", wait_until="networkidle")
+        panel = page.locator("section[aria-labelledby='chart-g2-title']")
+        expect(panel.locator("[x-ref='canvas'] svg")).to_be_visible(timeout=20000)
+        panel.get_by_role("button", name="Ampliar").click()
+        big = page.get_by_role("dialog", name="Venta en dólares por día ampliada")
+        expect(big).to_be_visible()
+        expect(big.locator("[x-ref='big'] svg")).to_be_visible(timeout=15000)
+        assert big.locator("[x-ref='big']").bounding_box()["width"] > 900
+        shot(page, "03c-grafica-ampliada")
+        page.keyboard.press("Escape")
+        expect(big).to_be_hidden()
+    step("gráficas: 'Ampliar' abre la gráfica a pantalla completa y Esc la cierra", chart_expand)
+
+    def month_sort_and_search():
+        page.goto(f"{BASE}/mes/2025-09", wait_until="networkidle")
+        expect(page.get_by_role("button", name="Imprimir")).to_be_visible()
+        page.get_by_role("button", name="Venta Bs").click()
+        expect(page.locator("tbody tr").first).to_contain_text("jue 25/09", timeout=15000)
+        page.get_by_role("button", name="Venta Bs").click()
+        expect(page.locator("tbody tr").first).to_contain_text("mar 16/09", timeout=15000)
+        page.get_by_label("Buscar fecha en el cuadro").fill("16")
+        expect(page.locator("tbody tr")).to_have_count(1, timeout=15000)
+        expect(page.locator("tfoot")).to_contain_text("Bs 3.012.770,86")  # los totales siguen siendo del mes
+        shot(page, "03d-mes-orden-busqueda")
+        page.get_by_label("Buscar fecha en el cuadro").fill("")
+        page.get_by_role("button", name="Fecha").click()
+        expect(page.locator("tbody tr")).to_have_count(30, timeout=15000)
+        expect(page.locator("tbody tr").first).to_contain_text("lun 01/09")
+        # Flechas en el calendario
+        page.locator("a[data-day='1']").focus()
+        page.keyboard.press("ArrowRight")
+        assert page.evaluate("document.activeElement.dataset.day") == "2"
+        page.keyboard.press("ArrowDown")
+        assert page.evaluate("document.activeElement.dataset.day") == "9"
+    step("mes: ordenar por columna, buscar por fecha sin tocar los totales, Imprimir y flechas en el calendario", month_sort_and_search)
+
+    def form_draft():
+        page.goto(f"{BASE}/cargar/2025-07-15", wait_until="networkidle")
+        page.fill("#sales_bs", "12345")
+        page.fill("#transactions", "77")
+        page.wait_for_timeout(900)
+        page.reload(wait_until="networkidle")
+        expect(page.get_by_text("Recuperamos lo que escribiste para este día")).to_be_visible()
+        assert page.input_value("#sales_bs") in ("12345", "12.345,00"), page.input_value("#sales_bs")
+        assert page.input_value("#transactions") == "77"
+        shot(page, "03e-borrador-recuperado")
+        page.get_by_role("button", name="Descartar").click()
+        expect(page.get_by_text("Recuperamos lo que escribiste")).to_be_hidden()
+        assert page.input_value("#sales_bs") == ""
+        page.reload(wait_until="networkidle")
+        expect(page.get_by_text("Recuperamos lo que escribiste")).to_be_hidden()
+    step("formulario: el borrador por fecha sobrevive a una recarga y se descarta con un clic", form_draft)
+
     # ---------- 3b. Fase 6: Tasa/Año en gráficas, pantalla Año y reporte PDF ----------
     def charts_rate_and_year_tabs():
+        page.goto(f"{BASE}/graficas", wait_until="networkidle")
         page.get_by_role("tab", name="Tasa").click()
         expect(page.get_by_role("tab", name="Tasa")).to_have_attribute("aria-selected", "true", timeout=10000)
         expect(page.get_by_text("Tasa BCV frente a la venta en dólares")).to_be_visible()
@@ -439,6 +525,27 @@ with sync_playwright() as p:
         shot(page, "11-editar-dia")
     step("volver a un día cargado abre el modo de edición", form_duplicate)
 
+    def atypical_undo():
+        page.goto(f"{BASE}/cargar/{day(1)}", wait_until="networkidle")
+        page.get_by_label("Día atípico").check()
+        page.fill("#notes", "Media jornada por inventario general")
+        page.get_by_role("button", name="Guardar cambios").click()
+        # Si el día trae advertencias (inventario vacío en día de conteo), se confirma sin modal (§13.5)
+        strip = page.get_by_role("button", name="Guardar de todos modos")
+        try:
+            strip.wait_for(state="visible", timeout=4000)
+            strip.click()
+        except Exception:  # noqa: BLE001
+            pass
+        expect(page.get_by_text("Día marcado como atípico. No se usará en la proyección.")).to_be_visible(timeout=20000)
+        shot(page, "11b-atipico-deshacer")
+        page.get_by_role("button", name="Deshacer").click()
+        expect(page.get_by_text(re.compile(r"^Marca de atípico retirada del "))).to_be_visible(timeout=15000)
+        page.goto(f"{BASE}/cargar/{day(1)}", wait_until="networkidle")
+        assert not page.get_by_label("Día atípico").is_checked()
+        assert page.input_value("#notes") == "Media jornada por inventario general"
+    step("formulario: marcar atípico deja 'Deshacer' en el aviso y deshacerlo conserva la observación", atypical_undo)
+
     def closed_day():
         page.goto(f"{BASE}/cargar/{day(3)}", wait_until="networkidle")
         page.get_by_role("button", name="Registrar como día cerrado").click()
@@ -458,6 +565,19 @@ with sync_playwright() as p:
         assert "Bs 0,00" not in closed_row.inner_text(), closed_row.inner_text()
         shot(page, "12-mes-actual")
     step("mes actual muestra días cargados, cerrado y faltantes", month_current)
+
+    def sequence_mode():
+        page.goto(f"{BASE}/mes/{PERIOD}", wait_until="networkidle")
+        link = page.get_by_role("link", name=re.compile(r"^Cargar los \d+ faltantes$|^Cargarlo$"))
+        expect(link).to_be_visible()
+        link.click()
+        page.wait_for_url(re.compile(r"faltantes=1"), timeout=15000)
+        expect(page.get_by_text(re.compile(r"^Faltante 1 de \d+$"))).to_be_visible()
+        shot(page, "12a-secuencia-faltantes")
+        page.get_by_role("link", name="Salir").click()
+        page.wait_for_url(re.compile(r"/cargar/\d{4}-\d{2}-\d{2}$"), timeout=15000)
+        expect(page.get_by_text(re.compile(r"^Faltante \d+ de"))).to_have_count(0)
+    step("mes: 'Cargar los N faltantes' abre la secuencia con su posición y 'Salir' la deja", sequence_mode)
 
     # ---------- 5f. Fase 4: cerrar y reabrir el mes, candado en el formulario, historial ----------
     month_name = _MONTHS[_TODAY.month - 1]
@@ -603,6 +723,21 @@ with sync_playwright() as p:
         expect(page.get_by_text("cambió la contraseña de Prueba Recorrido")).to_be_visible(timeout=10000)
         shot(page, "19-admin-bitacora")
     step("administración: editar sede, validar parámetros y leer la bitácora en palabras del negocio", admin_branches_and_settings)
+
+    def admin_mail_settings():
+        page.goto(f"{BASE}/administracion?tab=parametros", wait_until="networkidle")
+        expect(page.get_by_text("Día del reporte mensual")).to_be_visible()
+        page.fill("#s-report-day", "40")
+        page.fill("#s-report-to", "direccion@farmacia.com, malo")
+        page.get_by_role("button", name="Guardar parámetros").click()
+        expect(page.get_by_text("Fuera del rango permitido.")).to_be_visible(timeout=10000)
+        expect(page.get_by_text('"malo" no es un correo válido.')).to_be_visible()
+        page.fill("#s-report-day", "5")
+        page.fill("#s-report-to", "direccion@farmacia.com")
+        page.get_by_role("button", name="Guardar parámetros").click()
+        expect(page.get_by_text(re.compile("Parámetros guardados|Sin cambios en los parámetros"))).to_be_visible(timeout=10000)
+        shot(page, "18b-admin-correo")
+    step("administración: parámetros de correo con validación de día y destinatarios", admin_mail_settings)
 
     def rates_page():
         page.goto(f"{BASE}/tasas", wait_until="networkidle")

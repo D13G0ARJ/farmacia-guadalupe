@@ -37,7 +37,7 @@ it('abre en el primer día no cargado del mes con la tasa BCV precargada y su in
         ->assertSee('Ayer:')
         ->assertSee('Guardar día')
         // La vista previa se enlaza con entangle: el x-data no cambia entre morphs y no reinicia el estado.
-        ->assertSee('x-data="dailyPreview($wire)"', false);
+        ->assertSee('x-data="dailyPreview($wire, { branch: 1, edit: false', false);
 });
 
 it('guarda un día y redirige al siguiente faltante', function (): void {

@@ -4,7 +4,7 @@
             <h1 class="text-title text-brand-800">{{ $view->period->label() }}</h1>
             <p class="text-ink-600">{{ $branch?->name ?? 'Todas las sedes' }}</p>
         </div>
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2 print:hidden">
             @if ($closedEvent)
                 {{-- Estado = icono + texto (§13.4): "Cerrado el 05/10" --}}
                 <x-badge tone="neutral" icon="lock" title="Cerrado por {{ $closedEvent->user?->name }}">Cerrado el {{ $closedEvent->created_at->format('d/m') }}</x-badge>
@@ -16,6 +16,7 @@
                 <x-btn variant="secondary" icon="unlock" x-on:click="reopenOpen = true">Reabrir</x-btn>
             @endif
             <x-btn variant="secondary" icon="download" :href="route('exports.month', ['period' => $view->period->key()])">Exportar a Excel</x-btn>
+            <x-btn variant="secondary" icon="printer" x-on:click="window.print()">Imprimir</x-btn>
         </div>
     </div>
 
@@ -74,14 +75,17 @@
                         <p class="flex flex-wrap items-center gap-2 text-ink-600">
                             <span>{{ count($view->missingDates) === 1 ? 'Falta 1 día' : 'Faltan '.count($view->missingDates).' días' }}: {{ implode(', ', array_map(fn ($d) => $d->day, array_slice($view->missingDates, 0, 8))) }}{{ count($view->missingDates) > 8 ? '…' : '' }}</span>
                             @if ($canCreate)
-                                <a href="{{ route('records.create', ['date' => $view->firstMissingDate()->toDateString()]) }}" wire:navigate class="font-medium text-brand-700 hover:underline">Cargar el primero</a>
+                                <a href="{{ route('records.create', ['date' => $view->firstMissingDate()->toDateString(), 'faltantes' => 1]) }}" wire:navigate class="font-medium text-brand-700 hover:underline">{{ count($view->missingDates) === 1 ? 'Cargarlo' : 'Cargar los '.count($view->missingDates).' faltantes' }}</a>
                             @endif
                         </p>
                     @else
                         <p class="flex items-center gap-1 text-success-600"><x-lucide name="check" class="h-4 w-4" />Todos los días cargados</p>
                     @endif
                 </div>
-                <div class="overflow-hidden rounded-card border border-line bg-surface">
+                {{-- Flechas (§13.8): mueven el foco entre los días del calendario --}}
+                <div class="overflow-hidden rounded-card border border-line bg-surface"
+                     x-data="{ move(step) { const links = [...$el.querySelectorAll('a[data-day]')]; const i = links.indexOf(document.activeElement); if (i < 0) return; links[Math.max(0, Math.min(links.length - 1, i + step))]?.focus() } }"
+                     x-on:keydown.arrow-right.prevent="move(1)" x-on:keydown.arrow-left.prevent="move(-1)" x-on:keydown.arrow-down.prevent="move(7)" x-on:keydown.arrow-up.prevent="move(-7)">
                     <div class="grid grid-cols-7 border-b border-line bg-panel text-center text-label text-ink-600">
                         @foreach (['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'] as $d)
                             <div class="py-2">{{ $d }}</div>
@@ -105,6 +109,7 @@
                                         };
                                     @endphp
                                     <a href="{{ route('records.create', ['date' => $date->toDateString()]) }}" wire:navigate
+                                       @if ($status !== 'future') data-day="{{ $date->day }}" @else tabindex="-1" @endif
                                        class="block min-h-[64px] p-2 text-left transition-colors {{ $classes }} {{ $status === 'future' ? 'pointer-events-none' : '' }}"
                                        aria-label="{{ $formatter->date($date, 'long') }}: {{ match($status) { 'loaded' => 'cargado', 'atypical' => 'atípico', 'closed' => 'cerrado', 'missing' => 'falta cargar', default => 'futuro' } }}">
                                         <span class="flex items-center justify-between">
@@ -134,30 +139,48 @@
         <section class="space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <h2 class="text-sub font-semibold">Cuadro de indicadores</h2>
-                <label class="flex items-center gap-2 text-label text-ink-600">
-                    <input type="checkbox" wire:model.live="excludeAtypical" class="h-4 w-4 rounded border-line text-accent-600 focus:ring-accent-600">
-                    Excluir días atípicos de los promedios
-                </label>
+                <div class="flex flex-wrap items-center gap-4 print:hidden">
+                    <label class="relative block">
+                        <span class="sr-only">Buscar fecha</span>
+                        <x-lucide name="search" class="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
+                        <input type="search" wire:model.live.debounce.300ms="search" placeholder="Buscar fecha: 16, 16/09, mar" class="w-56 rounded-control border-line bg-surface py-1.5 pl-8 pr-3 text-label focus:border-brand-500 focus:ring-2 focus:ring-brand-500" aria-label="Buscar fecha en el cuadro">
+                    </label>
+                    <label class="flex items-center gap-2 text-label text-ink-600">
+                        <input type="checkbox" wire:model.live="excludeAtypical" class="h-4 w-4 rounded border-line text-accent-600 focus:ring-accent-600">
+                        Excluir días atípicos de los promedios
+                    </label>
+                </div>
             </div>
             <div class="overflow-x-auto rounded-card border border-line bg-surface">
                 <table class="w-full min-w-[960px] border-collapse text-label">
                     <thead class="bg-panel text-ink-600">
                         <tr>
-                            <th rowspan="2" class="sticky left-0 z-10 bg-panel px-3 py-2 text-left font-medium">Fecha</th>
+                            <th rowspan="2" scope="col" class="sticky left-0 z-10 bg-panel px-3 py-2 text-left font-medium" aria-sort="{{ $sort === 'date' ? ($dir === 'asc' ? 'ascending' : 'descending') : 'none' }}">
+                                <button type="button" wire:click="sortBy('date')" class="inline-flex items-center gap-1 hover:text-ink-900">Fecha
+                                    @if ($sort === 'date')<x-lucide :name="$dir === 'asc' ? 'arrow-up' : 'arrow-down'" class="h-3.5 w-3.5" />@endif
+                                </button>
+                            </th>
                             @foreach (collect($columns)->groupBy('group') as $group => $cols)
                                 <th colspan="{{ $cols->count() }}" class="border-l border-line px-3 py-1.5 text-center font-medium">{{ $group }}</th>
                             @endforeach
                         </tr>
                         <tr>
                             @foreach ($columns as $col)
-                                <th class="whitespace-nowrap border-l border-line px-3 py-1.5 text-right font-medium" title="{{ $col['indicator']->explanation() }}">
-                                    {{ $col['indicator']->shortLabel() }}
+                                @php $key = $col['indicator']->value; @endphp
+                                <th scope="col" class="whitespace-nowrap border-l border-line px-3 py-1.5 text-right font-medium" title="{{ $col['indicator']->explanation() }}" aria-sort="{{ $sort === $key ? ($dir === 'asc' ? 'ascending' : 'descending') : 'none' }}">
+                                    <button type="button" wire:click="sortBy('{{ $key }}')" class="inline-flex items-center gap-1 hover:text-ink-900 {{ $sort === $key ? 'text-brand-700' : '' }}">
+                                        {{ $col['indicator']->shortLabel() }}
+                                        @if ($sort === $key)<x-lucide :name="$dir === 'asc' ? 'arrow-up' : 'arrow-down'" class="h-3.5 w-3.5" />@endif
+                                    </button>
                                 </th>
                             @endforeach
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-line">
-                        @foreach ($view->rows as $m)
+                        @if ($rows === [])
+                            <tr><td colspan="{{ count($columns) + 1 }}" class="px-3 py-6 text-center text-ink-600">Ningún día coincide con "{{ $search }}".</td></tr>
+                        @endif
+                        @foreach ($rows as $m)
                             @php $status = $m->data->status; @endphp
                             <tr wire:key="row-{{ $m->data->date->toDateString() }}-{{ $m->data->branchId }}" class="{{ $loop->even ? 'bg-brand-50/40' : '' }} hover:bg-brand-100/40">
                                 <td class="sticky left-0 z-10 whitespace-nowrap bg-inherit px-3 py-2">

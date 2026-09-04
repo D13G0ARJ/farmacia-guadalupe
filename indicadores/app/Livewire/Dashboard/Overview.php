@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Livewire\Dashboard;
 
+use App\Domain\Indicators\DailyMetrics;
 use App\Domain\Indicators\Indicator;
 use App\Domain\Shared\Formatter;
 use App\Domain\Shared\Period;
+use App\Enums\DayStatus;
 use App\Models\DailyRecord;
 use App\Models\Goal;
 use App\Queries\DashboardQuery;
@@ -71,11 +73,42 @@ class Overview extends Component
             'branch' => $branch,
             'primary' => $this->primary($currency),
             'secondary' => $this->secondary($currency),
+            'hints' => $this->lastDayHints($dashboard->month->rows, $formatter),
             'formatter' => $formatter,
             'canCreate' => $branch !== null && $user->can('create', [DailyRecord::class, $branch]),
             'canSeeGoals' => $user->can('viewAny', Goal::class),
             'canManageGoals' => $user->can('manage', [Goal::class, $branch]),
         ]);
+    }
+
+    /**
+     * "¿Cómo se calcula?" (§13.5) acompaña la fórmula con el valor del último día cargado.
+     *
+     * @param  list<DailyMetrics>  $rows
+     * @return array<string, string>
+     */
+    private function lastDayHints(array $rows, Formatter $formatter): array
+    {
+        $last = null;
+        foreach (array_reverse($rows) as $row) {
+            if ($row->data->status !== DayStatus::Closed) {
+                $last = $row;
+                break;
+            }
+        }
+        if ($last === null) {
+            return [];
+        }
+
+        $hints = [];
+        foreach ([...Indicator::primary(), ...Indicator::secondary(), Indicator::SalesBs, Indicator::AvgTicketBs] as $indicator) {
+            $value = $last->value($indicator);
+            if ($value !== null) {
+                $hints[$indicator->value] = 'Último día ('.$formatter->date($last->data->date, 'weekday').'): '.$indicator->format($formatter, $value);
+            }
+        }
+
+        return $hints;
     }
 
     /**

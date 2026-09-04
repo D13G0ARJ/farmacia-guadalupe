@@ -267,6 +267,26 @@
                 </div>
             </section>
 
+            <section class="rounded-card border border-line bg-surface p-5">
+                <h2 class="text-sub font-semibold text-ink-900">Correo</h2>
+                <p class="mt-1 text-label text-ink-600">Necesita el correo saliente configurado en el servidor (SMTP). Los avisos de reapertura y de tasa desviada van a quien tiene el permiso.</p>
+                <div class="mt-4 grid gap-5 sm:grid-cols-2">
+                    <x-field label="Día del reporte mensual" for="s-report-day" :error="$errors->first('settingsForm.report_email_day')" help="Del 1 al 28 se envía el PDF del mes anterior ese día; 0 lo apaga.">
+                        <x-input id="s-report-day" numeric inputmode="numeric" wire:model="settingsForm.report_email_day" :invalid="$errors->has('settingsForm.report_email_day')" />
+                    </x-field>
+                    <x-field label="Destinatarios del reporte" for="s-report-to" :error="$errors->first('settingsForm.report_recipients')" help="Correos separados por coma.">
+                        <x-input id="s-report-to" type="text" wire:model="settingsForm.report_recipients" placeholder="direccion@farmacia.com, contador@farmacia.com" :invalid="$errors->has('settingsForm.report_recipients')" />
+                    </x-field>
+                </div>
+                <label class="mt-4 flex items-start gap-3">
+                    <input type="checkbox" wire:model="settingsForm.close_reminder_enabled" class="mt-1 h-5 w-5 rounded border-line text-brand-600 focus:ring-brand-500">
+                    <span>
+                        <span class="font-medium">Recordatorio de cierre el día 1</span>
+                        <span class="block text-label text-ink-600">Si el mes anterior tiene días sin cargar o sigue abierto, se avisa a quien puede cerrarlo.</span>
+                    </span>
+                </label>
+            </section>
+
             <div class="flex justify-end">
                 <x-btn type="submit" wire:loading.attr="disabled" wire:target="saveSettings">Guardar parámetros</x-btn>
             </div>

@@ -28,14 +28,16 @@
             ]],
         ];
     @endphp
-    <body class="h-full bg-brand-50 font-sans text-body text-ink-900 antialiased"
-          x-data="{ sidebar: false, toasts: [], push(t) { if (! t || ! t.message) return; const id = Date.now() + Math.random(); this.toasts.push({ id, ...t }); setTimeout(() => this.toasts = this.toasts.filter(x => x.id !== id), t.action ? 10000 : 4000) }, dismiss(id) { this.toasts = this.toasts.filter(x => x.id !== id) } }"
+    <body class="h-full bg-brand-50 font-sans text-body text-ink-900 antialiased print:bg-white"
+          x-data="{ sidebar: false, help: false, toasts: [], push(t) { if (! t || ! t.message) return; const id = Date.now() + Math.random(); this.toasts.push({ id, ...t }); setTimeout(() => this.toasts = this.toasts.filter(x => x.id !== id), t.action ? 10000 : 4000) }, dismiss(id) { this.toasts = this.toasts.filter(x => x.id !== id) } }"
           x-on:toast.window="push(Array.isArray($event.detail) ? $event.detail[0] : $event.detail)"
+          x-on:toggle-help.window="help = ! help"
+          @can('records.create') data-shortcut-new="{{ route('records.create') }}" @endcan
           @if (session('toast')) x-init="push(@js(session('toast')))" @endif>
 
         <div class="flex min-h-full">
             {{-- Barra lateral (§13.3): capa neutra `panel`, tres grupos, activo en azul. --}}
-            <aside class="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-line bg-panel md:flex" aria-label="Navegación principal">
+            <aside class="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-line bg-panel md:flex print:hidden" aria-label="Navegación principal">
                 <a href="{{ route('dashboard') }}" wire:navigate class="flex items-center gap-2 px-5 py-5 text-brand-800">
                     <x-lucide name="cross" class="h-6 w-6 text-brand-600" />
                     <span class="text-sub font-semibold">Guadalupe</span>
@@ -67,28 +69,33 @@
                 </div>
             </aside>
 
-            <div class="flex min-h-full min-w-0 flex-1 flex-col md:pl-60">
+            <div class="flex min-h-full min-w-0 flex-1 flex-col md:pl-60 print:pl-0">
                 {{-- Barra superior: contexto global y la única acción primaria (§13.3). --}}
-                <header class="sticky top-0 z-20 border-b border-line bg-panel/95 backdrop-blur">
+                <header class="sticky top-0 z-20 border-b border-line bg-panel/95 backdrop-blur print:hidden">
                     <div class="mx-auto flex max-w-[1280px] items-center gap-3 px-4 py-3 sm:px-6">
                         <button type="button" class="md:hidden rounded-control p-2 text-brand-800 hover:bg-brand-100/60" x-on:click="sidebar = true" aria-label="Abrir menú">
                             <x-lucide name="menu" />
                         </button>
                         <livewire:shared.context-bar />
-                        <div class="ml-auto hidden sm:block">
+                        <div class="ml-auto flex items-center gap-2">
+                            {{-- Sin conexión (§13.8): Livewire lo detecta; el aviso no bloquea nada --}}
+                            <span wire:offline class="hidden items-center gap-1.5 rounded-control bg-warning-100 px-2.5 py-1.5 text-label font-medium text-warning-600 [&[wire\:offline]]:flex" role="status"><x-lucide name="warning" class="h-4 w-4" />Sin conexión</span>
+                            <button type="button" x-on:click="help = ! help" class="rounded-control p-2 text-ink-600 hover:bg-brand-100/60 focus-visible:ring-2 focus-visible:ring-brand-500" aria-label="Ayuda de esta pantalla" title="Ayuda (?)">
+                                <x-lucide name="help" />
+                            </button>
                             @can('records.create')
-                                <x-btn :href="route('records.create')" icon="plus" wire:navigate>Cargar día</x-btn>
+                                <span class="hidden sm:block"><x-btn :href="route('records.create')" icon="plus" wire:navigate title="Alt + N">Cargar día</x-btn></span>
                             @endcan
                         </div>
                     </div>
                 </header>
 
-                <main class="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 pb-24 sm:px-6 md:pb-8">
+                <main class="mx-auto w-full max-w-[1280px] flex-1 px-4 py-6 pb-24 sm:px-6 md:pb-8 print:max-w-none print:p-0">
                     {{ $slot }}
                 </main>
 
                 {{-- Móvil: navegación inferior y botón fijo de carga (§13.3). --}}
-                <nav class="fixed inset-x-0 bottom-0 z-30 flex h-[56px] items-stretch border-t border-line bg-panel md:hidden" aria-label="Navegación">
+                <nav class="fixed inset-x-0 bottom-0 z-30 flex h-[56px] items-stretch border-t border-line bg-panel md:hidden print:hidden" aria-label="Navegación">
                     <a href="{{ route('dashboard') }}" wire:navigate class="flex flex-1 flex-col items-center gap-0.5 py-2 text-label {{ request()->routeIs('dashboard') ? 'text-brand-600' : 'text-ink-600' }}"><x-lucide name="panel" />Panel</a>
                     @can('records.create')
                         <a href="{{ route('records.create') }}" wire:navigate class="flex flex-1 flex-col items-center gap-0.5 py-2 text-label {{ request()->routeIs('records.create') ? 'text-brand-600' : 'text-ink-600' }}"><x-lucide name="plus" />Cargar</a>
@@ -125,8 +132,10 @@
             </div>
         </div>
 
+        @include('layouts.partials.help-panel')
+
         {{-- Toasts (§13.5): inferior derecha, 4 s, mismo verbo de la acción en pasado. --}}
-        <div class="pointer-events-none fixed bottom-20 right-4 z-50 flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2 md:bottom-4" aria-live="polite">
+        <div class="pointer-events-none fixed bottom-20 right-4 z-50 flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2 md:bottom-4 print:hidden" aria-live="polite">
             <template x-for="t in toasts" :key="t.id">
                 <div class="pointer-events-auto flex items-start gap-2 rounded-card border bg-surface px-4 py-3 shadow-overlay"
                      :class="t.type === 'danger' ? 'border-danger-100' : (t.type === 'warning' ? 'border-warning-100' : 'border-success-100')">

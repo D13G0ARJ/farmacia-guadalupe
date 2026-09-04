@@ -114,7 +114,27 @@
             </div>
             @error('growth')<p class="text-label text-danger-600" role="alert">{{ $message }}</p>@enderror
 
-            <div class="relative overflow-x-auto rounded-card border border-line bg-surface">
+            {{-- Móvil (§13.8): la cuadrícula se apila, un indicador por tarjeta con sus doce meses --}}
+            <div class="space-y-3 md:hidden">
+                @foreach ($indicators as $ind)
+                    <details class="rounded-card border border-line bg-surface" wire:key="grid-card-{{ $ind->value }}" {{ $loop->first ? 'open' : '' }}>
+                        <summary class="cursor-pointer list-none px-4 py-3 font-medium text-ink-900">{{ $ind->label() }}</summary>
+                        <div class="grid grid-cols-3 gap-2 border-t border-line px-3 py-3">
+                            @foreach ($months as $key)
+                                @php $cellError = $errors->has("grid.{$ind->value}.{$key}") ? $errors->first("grid.{$ind->value}.{$key}") : null; @endphp
+                                <label class="block">
+                                    <span class="text-label text-ink-600">{{ ucfirst(mb_strtolower(\App\Domain\Shared\Period::of($key)->monthNameUpper())) }}</span>
+                                    <input type="text" inputmode="decimal" autocomplete="off" wire:model="grid.{{ $ind->value }}.{{ $key }}" x-on:focus="$event.target.select()"
+                                           @disabled(! $canManage) title="{{ $cellError }}"
+                                           class="mt-0.5 block w-full rounded-control border bg-surface px-2 py-2 text-right text-body tnum text-ink-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500 disabled:bg-panel {{ $cellError ? 'border-danger-600' : 'border-line' }}">
+                                </label>
+                            @endforeach
+                        </div>
+                    </details>
+                @endforeach
+            </div>
+
+            <div class="relative hidden overflow-x-auto rounded-card border border-line bg-surface md:block">
                 <table class="w-full min-w-[1180px] border-collapse text-label">
                     <thead class="bg-panel text-ink-600">
                         <tr>
