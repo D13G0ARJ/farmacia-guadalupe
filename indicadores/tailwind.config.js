@@ -20,6 +20,8 @@ export default {
                     600: '#1D6FE5',
                     700: '#1558C2',
                     800: '#0F3F8F',
+                    // Azul marino profundo del wordmark: solo el panel de marca del acceso (§13.4).
+                    900: '#0A2C66',
                 },
                 accent: {
                     100: '#EDE8FB',

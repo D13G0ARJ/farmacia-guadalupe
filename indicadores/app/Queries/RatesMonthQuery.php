@@ -22,7 +22,7 @@ final class RatesMonthQuery
     public function __construct(private readonly RateResolver $resolver) {}
 
     /**
-     * @return array{rows: list<array{date: CarbonImmutable, rate: BigDecimal|null, source: RateSource|null, carriedFrom: CarbonImmutable|null, variation: BigDecimal|null, setter: string|null, fetchedAt: CarbonImmutable|null}>, first: BigDecimal|null, last: BigDecimal|null, published: int, manual: int, status: array{provider: string, lastAttempt: string|null, lastSuccess: string|null, lastError: string|null}}
+     * @return array{rows: list<array{date: CarbonImmutable, rate: BigDecimal|null, source: RateSource|null, carriedFrom: CarbonImmutable|null, stale: bool, variation: BigDecimal|null, setter: string|null, fetchedAt: CarbonImmutable|null}>, first: BigDecimal|null, last: BigDecimal|null, published: int, manual: int, status: array{provider: string, lastAttempt: string|null, lastSuccess: string|null, lastError: string|null}}
      */
     public function run(Period $period): array
     {
@@ -66,6 +66,7 @@ final class RatesMonthQuery
                 'rate' => $value,
                 'source' => $rate->source ?? ($resolution !== null ? RateSource::Carried : null),
                 'carriedFrom' => $rate === null ? $resolution?->sourceDate : null,
+                'stale' => $rate === null && ($resolution?->isStale() ?? false),
                 'variation' => $rate === null ? null : Decimal::variation($previousRate, $rate->rate),
                 'setter' => $rate?->setter?->name,
                 'fetchedAt' => $rate?->fetched_at,

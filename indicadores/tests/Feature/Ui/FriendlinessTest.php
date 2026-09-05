@@ -5,10 +5,12 @@ declare(strict_types=1);
 use App\Domain\Shared\Period;
 use App\Enums\DayStatus;
 use App\Enums\Role;
+use App\Livewire\Dashboard\Overview;
 use App\Livewire\Records\DailyForm;
 use App\Livewire\Records\MonthOverview;
 use App\Models\DailyRecord;
 use App\Models\User;
+use App\Queries\DashboardQuery;
 use App\Support\PeriodContext;
 use Carbon\CarbonImmutable;
 use Database\Seeders\DatabaseSeeder;
@@ -110,6 +112,33 @@ it('la carga en secuencia recorre los días faltantes y sigue con el siguiente a
     Livewire::actingAs($admin)->withQueryParams([])->test(DailyForm::class, ['date' => '2025-09-10'])->assertSet('sequence', false)->assertDontSee('Faltante');
 
     Livewire::actingAs($admin)->test(MonthOverview::class)->assertSee('Cargar los 2 faltantes')->assertSeeHtml('faltantes=1');
+});
+
+it('una tasa arrastrada de hace meses se propone en rojo y exige confirmarla al guardar (§9.3)', function (): void {
+    $admin = friendlyAdmin();
+    CarbonImmutable::setTestNow('2026-09-04 09:00:00');
+
+    $component = Livewire::actingAs($admin)->withQueryParams([])->test(DailyForm::class, ['date' => '2026-09-01'])
+        ->assertSet('rateTone', 'danger')
+        ->assertSet('form.rate', '177,61')
+        ->assertSee('Arrastrada del 30/09/2025 (hace 11 meses)')
+        ->set('form.sales_bs', '150.000,00')->set('form.transactions', '100')->set('form.units', '200')->set('form.shifts', '3')
+        ->call('save')
+        ->assertNoRedirect()
+        ->assertSee('no hubo consultas al BCV desde entonces');
+    expect(collect($component->get('warnings'))->pluck('code'))->toContain('rate_stale');
+
+    // Al escribir la tasa de hoy la advertencia desaparece
+    $component->set('form.rate', '807,39')->assertSet('rateTone', 'warning');
+    expect(collect($component->get('warnings'))->pluck('code'))->not->toContain('rate_stale');
+
+    // El panel avisa en ámbar con acceso directo a Tasa BCV
+    Livewire::actingAs($admin)->test(Overview::class)
+        ->dispatch('context-changed');
+    app(PeriodContext::class)->set(Period::of('2026-09'));
+    $notices = app(DashboardQuery::class)->run(1, Period::of('2026-09'))->notices;
+    $stale = collect($notices)->firstWhere('action', 'Consultar ahora');
+    expect($stale)->not->toBeNull()->and($stale['tone'])->toBe('warning')->and($stale['text'])->toContain('hace 11 meses');
 });
 
 it('el panel muestra "¿Cómo se calcula?" con el último día y el formulario guarda el borrador por fecha', function (): void {

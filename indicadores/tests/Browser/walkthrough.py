@@ -40,6 +40,7 @@ def heading(n):
 os.makedirs(SHOTS, exist_ok=True)
 
 results = []
+RATE = {}  # tasa propuesta para el día 1 del mes en curso, leída en form_open
 
 # El servidor de desarrollo atiende una petición a la vez: las esperas cubren un cálculo de mes en frío.
 expect.set_options(timeout=15000)
@@ -458,8 +459,13 @@ with sync_playwright() as p:
     def form_open():
         page.goto(f"{BASE}/cargar/{day(1)}", wait_until="networkidle")
         expect(page.get_by_role("heading", name=heading(1))).to_be_visible()
-        assert "Arrastrada" in page.locator("#rate").evaluate("e => e.parentElement.parentElement.innerText")
-        assert page.input_value("#rate") == "177,61", page.input_value("#rate")
+        badge = page.locator("#rate").evaluate("e => e.parentElement.parentElement.innerText")
+        assert "Arrastrada" in badge or "BCV" in badge, badge
+        # La tasa propuesta depende de lo que haya en la tabla (demo: 177,61; con histórico del BCV, la del día)
+        RATE["text"] = page.input_value("#rate")
+        RATE["value"] = float(RATE["text"].replace(".", "").replace(",", "."))
+        assert RATE["value"] > 0, RATE
+        RATE["usd"] = "$ " + f"{91154.02 / RATE['value']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         assert page.input_value("#shifts") == "3"
         expect(page.get_by_text("Ayer:").first).to_be_visible()
         shot(page, "07-formulario-vacio")
@@ -475,7 +481,7 @@ with sync_playwright() as p:
         page.locator("#units").blur()
         time.sleep(0.9)
         aside = page.locator("aside", has_text="Se calculará").inner_text()
-        assert "$ 513,23" in aside, aside          # 91154,02 / 177,61
+        assert RATE["usd"] in aside, (aside, RATE)  # 91154,02 / tasa propuesta
         assert "Bs 766" in aside, aside            # ticket
         assert "2,5" in aside, aside               # und/compra
         assert "40" in aside, aside                # trn/jornada 119/3 = 39,67 → 40
@@ -502,13 +508,21 @@ with sync_playwright() as p:
     def form_fix_and_save():
         page.fill("#rate", "")
         page.locator("#rate").blur()
-        expect(page.locator("#rate")).to_have_value("177,61", timeout=8000)
-        assert "Arrastrada" in page.locator("#rate").evaluate("e => e.parentElement.parentElement.innerText")
+        expect(page.locator("#rate")).to_have_value(RATE["text"], timeout=8000)
+        badge = page.locator("#rate").evaluate("e => e.parentElement.parentElement.innerText")
+        assert "Arrastrada" in badge or "BCV" in badge, badge
         page.fill("#inventory_units", "9029")
         page.fill("#inventory_value_usd", "21848,73")
         page.locator("#inventory_value_usd").blur()
         time.sleep(0.8)
         page.get_by_role("button", name="Guardar día").click()
+        # La tasa arrastrada de hace meses (sin cron en desarrollo) pide confirmación explícita (§9.3)
+        strip = page.get_by_role("button", name="Guardar de todos modos")
+        try:
+            strip.wait_for(state="visible", timeout=4000)
+            strip.click()
+        except Exception:  # noqa: BLE001
+            pass
         page.wait_for_url(f"{BASE}/cargar/{day(2)}", timeout=15000)
         page.wait_for_load_state("networkidle")
         expect(page.get_by_text("Día guardado.")).to_be_visible()
@@ -863,7 +877,7 @@ with sync_playwright() as p:
         expect(bar).to_be_visible()
         expect(bar.get_by_role("button", name="Guardar día")).to_be_visible()
         mp.fill("#sales_bs", "91154,02"); mp.fill("#transactions", "119"); mp.fill("#units", "300"); mp.locator("#units").blur()
-        expect(bar).to_contain_text("$ 513,23")
+        expect(bar).to_contain_text(RATE["usd"])
         expect(bar).to_contain_text("2,5")
         bar_bottom = bar.evaluate("e => e.getBoundingClientRect().bottom")
         nav_top = mp.locator("nav[aria-label='Navegación']").evaluate("e => e.getBoundingClientRect().top")

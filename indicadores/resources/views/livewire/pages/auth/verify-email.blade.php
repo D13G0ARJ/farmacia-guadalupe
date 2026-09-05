@@ -32,7 +32,7 @@ new #[Layout('layouts.guest')] #[Title('Verifica tu correo')] class extends Comp
 }; ?>
 
 <div>
-    <h1 class="text-sub font-semibold text-ink-900">Verifica tu correo</h1>
+    <h1 class="text-title text-ink-900">Verifica tu correo</h1>
     <p class="mt-1 text-body text-ink-600">Te enviamos un enlace a tu correo. Ábrelo para activar tu acceso. Si no llegó, te enviamos otro.</p>
 
     @if (session('status') == 'verification-link-sent')

@@ -85,7 +85,7 @@ final class HelpContent
                 'intro' => 'La tasa de cada día con su origen. Se consulta sola dos veces al día; aquí se corrige a mano.',
                 'items' => [
                     'Corregir una tasa no cambia los días ya cargados: usa "Recalcular el mes" y revisa la vista previa.',
-                    '"Consultar ahora" pide la tasa de hoy y la del siguiente día hábil.',
+                    '"Consultar ahora" pide la tasa de hoy y la del siguiente día hábil; "Traer histórico del BCV" completa meses enteros desde los libros oficiales.',
                     'Si el BCV se desvía más del umbral, se avisa al administrador por correo.',
                 ],
             ],

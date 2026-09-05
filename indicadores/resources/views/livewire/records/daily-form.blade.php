@@ -1,6 +1,6 @@
 @php
     // Borrador por fecha en el navegador (§13.8): clave por sede y fecha; el día recién guardado limpia el suyo.
-    $draftClear = session('saved_date') ? 'draft:'.$branchId.':'.session('saved_date') : '';
+    $savedDate = session()->pull('saved_date'); $draftClear = $savedDate ? 'draft:'.$branchId.':'.$savedDate : '';
 @endphp
 <div class="space-y-6"
      x-data="dailyPreview($wire, { branch: {{ $branchId }}, edit: {{ $isEdit ? 'true' : 'false' }}, clear: '{{ $draftClear }}' })">

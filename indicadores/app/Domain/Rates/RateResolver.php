@@ -10,7 +10,8 @@ use Carbon\CarbonImmutable;
 
 /**
  * Tasa para una fecha: publicada ese día → si no, la última publicada anterior (arrastre, RN-07)
- * → si no hay ninguna, null y el formulario exige tasa manual (UC-02 A4).
+ * → si no hay ninguna, null y el formulario exige tasa manual (UC-02 A4). Un arrastre de más de
+ * una semana se marca como viejo (`isStale`): se propone igual, pero se pide confirmarlo.
  */
 final class RateResolver
 {
@@ -19,7 +20,7 @@ final class RateResolver
         $exact = ExchangeRate::query()->where('date', $date->toDateString())->first();
 
         if ($exact !== null) {
-            return new RateResolution($exact->rate, $exact->source, $exact->date);
+            return new RateResolution($exact->rate, $exact->source, $exact->date, $date);
         }
 
         $previous = ExchangeRate::query()
@@ -31,6 +32,6 @@ final class RateResolver
             return null;
         }
 
-        return new RateResolution($previous->rate, RateSource::Carried, $previous->date);
+        return new RateResolution($previous->rate, RateSource::Carried, $previous->date, $date);
     }
 }

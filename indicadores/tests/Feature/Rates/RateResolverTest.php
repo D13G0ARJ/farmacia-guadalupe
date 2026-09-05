@@ -36,6 +36,22 @@ it('arrastra la última tasa publicada en fin de semana (RN-07, H4)', function (
         ->and($sunday?->isCarried())->toBeTrue();
 });
 
+it('un arrastre de más de una semana se marca como viejo, con la fecha completa y la antigüedad (§9.3)', function (): void {
+    ExchangeRate::query()->create(['date' => '2025-09-30', 'rate' => '177.61', 'source' => RateSource::Manual]);
+
+    $fresh = app(RateResolver::class)->forDate(CarbonImmutable::parse('2025-10-05'));
+    $stale = app(RateResolver::class)->forDate(CarbonImmutable::parse('2026-09-01'));
+
+    expect($fresh?->isStale())->toBeFalse()
+        ->and($fresh?->ageDays())->toBe(5)
+        ->and($fresh?->label(new Formatter))->toBe('Arrastrada del mar 30/09')
+        ->and($stale?->isStale())->toBeTrue()
+        ->and($stale?->ageLabel())->toBe('hace 11 meses')
+        ->and($stale?->label(new Formatter))->toBe('Arrastrada del 30/09/2025 (hace 11 meses)')
+        ->and(app(RateResolver::class)->forDate(CarbonImmutable::parse('2025-10-21'))?->ageLabel())->toBe('hace 3 semanas')
+        ->and(app(RateResolver::class)->forDate(CarbonImmutable::parse('2027-10-21'))?->ageLabel())->toBe('hace 2 años');
+});
+
 it('no arrastra hacia atrás: una tasa futura no sirve para un día anterior', function (): void {
     ExchangeRate::query()->create(['date' => '2025-09-08', 'rate' => '154.01', 'source' => RateSource::Bcv]);
 

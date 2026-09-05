@@ -40,9 +40,12 @@ El administrador inicial sale de `ADMIN_NAME`, `ADMIN_EMAIL` y `ADMIN_PASSWORD` 
 En desarrollo el sistema trae septiembre 2025 real y agosto sintético para que la primera sesión no esté vacía. Antes de la carga real:
 
 ```bash
-php artisan demo:clear --force     # borra días, tasas, metas, cierres, importaciones, bitácora y usuarios de demostración
-php artisan rates:fetch            # trae la tasa BCV de hoy y del siguiente día hábil
+php artisan demo:clear --force                 # borra días, tasas, metas, cierres, importaciones, bitácora y usuarios de demostración
+php artisan rates:backfill --from=2025-01-01   # histórico oficial del BCV desde esa fecha (libros trimestrales)
+php artisan rates:fetch                        # trae la tasa BCV de hoy y del siguiente día hábil
 ```
+
+El histórico también se trae desde la pantalla Tasa BCV ("Traer histórico del BCV"). Solo agrega los días que no tienen tasa; hace falta antes de importar cuadros de meses viejos para que los días sin tasa propia se completen con la oficial.
 
 Si el cliente quiere ver la demostración en el servidor, sembrarla es opcional: `php artisan db:seed --class=DemoSeeder --force`.
 

@@ -158,6 +158,8 @@ final class DashboardQuery
             $resolution = $this->rates->forDate($month->today);
             if ($resolution === null) {
                 $notices[] = ['tone' => 'danger', 'icon' => 'rate', 'text' => 'No hay tasa BCV para hoy: el formulario pedirá la tasa manual.', 'href' => null, 'action' => null];
+            } elseif ($resolution->isStale()) {
+                $notices[] = ['tone' => 'warning', 'icon' => 'rate', 'text' => 'La tasa de hoy viene arrastrada del '.$resolution->sourceDate->format('d/m/Y').' ('.$resolution->ageLabel().', '.$this->formatter->number($resolution->rate, 2).'): no hubo consultas al BCV desde entonces.', 'href' => route('rates'), 'action' => 'Consultar ahora'];
             } elseif ($resolution->isCarried()) {
                 $notices[] = ['tone' => 'neutral', 'icon' => 'rate', 'text' => 'La tasa de hoy aún no está publicada: se usa la arrastrada del '.$this->formatter->date($resolution->sourceDate, 'weekday').' ('.$this->formatter->number($resolution->rate, 2).').', 'href' => null, 'action' => null];
             }

@@ -10,6 +10,9 @@
     </head>
     @php
         $user = auth()->user();
+        // Aviso tras una redirección: se guarda con put() y se consume aquí con pull(), no con flash(),
+        // para que una petición intermedia (registro de consola, precarga) no lo haga desaparecer.
+        $toast = session()->pull('toast');
         $nav = [
             ['title' => 'Día a día', 'items' => [
                 ['label' => 'Panel', 'icon' => 'panel', 'route' => 'dashboard', 'active' => request()->routeIs('dashboard')],
@@ -33,7 +36,7 @@
           x-on:toast.window="push(Array.isArray($event.detail) ? $event.detail[0] : $event.detail)"
           x-on:toggle-help.window="help = ! help"
           @can('records.create') data-shortcut-new="{{ route('records.create') }}" @endcan
-          @if (session('toast')) x-init="push(@js(session('toast')))" @endif>
+          @if ($toast) x-init="push(@js($toast))" @endif>
 
         <div class="flex min-h-full">
             {{-- Barra lateral (§13.3): capa neutra `panel`, tres grupos, activo en azul. --}}

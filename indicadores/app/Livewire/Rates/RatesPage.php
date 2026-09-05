@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Rates;
 
+use App\Actions\Rates\BackfillBcvRates;
 use App\Actions\Rates\FetchBcvRate;
 use App\Actions\Rates\RecalculateMonthRates;
 use App\Actions\Rates\UpsertExchangeRate;
@@ -19,6 +20,7 @@ use App\Support\PeriodContext;
 use Brick\Math\BigDecimal;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
+use InvalidArgumentException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
@@ -39,6 +41,11 @@ class RatesPage extends Component
     public string $editValue = '';
 
     public bool $recalcDialog = false;
+
+    public bool $backfillDialog = false;
+
+    /** Desde cuándo traer el histórico del BCV (AAAA-MM-DD). */
+    public string $backfillFrom = '2025-01-01';
 
     /** @var array<string, array<string, mixed>> */
     public array $specs = [];
@@ -118,6 +125,43 @@ class RatesPage extends Component
         }
 
         $this->dispatch('toast', type: 'success', message: 'Tasa del '.$formatter->date($saved->date, 'short').': '.$formatter->number($saved->rate, 2).' ('.$saved->source->label().').');
+    }
+
+    /** Trae del BCV las tasas históricas que faltan desde una fecha (§9.2); nunca pisa una tasa existente. */
+    public function backfill(BackfillBcvRates $action, Formatter $formatter): void
+    {
+        abort_unless(auth()->user()->can(Permission::RatesManage->value), 403);
+        $this->resetErrorBag('backfillFrom');
+
+        try {
+            $from = CarbonImmutable::parse($this->backfillFrom)->startOfDay();
+        } catch (InvalidArgumentException) {
+            $this->addError('backfillFrom', 'Escribe una fecha válida.');
+
+            return;
+        }
+        if ($from->lt(CarbonImmutable::create(2010, 1, 1)) || $from->gt(CarbonImmutable::today())) {
+            $this->addError('backfillFrom', 'La fecha debe estar entre 2010 y hoy.');
+
+            return;
+        }
+
+        $result = $action->handle($from, CarbonImmutable::today());
+        $this->backfillDialog = false;
+
+        if ($result['found'] === 0) {
+            $this->dispatch('toast', type: 'warning', message: 'El BCV no devolvió tasas para ese período. Inténtalo más tarde o escríbelas a mano.');
+
+            return;
+        }
+
+        $message = $result['created'] === 0
+            ? 'Todas las tasas de ese período ya estaban: nada que agregar.'
+            : ($result['created'] === 1 ? '1 tasa nueva del BCV' : "{$result['created']} tasas nuevas del BCV").' ('.$formatter->date(CarbonImmutable::parse((string) $result['from']), 'short').' a '.$formatter->date(CarbonImmutable::parse((string) $result['to']), 'short').').';
+        if ($result['failed'] !== []) {
+            $message .= ' Algún trimestre no estaba disponible; vuelve a intentarlo más tarde.';
+        }
+        $this->dispatch('toast', type: 'success', message: $message);
     }
 
     public function recalculate(RecalculateMonthRates $action, Formatter $formatter): void

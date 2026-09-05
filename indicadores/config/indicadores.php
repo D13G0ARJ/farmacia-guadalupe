@@ -21,6 +21,8 @@ return [
         'primary_url' => env('RATES_PRIMARY_URL', 'https://ve.dolarapi.com/v1/dolares/oficial'),
         // Fuente de respaldo: la página del BCV (se extrae el valor del bloque "dolar").
         'fallback_url' => env('RATES_FALLBACK_URL', 'https://www.bcv.org.ve/'),
+        // Histórico oficial: libros trimestrales de "Tipo de cambio de referencia" ({file} = 2_1_2a25_smc.xls).
+        'history_url' => env('RATES_HISTORY_URL', 'https://www.bcv.org.ve/sites/default/files/EstadisticasGeneral/{file}'),
         'connect_timeout' => 3,
         'timeout' => 10,
         'retries' => 2,

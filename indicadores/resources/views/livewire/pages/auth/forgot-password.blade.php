@@ -31,8 +31,8 @@ new #[Layout('layouts.guest')] #[Title('Recuperar contraseña')] class extends C
 }; ?>
 
 <div>
-    <h1 class="text-sub font-semibold text-ink-900">Recuperar contraseña</h1>
-    <p class="mt-1 text-label text-ink-600">Escribe tu correo y te enviamos un enlace para elegir una contraseña nueva.</p>
+    <h1 class="text-title text-ink-900">Recuperar contraseña</h1>
+    <p class="mt-1.5 text-body text-ink-600">Escribe tu correo y te enviamos un enlace para elegir una contraseña nueva.</p>
 
     @if (session('status'))
         <p class="mt-4 rounded-card border border-success-100 bg-success-100/60 px-3 py-2 text-label text-success-600" role="status">{{ session('status') }}</p>

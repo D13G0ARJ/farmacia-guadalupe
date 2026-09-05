@@ -34,3 +34,22 @@
 
 /* Alpine x-cloak: oculto hasta que Alpine inicializa. */
 [x-cloak] { display: none !important; }
+
+@layer components {
+    /* Acceso (§13.4): el panel de marca es el único degradado del sistema y se mueve entre dos
+       tonos del mismo azul (brand-800 → brand-900), de modo que lee como profundidad, no como color. */
+    .brand-panel {
+        background-color: theme('colors.brand.800');
+        background-image: linear-gradient(157deg, #14509F 0%, theme('colors.brand.800') 46%, theme('colors.brand.900') 100%);
+    }
+
+    /* Entrada única del acceso, dentro de los 150–250 ms del sistema; anulada por prefers-reduced-motion. */
+    .auth-enter {
+        animation: auth-enter 240ms cubic-bezier(0.2, 0, 0, 1) both;
+    }
+
+    @keyframes auth-enter {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: none; }
+    }
+}

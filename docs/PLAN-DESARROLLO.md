@@ -933,7 +933,7 @@ Contraste verificado: `brand-600` sobre blanco 4,7:1; `ink-600` sobre blanco 7,4
 | Capas superpuestas | Menús, selectores de fecha y tooltips se montan fuera de contenedores con `overflow` (portal / `position: fixed`) para que la tabla con scroll no los recorte |
 | Motion | Solo movimiento que comunica estado, 150–250 ms: al guardar un día, los cinco valores calculados se fijan y la celda del calendario se rellena; despliegue de grupos y paneles; carga con skeleton. Sin secuencias de entrada al cargar la página, sin hover animado en tarjetas. `prefers-reduced-motion` respetado |
 | Modo oscuro | No en v1. Los tokens lo permiten después |
-| Marca | Cruz del logotipo como icono de la barra y favicon; wordmark solo en login y PDF |
+| Marca | Cruz del logotipo como icono de la barra y favicon; wordmark solo en login y PDF. La cruz de marca (`<x-brand-mark>`) lleva los brazos en blanco o `brand-600` y el **pie en violeta**, como el logotipo; el wordmark (`<x-brand-wordmark>`) pone "Farmacia" en 12 px sobre "Guadalupe" en 27–32 px, sin versalitas |
 
 ### 13.5 Componentes
 
@@ -1011,6 +1011,18 @@ Términos fijos en toda la interfaz: **día** (registro diario), **mes**, **meta
 - **Impresión**: hoja de estilos para Mes y Panel.
 
 ---
+
+### 13.9 Pantalla de acceso (UC-01)
+
+El acceso es la **única pantalla comprometida con la marca**: fuera de la aplicación, sin datos que estorbar y con el wordmark ya autorizado aquí (§13.4). Todo lo demás del sistema sigue en modo *Operate*.
+
+- **Composición**: dos columnas. Izquierda (≥ 1024 px, 46 % hasta 640 px) el **panel de marca**; derecha el formulario sobre blanco, ancho de lectura 400 px. En < 1024 px el panel se convierte en una **banda superior de ~190 px** para que el campo de correo y el botón queden sobre la línea de flotación en un teléfono de 390 × 844.
+- **Panel de marca**: cruz + wordmark arriba; regla de 48 × 3 px en el violeta del pie de la cruz; una frase de 38 px ("Los números del mes, claros desde el primer día."), su bajada y tres líneas de lo que hace el sistema; al pie, la razón social. La textura son **cruces de la marca** en retícula girada 14°, al 6 % y desvanecidas con una máscara, más **una cruz sobredimensionada trazada a hairline** que sale por el borde inferior derecho. Sin fotos, sin iconos de terceros, sin brillos.
+- **Único degradado del sistema**: el fondo del panel se mueve entre dos tonos del mismo azul (`#14509F` → `brand-800` → `brand-900`), de modo que lee como profundidad, no como color. `brand-900` (`#0A2C66`) existe solo para esto.
+- **Formulario**: título de 22 px, campos de 44 px con foco de 2 px, **mostrar/ocultar contraseña** con etiqueta accesible que cambia de estado, "Recordarme" y recuperación en la misma línea, botón primario a ancho completo con estado de carga ("Entrando…"). Errores en línea bajo el campo (§13.8), nunca en modal, y mensaje genérico que no revela si el correo existe.
+- **Movimiento**: una sola entrada de 240 ms (opacidad + 8 px) en la columna del formulario, anulada por `prefers-reduced-motion`. Nada más se anima.
+- El resto de pantallas de invitado (recuperar, nueva contraseña, confirmar, verificar) heredan el mismo marco y el mismo título de 22 px.
+
 
 ## 14. Gráficas
 
@@ -1647,6 +1659,7 @@ Entregado en `indicadores/`:
 - **Mes (UC-09)**: ordenar por cualquier columna (clic en el encabezado, `aria-sort`), buscar por fecha ("16", "16/09", "mar") sin tocar los totales, flechas para moverse por el calendario, botón "Imprimir" y hoja de impresión (sin menús ni barras) también en el Panel.
 - **Gráficas**: "Ampliar" abre la gráfica a pantalla completa (segundo lienzo, Esc cierra). **Metas**: la cuadrícula anual se apila en móvil (una tarjeta por indicador con sus doce meses). Atajos `Alt+N` y `?`.
 - **Correo (§11.2, §13.8, RN-16)**: Administración › Correo define el día del reporte mensual (0 apaga) y sus destinatarios, y el recordatorio de cierre. `reports:send-monthly` (a diario, actúa solo ese día) envía el PDF del mes anterior por sede con el resumen en el cuerpo; `periods:remind-close` (día 1) avisa a quien puede cerrar si el mes anterior tiene faltantes o sigue abierto; la tasa BCV desviada más del umbral avisa por correo a quien gestiona tasas.
+- **Tasa BCV (§9.2, §9.3)**: histórico oficial desde los libros trimestrales del BCV (`rates:backfill`, botón "Traer histórico del BCV"), y arrastres de más de una semana marcados como viejos (insignia roja, advertencia al guardar, aviso en el panel).
 - **Entrega (§15.2, §4.6)**: cabeceras de seguridad en toda respuesta (`nosniff`, `SAMEORIGIN`, `Referrer-Policy`, `Permissions-Policy`, HSTS con HTTPS); `db:backup` diario (mysqldump comprimido o `VACUUM INTO` en SQLite, 30 días de retención); `demo:clear` para dejar el sistema listo para la carga real; `rates:fetch` para probar el BCV en el servidor (probado desde desarrollo: la API responde 807,39 al 04-09-2026); `docs/DESPLIEGUE.md` y `docs/MANUAL-USUARIO.md` con capturas.
 - **Pruebas**: 274 Pest (ayuda por pantalla, orden y búsqueda del cuadro, deshacer atípico, secuencia de faltantes, borrador, correo programado y sus reglas, recordatorio de cierre, aviso de tasa, `rates:fetch`, cabeceras, respaldo, limpieza), Larastan nivel 6 en cero, Pint limpio. Recorrido Playwright ampliado a 46 pasos (siete nuevos: ayuda y atajos, gráfica ampliada, orden y búsqueda con flechas en el calendario, borrador recuperado, atípico con deshacer, secuencia de faltantes, parámetros de correo).
 
@@ -1668,6 +1681,9 @@ Hallazgos del code review y del recorrido en navegador (corregidos):
 | 17.7 | `VACUUM INTO` no corre dentro de una transacción (la de las pruebas) y la ruta de Windows necesitaba barras normales | Opción `--connection` para respaldar cualquier conexión y ruta normalizada |
 | 17.8 | El panel de ayuda oculto seguía en el DOM y duplicaba textos de la pantalla ("Avisos del mes", nombres de indicadores) para lectores de pantalla, "buscar en la página" y el recorrido automatizado | El panel solo existe en el DOM mientras está abierto |
 | 17.9 | El borrador restaurado se muestra ya formateado ("12.345,00") aunque se escribió "12345" | Comportamiento esperado: el campo formatea al perder el foco; el recorrido acepta ambos |
+| 17.10 | Sin cron (desarrollo, o un servidor recién instalado), la tasa se arrastraba durante meses en silencio: el formulario proponía 177,61 de septiembre 2025 cuando el BCV iba por 807 | Un arrastre de más de una semana se marca como viejo: insignia roja con fecha completa y antigüedad, advertencia que exige confirmar al guardar, aviso ámbar en el panel con acceso a "Consultar ahora" y fila en rojo en Tasa BCV |
+| 17.11 | No había forma de traer las tasas de meses pasados (las API comunitarias no dan histórico) | Se leen los libros trimestrales oficiales del BCV ("Tipo de cambio de referencia", una hoja por día con la fecha de vigencia): `rates:backfill --from=2025-01-01` y el botón "Traer histórico del BCV" en Tasa BCV; solo crea los días sin tasa |
+| 17.12 | Los avisos tras una redirección (día guardado, borrado, atípico) se perdían a veces: una petición intermedia del navegador consumía el `flash` de sesión | El aviso se guarda con `put` y el layout lo consume con `pull`: sobrevive a peticiones intermedias y se muestra una sola vez |
 
 ### Estado final
 
@@ -1696,7 +1712,7 @@ Qué hay construido y probado (274 pruebas Pest, Larastan nivel 6, recorrido Pla
 | 13 | Comparativa anual | Hecho | — |
 | 14 | Exportar | Hecho (Excel de tres hojas, Excel del año, PDF mensual, envío programado por correo) | SMTP del cliente para activarlo |
 | 15 | Importar histórico | Hecho | — |
-| 16 | Gestionar tasa BCV | Hecho (con aviso por correo si se desvía) | SMTP del cliente para activarlo |
+| 16 | Gestionar tasa BCV | Hecho (histórico oficial del BCV, arrastre viejo señalado, aviso por correo si se desvía) | SMTP del cliente para el aviso |
 | 17 | Administración | Hecho | — |
 | 18 | Consolidado multi-sede | Preparado en el modelo | Selector y consolidado en UI (Fase 8, condicionada) |
 

@@ -82,6 +82,9 @@ class DailyForm extends Component
 
     public bool $rateEdited = false;
 
+    /** Aviso de tasa arrastrada desde hace más de una semana (§9.3); entra como advertencia al guardar. */
+    public ?string $rateStaleMessage = null;
+
     /** @var list<array{code: string, field: string, message: string}> */
     public array $warnings = [];
 
@@ -154,7 +157,7 @@ class DailyForm extends Component
             ->latest('id')
             ->value('id');
 
-        session()->flash('toast', [
+        session()->put('toast', [
             'type' => 'success',
             'message' => 'Día '.app(Formatter::class)->date($date, 'short').' borrado.',
             'action' => $activityId === null ? null : ['label' => 'Deshacer', 'event' => 'undo-delete', 'params' => ['activity' => (int) $activityId]],
@@ -411,6 +414,7 @@ class DailyForm extends Component
     {
         $formatter = app(Formatter::class);
 
+        $this->rateStaleMessage = null;
         if ($this->rateEdited) {
             $this->rateLabel = 'Manual';
             $this->rateTone = 'warning';
@@ -436,7 +440,11 @@ class DailyForm extends Component
 
         $this->form->rate = $formatter->number($resolution->rate, 2);
         $this->rateLabel = $resolution->label($formatter);
-        $this->rateTone = $resolution->isCarried() ? 'neutral' : 'brand';
+        $this->rateTone = $resolution->isStale() ? 'danger' : ($resolution->isCarried() ? 'neutral' : 'brand');
+        // Arrastre de más de una semana: se propone, pero exige confirmarlo al guardar (§9.3).
+        $this->rateStaleMessage = $resolution->isStale()
+            ? 'La tasa propuesta es del '.$resolution->sourceDate->format('d/m/Y').' ('.$resolution->ageLabel().'): no hubo consultas al BCV desde entonces. Escribe la de hoy o confírmala.'
+            : null;
     }
 
     /** Mientras se escribe se omite el aviso de inventario vacío: solo tiene sentido al intentar guardar. */
@@ -459,6 +467,9 @@ class DailyForm extends Component
         }
 
         $this->warnings = array_map(fn ($w) => ['code' => $w->code, 'field' => $w->field, 'message' => $w->message], $warnings);
+        if ($this->rateStaleMessage !== null && ! $this->rateEdited && $this->recordId === null) {
+            array_unshift($this->warnings, ['code' => 'rate_stale', 'field' => 'rate', 'message' => $this->rateStaleMessage]);
+        }
     }
 
     /** @param  array{label: string, event: string, params: array<string, mixed>}|null  $undo */
@@ -466,8 +477,8 @@ class DailyForm extends Component
     {
         $next = app(MonthRecordsQuery::class)->run($branch->id, Period::of($saved))->firstMissingDate();
 
-        session()->flash('toast', ['type' => 'success', 'message' => $message, 'action' => $undo]);
-        session()->flash('saved_date', $saved->toDateString());
+        session()->put('toast', ['type' => 'success', 'message' => $message, 'action' => $undo]);
+        session()->put('saved_date', $saved->toDateString());
 
         // Recarga completa (sin wire:navigate): garantiza que el aviso en sesión se muestre siempre.
         if ($next !== null) {

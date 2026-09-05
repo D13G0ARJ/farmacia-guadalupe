@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Domain\Rates\BcvHistoryParser;
 use App\Domain\Rates\ExchangeRateProvider;
+use App\Domain\Rates\Providers\BcvHistoryProvider;
 use App\Domain\Rates\Providers\BcvProvider;
 use App\Domain\Rates\Providers\NullProvider;
 use App\Domain\Shared\Formatter;
@@ -31,6 +33,13 @@ class AppServiceProvider extends ServiceProvider
                 ? new BcvProvider($app->make(HttpFactory::class), $config)
                 : new NullProvider;
         });
+
+        // Histórico oficial del BCV (libros trimestrales), para completar meses viejos.
+        $this->app->bind(BcvHistoryProvider::class, fn ($app): BcvHistoryProvider => new BcvHistoryProvider(
+            $app->make(HttpFactory::class),
+            $app->make(BcvHistoryParser::class),
+            (string) $app['config']->get('indicadores.rates.history_url'),
+        ));
     }
 
     public function boot(): void

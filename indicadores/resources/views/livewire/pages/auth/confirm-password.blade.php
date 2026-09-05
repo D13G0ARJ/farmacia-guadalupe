@@ -33,8 +33,8 @@ new #[Layout('layouts.guest')] #[Title('Confirma tu contraseña')] class extends
 }; ?>
 
 <div>
-    <h1 class="text-sub font-semibold text-ink-900">Confirma tu contraseña</h1>
-    <p class="mt-1 text-label text-ink-600">Es una zona sensible: confirma tu contraseña antes de continuar.</p>
+    <h1 class="text-title text-ink-900">Confirma tu contraseña</h1>
+    <p class="mt-1.5 text-body text-ink-600">Es una zona sensible: confirma tu contraseña antes de continuar.</p>
 
     <form wire:submit="confirmPassword" class="mt-6 space-y-5">
         <x-field label="Contraseña" for="password" :error="$errors->first('password')">

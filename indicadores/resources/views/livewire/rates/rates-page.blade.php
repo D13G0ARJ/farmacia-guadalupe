@@ -11,11 +11,31 @@
                     <span wire:loading wire:target="fetchNow">Consultando…</span>
                 </x-btn>
             @endif
+            @if ($status['automatic'])
+                <x-btn variant="secondary" icon="download" wire:click="$set('backfillDialog', true)">Traer histórico del BCV</x-btn>
+            @endif
             @if ($branch !== null)
                 <x-btn variant="secondary" icon="history" wire:click="$set('recalcDialog', true)">Recalcular el mes</x-btn>
             @endif
         </div>
     </div>
+
+    {{-- Histórico oficial (§9.2): libros trimestrales del BCV; solo crea los días sin tasa --}}
+    @if ($status['automatic'])
+        <x-dialog show="$wire.backfillDialog" id="backfill-dialog" title="Traer el histórico del BCV">
+            <p>Se descargan los libros trimestrales oficiales del BCV y se agregan las tasas de los días que no tienen ninguna. Las tasas escritas a mano y las ya publicadas no se tocan.</p>
+            <x-field label="Desde" for="backfill-from" :error="$errors->first('backfillFrom')" help="Hasta hoy. Cada trimestre tarda unos segundos en descargarse.">
+                <x-input id="backfill-from" type="date" wire:model="backfillFrom" min="2010-01-01" max="{{ now()->toDateString() }}" :invalid="$errors->has('backfillFrom')" class="max-w-xs" />
+            </x-field>
+            <x-slot:actions>
+                <x-btn variant="ghost" x-on:click="$wire.backfillDialog = false">Cancelar</x-btn>
+                <x-btn wire:click="backfill" wire:loading.attr="disabled" wire:target="backfill">
+                    <span wire:loading.remove wire:target="backfill">Traer tasas</span>
+                    <span wire:loading wire:target="backfill">Descargando…</span>
+                </x-btn>
+            </x-slot:actions>
+        </x-dialog>
+    @endif
 
     {{-- Estado del proveedor (§9.4) --}}
     <div class="flex flex-wrap items-start gap-3 rounded-card border border-line bg-surface px-5 py-4" role="status">
@@ -78,6 +98,8 @@
                                 <x-badge tone="brand">BCV</x-badge>
                             @elseif ($row['source'] === \App\Enums\RateSource::Manual)
                                 <x-badge tone="warning">Manual</x-badge>
+                            @elseif ($row['source'] === \App\Enums\RateSource::Carried && ($row['stale'] ?? false))
+                                <x-badge tone="danger" icon="warning" title="No hubo consultas al BCV desde esa fecha: consúltala o fíjala">Arrastrada del {{ $row['carriedFrom']?->format('d/m/Y') ?? '—' }}</x-badge>
                             @elseif ($row['source'] === \App\Enums\RateSource::Carried)
                                 <x-badge tone="neutral" title="El BCV no publicó ese día">Arrastrada del {{ $row['carriedFrom'] ? $formatter->date($row['carriedFrom'], 'weekday') : '—' }}</x-badge>
                             @else

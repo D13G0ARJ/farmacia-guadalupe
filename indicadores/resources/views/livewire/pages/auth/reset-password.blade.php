@@ -62,8 +62,8 @@ new #[Layout('layouts.guest')] #[Title('Nueva contraseña')] class extends Compo
 }; ?>
 
 <div>
-    <h1 class="text-sub font-semibold text-ink-900">Nueva contraseña</h1>
-    <p class="mt-1 text-label text-ink-600">Elige una contraseña de al menos 8 caracteres.</p>
+    <h1 class="text-title text-ink-900">Nueva contraseña</h1>
+    <p class="mt-1.5 text-body text-ink-600">Elige una contraseña de al menos 8 caracteres.</p>
 
     <form wire:submit="resetPassword" class="mt-6 space-y-5">
         <x-field label="Correo" for="email" :error="$errors->first('email')">
