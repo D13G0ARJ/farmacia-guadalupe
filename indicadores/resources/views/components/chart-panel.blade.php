@@ -1,22 +1,22 @@
 @props(['spec'])
 {{-- Gráfica sin marco (§13.5): título, subtítulo y lienzo sobre la superficie; acciones discretas (datos, PNG). --}}
-<section x-data="chartPanel(@js($spec['id']))" class="min-w-0 p-5" aria-labelledby="chart-{{ $spec['id'] }}-title">
+<section x-data="chartPanel(@js($spec['id']))" data-tour="chart-panel" class="min-w-0 p-5" aria-labelledby="chart-{{ $spec['id'] }}-title">
     <div class="flex items-start justify-between gap-3">
-        <div class="min-w-0">
+        <div class="min-w-0" data-tour="chart-title">
             <h3 id="chart-{{ $spec['id'] }}-title" class="text-sub font-semibold text-ink-900">{{ $spec['title'] }}</h3>
             <p class="text-label text-ink-600">{{ $spec['subtitle'] }}</p>
         </div>
         @unless ($spec['empty'])
             <div class="flex shrink-0 items-center gap-1" role="group" aria-label="Acciones de la gráfica">
-                <button type="button" x-on:click="showData = ! showData" x-bind:aria-pressed="showData"
+                <button type="button" data-tour="chart-data" x-on:click="showData = ! showData" x-bind:aria-pressed="showData"
                         class="inline-flex min-h-[36px] items-center gap-1.5 rounded-control px-2.5 text-label font-medium text-ink-600 transition-colors hover:bg-panel focus-visible:ring-2 focus-visible:ring-brand-500 aria-pressed:bg-brand-100 aria-pressed:text-brand-800">
                     <x-lucide name="table" class="h-4 w-4" />Datos
                 </button>
-                <button type="button" x-on:click="png()" x-bind:disabled="! ready"
+                <button type="button" data-tour="chart-png" x-on:click="png()" x-bind:disabled="! ready"
                         class="inline-flex min-h-[36px] items-center gap-1.5 rounded-control px-2.5 text-label font-medium text-ink-600 transition-colors hover:bg-panel focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-50">
                     <x-lucide name="image" class="h-4 w-4" />PNG
                 </button>
-                <button type="button" x-on:click="expand()" x-bind:disabled="! ready"
+                <button type="button" data-tour="chart-expand" x-on:click="expand()" x-bind:disabled="! ready"
                         class="inline-flex min-h-[36px] items-center gap-1.5 rounded-control px-2.5 text-label font-medium text-ink-600 transition-colors hover:bg-panel focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-50">
                     <x-lucide name="maximize" class="h-4 w-4" />Ampliar
                 </button>

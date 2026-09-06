@@ -7,16 +7,16 @@
 
     {{-- Título: la fecha con su día de la semana, derivado (RN-02) --}}
     <div class="flex flex-wrap items-end justify-between gap-3">
-        <div>
+        <div data-tour="form-heading">
             <p class="text-label text-ink-600">{{ $isEdit ? 'Editar día' : 'Cargar día' }}</p>
             <h1 class="text-title text-brand-800">{{ ucfirst($weekdayLabel) }}</h1>
         </div>
-        <a href="{{ route('month', ['period' => $period->key()]) }}" wire:navigate class="text-body text-brand-700 hover:underline">Ver el mes</a>
+        <a href="{{ route('month', ['period' => $period->key()]) }}" wire:navigate data-tour="form-see-month" class="text-body text-brand-700 hover:underline">Ver el mes</a>
     </div>
 
     {{-- Carga en secuencia de los días atrasados (§13.8): posición, anterior y siguiente --}}
     @if ($sequenceInfo !== null)
-        <div class="flex flex-wrap items-center gap-3 rounded-card border border-brand-100 bg-brand-100/60 px-4 py-3" role="status">
+        <div class="flex flex-wrap items-center gap-3 rounded-card border border-brand-100 bg-brand-100/60 px-4 py-3" role="status" data-tour="form-sequence">
             <x-lucide name="list" class="h-5 w-5 text-brand-700" />
             <p class="flex-1 text-ink-900">
                 @if ($sequenceInfo['total'] === 0)
@@ -40,14 +40,14 @@
     @endif
 
     {{-- Borrador recuperado (§13.8): lo escrito antes de cerrar la pestaña o perder la sesión --}}
-    <div x-cloak x-show="draftRestored" class="flex flex-wrap items-center gap-3 rounded-card border border-line bg-panel px-4 py-3" role="status">
+    <div x-cloak x-show="draftRestored" class="flex flex-wrap items-center gap-3 rounded-card border border-line bg-panel px-4 py-3" role="status" data-tour="form-draft">
         <x-lucide name="history" class="h-5 w-5 text-ink-600" />
         <p class="flex-1 text-ink-900">Recuperamos lo que escribiste para este día<span x-text="draftSavedAt ? ' (' + draftSavedAt + ')' : ''"></span>. Revísalo antes de guardar.</p>
         <x-btn variant="ghost" class="min-h-[36px] px-2.5 text-label" x-on:click="discardDraft()">Descartar</x-btn>
     </div>
 
     @if ($periodClosed)
-        <div class="flex items-start gap-3 rounded-card border border-line bg-panel p-4" role="status">
+        <div class="flex items-start gap-3 rounded-card border border-line bg-panel p-4" role="status" data-tour="form-locked">
             <x-lucide name="lock" class="mt-0.5 h-5 w-5 text-ink-600" />
             <div>
                 <p class="font-medium">{{ $period->label() }} está cerrado{{ $closedSince ? ' desde el '.$closedSince : '' }}.</p>
@@ -55,7 +55,7 @@
             </div>
         </div>
     @elseif ($readOnly)
-        <div class="flex items-start gap-3 rounded-card border border-line bg-panel p-4" role="status">
+        <div class="flex items-start gap-3 rounded-card border border-line bg-panel p-4" role="status" data-tour="form-locked">
             <x-lucide name="info" class="mt-0.5 h-5 w-5 text-ink-600" />
             <div>
                 <p class="font-medium">Este día es de solo lectura.</p>
@@ -76,7 +76,7 @@
         <div class="space-y-8">
             {{-- Fecha --}}
             <section class="space-y-4">
-                <x-field label="Fecha" for="date" :error="$errors->first('form.date')" class="max-w-xs">
+                <x-field label="Fecha" for="date" :error="$errors->first('form.date')" class="max-w-xs" data-tour="form-date">
                     <x-input id="date" type="date" wire:model.live="form.date" max="{{ now()->toDateString() }}" :invalid="$errors->has('form.date')" />
                 </x-field>
             </section>
@@ -85,10 +85,10 @@
             <section class="space-y-4">
                 <h2 class="text-sub font-semibold text-ink-900">Ventas del día</h2>
                 <div class="grid gap-5 sm:grid-cols-2">
-                    <x-field label="Venta del día (Bs)" for="sales_bs" :error="$errors->first('form.sales_bs')" :warning="collect($warnings)->firstWhere('field', 'sales_bs')['message'] ?? null" :reference="$reference['sales_bs'] ?? null">
+                    <x-field label="Venta del día (Bs)" for="sales_bs" data-tour="form-sales" :error="$errors->first('form.sales_bs')" :warning="collect($warnings)->firstWhere('field', 'sales_bs')['message'] ?? null" :reference="$reference['sales_bs'] ?? null">
                         <x-input id="sales_bs" numeric suffix="Bs" wire:model.live.debounce.500ms="form.sales_bs" x-on:input="sales = $event.target.value" x-on:blur="format($event, 'sales', 2)" placeholder="0,00" :invalid="$errors->has('form.sales_bs')" autofocus />
                     </x-field>
-                    <x-field label="Tasa BCV (Bs por $)" for="rate" :error="$errors->first('form.rate')" :warning="collect($warnings)->firstWhere('field', 'rate')['message'] ?? null" :reference="$reference['rate'] ?? null">
+                    <x-field label="Tasa BCV (Bs por $)" for="rate" data-tour="form-rate" :error="$errors->first('form.rate')" :warning="collect($warnings)->firstWhere('field', 'rate')['message'] ?? null" :reference="$reference['rate'] ?? null">
                         <div class="space-y-1.5">
                             <x-input id="rate" numeric wire:model.live.debounce.500ms="form.rate" x-on:input="rate = $event.target.value" x-on:blur="format($event, 'rate', 2)" placeholder="0,00" :invalid="$errors->has('form.rate')" />
                             @if ($rateLabel)
@@ -103,20 +103,20 @@
             <section class="space-y-4">
                 <h2 class="text-sub font-semibold text-ink-900">Operación</h2>
                 <div class="grid gap-5 sm:grid-cols-3">
-                    <x-field label="Transacciones" for="transactions" :error="$errors->first('form.transactions')" :warning="collect($warnings)->firstWhere('field', 'transactions')['message'] ?? null" :reference="$reference['transactions'] ?? null">
+                    <x-field label="Transacciones" for="transactions" data-tour="form-transactions" :error="$errors->first('form.transactions')" :warning="collect($warnings)->firstWhere('field', 'transactions')['message'] ?? null" :reference="$reference['transactions'] ?? null">
                         <x-input id="transactions" numeric inputmode="numeric" wire:model.live.debounce.500ms="form.transactions" x-on:input="transactions = $event.target.value" placeholder="0" :invalid="$errors->has('form.transactions')" />
                     </x-field>
-                    <x-field label="Unidades vendidas" for="units" :error="$errors->first('form.units')" :warning="collect($warnings)->firstWhere('field', 'units')['message'] ?? null" :reference="$reference['units'] ?? null">
+                    <x-field label="Unidades vendidas" for="units" data-tour="form-units" :error="$errors->first('form.units')" :warning="collect($warnings)->firstWhere('field', 'units')['message'] ?? null" :reference="$reference['units'] ?? null">
                         <x-input id="units" numeric inputmode="numeric" wire:model.live.debounce.500ms="form.units" x-on:input="units = $event.target.value" placeholder="0" :invalid="$errors->has('form.units')" />
                     </x-field>
-                    <x-field label="Jornadas (turnos)" for="shifts" :error="$errors->first('form.shifts')" :reference="$reference['shifts'] ?? null">
+                    <x-field label="Jornadas (turnos)" for="shifts" data-tour="form-shifts" :error="$errors->first('form.shifts')" :reference="$reference['shifts'] ?? null">
                         <x-input id="shifts" numeric inputmode="numeric" wire:model.live.debounce.500ms="form.shifts" x-on:input="shifts = $event.target.value" :invalid="$errors->has('form.shifts')" />
                     </x-field>
                 </div>
             </section>
 
             {{-- Grupo 3: Inventario, plegado en días sin conteo (RN-09) --}}
-            <section class="space-y-4">
+            <section class="space-y-4" data-tour="form-inventory">
                 <div class="flex items-center justify-between">
                     <h2 class="text-sub font-semibold text-ink-900">Inventario</h2>
                     @unless ($inventoryDay)
@@ -141,10 +141,10 @@
 
             {{-- Observación y día atípico (UC-04) --}}
             <section class="space-y-4">
-                <x-field label="Observación del día" for="notes" :error="$errors->first('form.notes')" help="Opcional. Obligatoria si marcas el día como atípico.">
+                <x-field label="Observación del día" for="notes" data-tour="form-notes" :error="$errors->first('form.notes')" help="Opcional. Obligatoria si marcas el día como atípico.">
                     <textarea id="notes" wire:model.live.debounce.500ms="form.notes" x-on:input="notes = $event.target.value" rows="2" maxlength="500" class="block w-full rounded-control border-line bg-surface px-3 py-2.5 text-body focus:border-brand-500 focus:ring-2 focus:ring-brand-500" placeholder="Por ejemplo: corte de luz de 10 a 12, media jornada"></textarea>
                 </x-field>
-                <label class="flex items-start gap-3">
+                <label class="flex items-start gap-3" data-tour="form-atypical">
                     <input type="checkbox" wire:model.live="form.atypical" class="mt-1 h-5 w-5 rounded border-line text-accent-600 focus:ring-accent-600">
                     <span>
                         <span class="font-medium">Día atípico</span>
@@ -155,7 +155,7 @@
 
             {{-- Franja de advertencias sin revisar (§13.5): sin modal --}}
             @if ($warnings !== [] && ! $acknowledged)
-                <div class="flex flex-wrap items-center gap-3 rounded-card border border-warning-100 bg-warning-100/60 p-4" role="status" x-init="$el.focus()" tabindex="-1">
+                <div class="flex flex-wrap items-center gap-3 rounded-card border border-warning-100 bg-warning-100/60 p-4" role="status" x-init="$el.focus()" tabindex="-1" data-tour="form-warnings">
                     <x-lucide name="warning" class="h-5 w-5 text-warning-600" />
                     <p class="flex-1 text-ink-900">{{ count($warnings) === 1 ? '1 advertencia sin revisar' : count($warnings).' advertencias sin revisar' }}</p>
                     <x-btn variant="secondary" x-on:click="document.getElementById('{{ $warnings[0]['field'] }}')?.focus()">Revisar</x-btn>
@@ -165,18 +165,18 @@
 
             {{-- Acciones --}}
             <div class="flex flex-wrap items-center gap-3 border-t border-line pt-6">
-                <x-btn type="submit" wire:loading.attr="disabled" wire:target="save">
+                <x-btn type="submit" wire:loading.attr="disabled" wire:target="save" data-tour="form-save">
                     <span wire:loading.remove wire:target="save">{{ $isEdit ? 'Guardar cambios' : 'Guardar día' }}</span>
                     <span wire:loading wire:target="save">Guardando…</span>
                 </x-btn>
                 @if ($isEdit && $lastEdit)
-                    <p class="basis-full text-label text-ink-400 sm:ml-auto sm:basis-auto">Última edición: {{ $lastEdit }}</p>
+                    <p class="basis-full text-label text-ink-400 sm:ml-auto sm:basis-auto" data-tour="form-last-edit">Última edición: {{ $lastEdit }}</p>
                 @endif
                 @if ($isEdit && $canDelete && ! $periodClosed)
                     {{-- UC-03: borrar día con confirmación (modal permitido, §13.5) y "Deshacer" en el aviso --}}
                     <div x-data="{ deleteOpen: false }">
-                        <x-btn variant="ghost" icon="trash" class="text-danger-600 hover:bg-danger-100" x-on:click="deleteOpen = true">Borrar día</x-btn>
-                        <x-dialog show="deleteOpen" id="delete-day" title="Borrar este día">
+                        <x-btn variant="ghost" icon="trash" class="text-danger-600 hover:bg-danger-100" data-tour="form-delete" x-on:click="deleteOpen = true">Borrar día</x-btn>
+                        <x-dialog show="deleteOpen" id="delete-day" data-tour="dialog-delete-day" title="Borrar este día">
                             <p>Se borrará {{ $weekdayLabel }} con todos sus datos. Tendrás unos segundos para deshacerlo desde el aviso.</p>
                             <x-slot:actions>
                                 <x-btn variant="ghost" x-on:click="deleteOpen = false">Cancelar</x-btn>
@@ -186,7 +186,7 @@
                     </div>
                 @endif
                 @unless ($isEdit)
-                    <div x-data="{ open: false, reason: '' }" class="relative">
+                    <div x-data="{ open: false, reason: '' }" class="relative" data-tour="form-closed-day">
                         <x-btn variant="ghost" icon="power" x-on:click="open = ! open">Registrar como día cerrado</x-btn>
                         <div x-cloak x-show="open" x-on:click.outside="open = false" class="absolute left-0 z-10 mt-2 w-80 rounded-card border border-line bg-surface p-4 shadow-overlay">
                             <p class="mb-2 font-medium">¿Ese día no operó?</p>
@@ -203,7 +203,7 @@
         </div>
 
         {{-- Panel "Se calculará" (RN-26): en el navegador; el servidor recalcula al guardar --}}
-        <aside class="lg:sticky lg:top-20 self-start rounded-card border border-line bg-surface p-5" aria-live="polite">
+        <aside class="lg:sticky lg:top-20 self-start rounded-card border border-line bg-surface p-5" aria-live="polite" data-tour="form-preview">
             <p class="text-label text-ink-600">Se calculará</p>
             <dl class="mt-3 divide-y divide-line">
                 <div class="flex items-baseline justify-between py-2.5"><dt class="text-ink-600">Venta en dólares</dt><dd class="text-sub tnum font-semibold" x-text="money(salesUsd, 'USD', 2)"></dd></div>
@@ -218,7 +218,7 @@
         </aside>
 
         {{-- Móvil y tableta: barra fija al pie con los derivados clave y Guardar (§13.3), sobre la navegación inferior --}}
-        <div class="fixed inset-x-0 bottom-[56px] z-20 flex items-center gap-4 border-t border-line bg-surface/95 px-4 py-2 backdrop-blur md:bottom-0 lg:hidden">
+        <div class="fixed inset-x-0 bottom-[56px] z-20 flex items-center gap-4 border-t border-line bg-surface/95 px-4 py-2 backdrop-blur md:bottom-0 lg:hidden" data-tour="form-mobile-bar">
             <dl class="flex min-w-0 flex-1 gap-5">
                 <div class="min-w-0"><dt class="truncate text-label text-ink-600">Venta $</dt><dd class="tnum font-semibold whitespace-nowrap" x-text="money(salesUsd, 'USD', 2)"></dd></div>
                 <div class="min-w-0"><dt class="truncate text-label text-ink-600">Ticket Bs</dt><dd class="tnum font-semibold whitespace-nowrap" x-text="money(ticketBs, 'BS', 0)"></dd></div>

@@ -34,6 +34,9 @@ Route::middleware(['auth', 'verified', 'active'])->group(function (): void {
 
     Route::view('profile', 'profile')->name('profile');
 
+    // Cuadro de ejemplo para la demostración del recorrido de Importar (enero 2020, con anomalías a propósito).
+    Route::get('recorrido/cuadro-ejemplo.xlsx', fn () => response()->file(resource_path('samples/cuadro-ejemplo.xlsx'), ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']))->name('tours.sample');
+
     // Cierre de sesión desde el formulario del layout (el stack Livewire de Breeze no lo define).
     Route::post('logout', LogoutController::class)->name('logout');
 });

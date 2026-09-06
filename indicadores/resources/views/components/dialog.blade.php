@@ -6,7 +6,7 @@
 --}}
 <div x-cloak x-show="{{ $show }}" x-on:keydown.escape.window="{{ $show }} = false" class="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="{{ $attributes->get('id', 'dialog') }}-title">
     <div class="absolute inset-0 bg-ink-900/40" x-on:click="{{ $show }} = false" aria-hidden="true"></div>
-    <div class="relative w-full {{ $maxWidth }} rounded-hero border border-line bg-surface p-6 shadow-overlay"
+    <div class="relative w-full {{ $maxWidth }} rounded-hero border border-line bg-surface p-6 shadow-overlay" {{ $attributes->only(['data-tour']) }}
          x-show="{{ $show }}" x-transition.opacity.duration.150ms x-trap.noscroll="{{ $show }}">
         <h2 id="{{ $attributes->get('id', 'dialog') }}-title" class="text-sub font-semibold text-ink-900">{{ $title }}</h2>
         <div class="mt-3 space-y-3 text-body text-ink-600">{{ $slot }}</div>

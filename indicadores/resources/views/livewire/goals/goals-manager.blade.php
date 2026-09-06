@@ -4,7 +4,7 @@
             <h1 class="text-title text-brand-800">Metas</h1>
             <p class="text-ink-600">{{ $branch?->name ?? 'Consolidado' }} · metas mensuales, en dólares las de venta y ticket</p>
         </div>
-        <div class="inline-flex rounded-control border border-line bg-surface p-0.5" role="group" aria-label="Vista">
+        <div class="inline-flex rounded-control border border-line bg-surface p-0.5" role="group" aria-label="Vista" data-tour="goals-view">
             @foreach (['month' => 'Este mes', 'year' => 'Año'] as $key => $label)
                 <button type="button" wire:click="$set('view', '{{ $key }}')"
                         class="rounded-[4px] px-3 py-1.5 text-label font-medium transition-colors {{ $view === $key ? 'bg-brand-600 text-white' : 'text-ink-600 hover:bg-panel' }}"
@@ -19,11 +19,11 @@
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 id="goals-month-title" class="text-sub font-semibold text-ink-900">{{ $periodObj->label() }}</h2>
                 @if ($canManage)
-                    <x-btn variant="secondary" wire:click="copyPreviousMonth" wire:loading.attr="disabled">Copiar de {{ mb_strtolower($periodObj->previous()->label()) }}</x-btn>
+                    <x-btn variant="secondary" wire:click="copyPreviousMonth" wire:loading.attr="disabled" data-tour="goals-copy-month">Copiar de {{ mb_strtolower($periodObj->previous()->label()) }}</x-btn>
                 @endif
             </div>
 
-            <div class="relative overflow-x-auto rounded-card border border-line bg-surface">
+            <div class="relative overflow-x-auto rounded-card border border-line bg-surface" data-tour="goals-table">
                 <table class="w-full min-w-[880px] border-collapse text-body">
                     <thead class="bg-panel text-label text-ink-600">
                         <tr>
@@ -51,7 +51,7 @@
                                 </td>
                                 <td class="px-4 py-2.5">
                                     <label for="target-{{ $ind->value }}" class="sr-only">Meta de {{ $ind->label() }}</label>
-                                    <x-input id="target-{{ $ind->value }}" numeric wire:model.blur="targets.{{ $ind->value }}"
+                                    <x-input id="target-{{ $ind->value }}" numeric data-tour="goals-target" wire:model.blur="targets.{{ $ind->value }}"
                                              placeholder="{{ $suggestions[$ind->value] !== null ? 'Sugerida: '.$suggestions[$ind->value] : '—' }}"
                                              :invalid="$error !== null" :disabled="! $canManage" class="py-1.5 !min-h-[36px]" />
                                     @if ($error)
@@ -68,7 +68,7 @@
                                         —
                                     @endif
                                 </td>
-                                <td class="px-4 py-2.5">
+                                <td class="px-4 py-2.5" data-tour="goals-status">
                                     @if ($p)
                                         <x-badge :tone="$p->status->tone()" :icon="$p->status->icon()">{{ $p->status->label() }}</x-badge>
                                     @endif
@@ -79,7 +79,7 @@
                 </table>
             </div>
 
-            <p class="text-label text-ink-400">
+            <p class="text-label text-ink-400" data-tour="goals-footnote">
                 Corte: {{ $formatter->date($tracking->cutoff, 'weekday_full') }} ·
                 @if ($tracking->patternReliable)
                     proyección por patrón semanal ({{ $tracking->patternWeeks }} semanas de histórico).
@@ -94,28 +94,28 @@
         {{-- Vista "Año" (UC-11): cuadrícula indicador × mes, guardado en lote --}}
         <section class="space-y-3" aria-labelledby="goals-year-title" x-data="goalGrid()">
             <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-center gap-1">
+                <div class="flex items-center gap-1" data-tour="goals-year-nav">
                     <button type="button" wire:click="previousYear" class="rounded-control p-1.5 text-ink-600 hover:bg-panel" aria-label="Año anterior"><x-lucide name="chevron-left" class="h-5 w-5" /></button>
                     <h2 id="goals-year-title" class="text-sub font-semibold text-ink-900 tnum">{{ $year }}</h2>
                     <button type="button" wire:click="nextYear" class="rounded-control p-1.5 text-ink-600 hover:bg-panel" aria-label="Año siguiente"><x-lucide name="chevron-right" class="h-5 w-5" /></button>
                 </div>
                 @if ($canManage)
                     <div class="flex flex-wrap items-center gap-2">
-                        <x-btn variant="secondary" wire:click="copyPreviousYear" wire:loading.attr="disabled">Copiar {{ $year - 1 }}</x-btn>
-                        <div class="flex items-center gap-1">
+                        <x-btn variant="secondary" wire:click="copyPreviousYear" wire:loading.attr="disabled" data-tour="goals-copy-year">Copiar {{ $year - 1 }}</x-btn>
+                        <div class="flex items-center gap-1" data-tour="goals-growth">
                             <label for="growth" class="sr-only">Porcentaje</label>
                             <input id="growth" type="text" inputmode="decimal" wire:model="growth" class="w-16 rounded-control border-line py-2 text-right text-body tnum focus:border-brand-500 focus:ring-brand-500" aria-describedby="growth-help">
                             <span id="growth-help" class="text-label text-ink-600">%</span>
                             <x-btn variant="secondary" wire:click="increaseAll">Aplicar a todo el año</x-btn>
                         </div>
-                        <x-btn wire:click="saveYear" wire:loading.attr="disabled" wire:target="saveYear">Guardar metas</x-btn>
+                        <x-btn wire:click="saveYear" wire:loading.attr="disabled" wire:target="saveYear" data-tour="goals-save-year">Guardar metas</x-btn>
                     </div>
                 @endif
             </div>
             @error('growth')<p class="text-label text-danger-600" role="alert">{{ $message }}</p>@enderror
 
             {{-- Móvil (§13.8): la cuadrícula se apila, un indicador por tarjeta con sus doce meses --}}
-            <div class="space-y-3 md:hidden">
+            <div class="space-y-3 md:hidden" data-tour="goals-grid-mobile">
                 @foreach ($indicators as $ind)
                     <details class="rounded-card border border-line bg-surface" wire:key="grid-card-{{ $ind->value }}" {{ $loop->first ? 'open' : '' }}>
                         <summary class="cursor-pointer list-none px-4 py-3 font-medium text-ink-900">{{ $ind->label() }}</summary>
@@ -134,7 +134,7 @@
                 @endforeach
             </div>
 
-            <div class="relative hidden overflow-x-auto rounded-card border border-line bg-surface md:block">
+            <div class="relative hidden overflow-x-auto rounded-card border border-line bg-surface md:block" data-tour="goals-grid">
                 <table class="w-full min-w-[1180px] border-collapse text-label">
                     <thead class="bg-panel text-ink-600">
                         <tr>

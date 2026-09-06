@@ -1,24 +1,24 @@
 <div class="space-y-8">
     <div class="flex flex-wrap items-end justify-between gap-3">
-        <div>
+        <div data-tour="dash-title">
             <h1 class="text-title text-brand-800">{{ $view->period->label() }}</h1>
             <p class="text-ink-600">{{ $branch?->name ?? 'Todas las sedes' }}</p>
         </div>
         @unless ($dashboard->isEmpty())
             {{-- Reporte PDF (UC-14): el navegador envía primero las gráficas en pantalla; si no puede, el PDF sale sin ellas --}}
             <div x-data="{ busy: false }" class="flex flex-wrap items-center gap-2 print:hidden">
-                <x-btn variant="secondary" icon="download" data-images-url="{{ route('exports.charts', ['period' => $view->period->key()]) }}" data-pdf-url="{{ route('exports.pdf', ['period' => $view->period->key()]) }}"
+                <x-btn variant="secondary" icon="download" data-tour="dash-pdf" data-images-url="{{ route('exports.charts', ['period' => $view->period->key()]) }}" data-pdf-url="{{ route('exports.pdf', ['period' => $view->period->key()]) }}"
                        x-on:click="busy = true; window.downloadReport($el.dataset.imagesUrl, $el.dataset.pdfUrl).finally(() => setTimeout(() => busy = false, 3000))" x-bind:disabled="busy">
                     <span x-show="! busy">Descargar PDF</span>
                     <span x-cloak x-show="busy">Generando…</span>
                 </x-btn>
-                <x-btn variant="secondary" icon="printer" class="print:hidden" x-on:click="window.print()">Imprimir</x-btn>
+                <x-btn variant="secondary" icon="printer" class="print:hidden" data-tour="dash-print" x-on:click="window.print()">Imprimir</x-btn>
             </div>
         @endunless
     </div>
 
     @if ($dashboard->isEmpty())
-        <div class="rounded-card border border-line bg-surface px-6 py-14 text-center">
+        <div class="rounded-card border border-line bg-surface px-6 py-14 text-center" data-tour="dash-empty">
             <x-lucide name="cross" class="mx-auto h-12 w-12 text-brand-100" />
             <p class="mt-4 text-sub text-ink-900">Aún no hay días cargados en {{ strtolower($view->period->label()) }}.</p>
             @if ($canCreate && $view->firstMissingDate())
@@ -35,7 +35,7 @@
         @endphp
 
         {{-- Héroe del mes (§13.5): estado frente a la meta y proyección; G9 a ancho completo --}}
-        <div class="rounded-hero border border-brand-100 bg-brand-100 p-6">
+        <div class="rounded-hero border border-brand-100 bg-brand-100 p-6" data-tour="dash-hero">
             @if ($goal?->hasGoal() && $goal->actual !== null)
                 @if ($goal->isComplete())
                     <p class="text-hero text-brand-800">{{ $view->period->label() }} cerró en <span class="tnum">{{ $formatter->pct($goal->pctOfTarget(), 0, false) }}</span> de la meta</p>
@@ -72,7 +72,7 @@
                     @if ($view->missingDates !== []) · faltan {{ count($view->missingDates) }} por cargar @endif
                 </p>
                 @if ($canManageGoals)
-                    <p class="mt-3 flex flex-wrap items-center gap-3 text-label text-accent-600">Define una meta para ver la proyección de cierre. <x-btn variant="secondary" :href="route('goals')" wire:navigate icon="target">Definir meta</x-btn></p>
+                    <p class="mt-3 flex flex-wrap items-center gap-3 text-label text-accent-600">Define una meta para ver la proyección de cierre. <x-btn variant="secondary" :href="route('goals')" wire:navigate icon="target" data-tour="dash-goal-link">Definir meta</x-btn></p>
                 @elseif ($canSeeGoals)
                     <p class="mt-3 text-label text-accent-600">Sin meta definida para este mes.</p>
                 @endif
@@ -86,7 +86,7 @@
         </div>
 
         {{-- KPI primarios con variación, sparkline y barra de meta (§13.5, §7.2, §8.3) --}}
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-tour="dash-kpis">
             @foreach ($primary as $ind)
                 <x-kpi :label="$ind->label()" :explanation="$ind->explanation()" :hint="$hints[$ind->value] ?? null"
                        :value="$ind->format($formatter, $summary->value($ind), $ind === \App\Domain\Indicators\Indicator::SalesBs ? 0 : null)"
@@ -105,7 +105,7 @@
             @endforeach
         </div>
 
-        <details class="group">
+        <details class="group" data-tour="dash-more">
             <summary class="cursor-pointer list-none text-body text-brand-700 hover:underline">Ver 4 indicadores más</summary>
             <div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 @foreach ($secondary as $ind)
@@ -122,7 +122,7 @@
         </details>
 
         {{-- Venta diaria (G2) y mapa de calor (G8), sin marco, separadas por hairline (§13.4, §13.7) --}}
-        <section class="grid rounded-card border border-line bg-surface lg:grid-cols-2 [&>section+section]:border-t [&>section+section]:border-line lg:[&>section+section]:border-l lg:[&>section+section]:border-t-0" aria-label="Gráficas del mes">
+        <section class="grid rounded-card border border-line bg-surface lg:grid-cols-2 [&>section+section]:border-t [&>section+section]:border-line lg:[&>section+section]:border-l lg:[&>section+section]:border-t-0" aria-label="Gráficas del mes" data-tour="dash-charts">
             @foreach (\App\Queries\DashboardQuery::CHARTS as $id)
                 @if (isset($specs[$id]))
                     <x-chart-panel :spec="$specs[$id]" wire:key="dashboard-chart-{{ $id }}" />
@@ -140,7 +140,7 @@
                     'neutral' => 'text-ink-600',
                 ];
             @endphp
-            <section class="rounded-card border border-line bg-surface" aria-labelledby="avisos-title">
+            <section class="rounded-card border border-line bg-surface" aria-labelledby="avisos-title" data-tour="dash-notices">
                 <h2 id="avisos-title" class="border-b border-line px-5 py-3 text-sub font-semibold text-ink-900">Avisos del mes</h2>
                 <ul class="divide-y divide-line">
                     @foreach ($dashboard->notices as $notice)
@@ -156,6 +156,6 @@
             </section>
         @endif
 
-        <p class="text-label text-ink-400">Tasa BCV del mes: {{ $formatter->number($summary->rateFirst, 2) }} → {{ $formatter->number($summary->rateLast, 2) }} ({{ $formatter->pct($summary->rateVariationPct) }}). <a href="{{ route('month', ['period' => $view->period->key()]) }}" wire:navigate class="text-brand-700 hover:underline">Ver el cuadro completo</a></p>
+        <p class="text-label text-ink-400" data-tour="dash-rate-line">Tasa BCV del mes: {{ $formatter->number($summary->rateFirst, 2) }} → {{ $formatter->number($summary->rateLast, 2) }} ({{ $formatter->pct($summary->rateVariationPct) }}). <a href="{{ route('month', ['period' => $view->period->key()]) }}" wire:navigate class="text-brand-700 hover:underline">Ver el cuadro completo</a></p>
     @endif
 </div>

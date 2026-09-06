@@ -50,7 +50,7 @@ new class extends Component
     <h2 id="profile-password-title" class="text-sub font-semibold text-ink-900">Tu contraseña</h2>
     <p class="mt-1 text-label text-ink-600">Al menos 8 caracteres. Si el administrador te dio una temporal, cámbiala aquí.</p>
 
-    <form wire:submit="updatePassword" class="mt-5 space-y-5">
+    <form wire:submit="updatePassword" class="mt-5 space-y-5" data-tour="profile-password">
         <x-field label="Contraseña actual" for="update_password_current_password" :error="$errors->first('current_password')">
             <x-input id="update_password_current_password" type="password" wire:model="current_password" autocomplete="current-password" :invalid="$errors->has('current_password')" />
         </x-field>
@@ -64,7 +64,7 @@ new class extends Component
         </x-field>
 
         <div class="flex justify-end">
-            <x-btn type="submit" wire:loading.attr="disabled" wire:target="updatePassword">Cambiar contraseña</x-btn>
+            <x-btn type="submit" wire:loading.attr="disabled" wire:target="updatePassword" data-tour="profile-change-password">Cambiar contraseña</x-btn>
         </div>
     </form>
 </div>

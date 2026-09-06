@@ -160,6 +160,15 @@ class ImportWizard extends Component
 
     public function restart(): void
     {
+        // Lo analizado y no confirmado no sirve para nada: se descarta (también lo que analiza el recorrido guiado).
+        if ($this->batchIds !== []) {
+            ImportBatch::query()
+                ->whereIn('id', $this->batchIds)
+                ->where('user_id', auth()->id())
+                ->whereIn('status', [ImportStatus::Parsed, ImportStatus::Failed])
+                ->delete();
+        }
+
         $this->reset('files', 'batchIds', 'decisions', 'skip', 'closeAfter', 'expanded', 'results');
         $this->groupId = (string) Str::uuid();
         $this->step = 1;

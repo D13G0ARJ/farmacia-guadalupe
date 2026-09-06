@@ -1,28 +1,28 @@
 <div class="space-y-8" x-data="{ closeOpen: false, reopenOpen: false }" x-on:month-state-changed.window="closeOpen = false; reopenOpen = false">
     <div class="flex flex-wrap items-end justify-between gap-3">
-        <div>
+        <div data-tour="month-title">
             <h1 class="text-title text-brand-800">{{ $view->period->label() }}</h1>
             <p class="text-ink-600">{{ $branch?->name ?? 'Todas las sedes' }}</p>
         </div>
         <div class="flex flex-wrap items-center gap-2 print:hidden">
             @if ($closedEvent)
                 {{-- Estado = icono + texto (§13.4): "Cerrado el 05/10" --}}
-                <x-badge tone="neutral" icon="lock" title="Cerrado por {{ $closedEvent->user?->name }}">Cerrado el {{ $closedEvent->created_at->format('d/m') }}</x-badge>
+                <x-badge tone="neutral" icon="lock" title="Cerrado por {{ $closedEvent->user?->name }}" data-tour="month-closed-badge">Cerrado el {{ $closedEvent->created_at->format('d/m') }}</x-badge>
             @endif
             @if ($canClose)
-                <x-btn variant="secondary" icon="lock" x-on:click="closeOpen = true">Cerrar {{ mb_strtolower($view->period->monthNameUpper()) }}</x-btn>
+                <x-btn variant="secondary" icon="lock" data-tour="month-close" x-on:click="closeOpen = true">Cerrar {{ mb_strtolower($view->period->monthNameUpper()) }}</x-btn>
             @endif
             @if ($canReopen)
-                <x-btn variant="secondary" icon="unlock" x-on:click="reopenOpen = true">Reabrir</x-btn>
+                <x-btn variant="secondary" icon="unlock" data-tour="month-reopen" x-on:click="reopenOpen = true">Reabrir</x-btn>
             @endif
-            <x-btn variant="secondary" icon="download" :href="route('exports.month', ['period' => $view->period->key()])">Exportar a Excel</x-btn>
-            <x-btn variant="secondary" icon="printer" x-on:click="window.print()">Imprimir</x-btn>
+            <x-btn variant="secondary" icon="download" data-tour="month-export" :href="route('exports.month', ['period' => $view->period->key()])">Exportar a Excel</x-btn>
+            <x-btn variant="secondary" icon="printer" data-tour="month-print" x-on:click="window.print()">Imprimir</x-btn>
         </div>
     </div>
 
     {{-- Modales de cierre y reapertura (UC-07): los únicos permitidos junto al borrado de día (§13.5) --}}
     @if ($canClose)
-        <x-dialog show="closeOpen" id="close-month" :title="'Cerrar '.mb_strtolower($view->period->label())">
+        <x-dialog show="closeOpen" id="close-month" data-tour="dialog-close-month" :title="'Cerrar '.mb_strtolower($view->period->label())">
             @if ($view->missingDates !== [])
                 <p class="text-ink-900">{{ count($view->missingDates) === 1 ? 'Falta 1 día por cargar' : 'Faltan '.count($view->missingDates).' días por cargar' }}: {{ implode(', ', array_map(fn ($d) => $d->day, array_slice($view->missingDates, 0, 10))) }}{{ count($view->missingDates) > 10 ? '…' : '' }}.</p>
                 <label class="flex items-start gap-2">
@@ -42,7 +42,7 @@
         </x-dialog>
     @endif
     @if ($canReopen)
-        <x-dialog show="reopenOpen" id="reopen-month" :title="'Reabrir '.mb_strtolower($view->period->label())">
+        <x-dialog show="reopenOpen" id="reopen-month" data-tour="dialog-reopen-month" :title="'Reabrir '.mb_strtolower($view->period->label())">
             <p>Mientras esté abierto, sus días se podrán volver a editar. Dirección recibirá un aviso.</p>
             <div>
                 <label for="reopen-reason" class="block text-label font-medium text-ink-600">Motivo de la reapertura (obligatorio)</label>
@@ -58,7 +58,7 @@
 
     @if ($view->loadedDays() === 0)
         {{-- Estado vacío (§13.5): una frase que dice qué falta y el botón que lo resuelve --}}
-        <div class="rounded-card border border-line bg-surface px-6 py-14 text-center">
+        <div class="rounded-card border border-line bg-surface px-6 py-14 text-center" data-tour="month-empty">
             <x-lucide name="cross" class="mx-auto h-12 w-12 text-brand-100" />
             <p class="mt-4 text-sub text-ink-900">Aún no hay días cargados en {{ strtolower($view->period->label()) }}.</p>
             @if ($canCreate && $view->firstMissingDate())
@@ -72,18 +72,18 @@
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <h2 class="text-sub font-semibold">Calendario</h2>
                     @if ($view->missingDates !== [])
-                        <p class="flex flex-wrap items-center gap-2 text-ink-600">
+                        <p class="flex flex-wrap items-center gap-2 text-ink-600" data-tour="month-missing">
                             <span>{{ count($view->missingDates) === 1 ? 'Falta 1 día' : 'Faltan '.count($view->missingDates).' días' }}: {{ implode(', ', array_map(fn ($d) => $d->day, array_slice($view->missingDates, 0, 8))) }}{{ count($view->missingDates) > 8 ? '…' : '' }}</span>
                             @if ($canCreate)
                                 <a href="{{ route('records.create', ['date' => $view->firstMissingDate()->toDateString(), 'faltantes' => 1]) }}" wire:navigate class="font-medium text-brand-700 hover:underline">{{ count($view->missingDates) === 1 ? 'Cargarlo' : 'Cargar los '.count($view->missingDates).' faltantes' }}</a>
                             @endif
                         </p>
                     @else
-                        <p class="flex items-center gap-1 text-success-600"><x-lucide name="check" class="h-4 w-4" />Todos los días cargados</p>
+                        <p class="flex items-center gap-1 text-success-600" data-tour="month-missing"><x-lucide name="check" class="h-4 w-4" />Todos los días cargados</p>
                     @endif
                 </div>
                 {{-- Flechas (§13.8): mueven el foco entre los días del calendario --}}
-                <div class="overflow-hidden rounded-card border border-line bg-surface"
+                <div class="overflow-hidden rounded-card border border-line bg-surface" data-tour="month-calendar"
                      x-data="{ move(step) { const links = [...$el.querySelectorAll('a[data-day]')]; const i = links.indexOf(document.activeElement); if (i < 0) return; links[Math.max(0, Math.min(links.length - 1, i + step))]?.focus() } }"
                      x-on:keydown.arrow-right.prevent="move(1)" x-on:keydown.arrow-left.prevent="move(-1)" x-on:keydown.arrow-down.prevent="move(7)" x-on:keydown.arrow-up.prevent="move(-7)">
                     <div class="grid grid-cols-7 border-b border-line bg-panel text-center text-label text-ink-600">
@@ -126,7 +126,7 @@
                         </div>
                     @endforeach
                 </div>
-                <p class="flex flex-wrap gap-4 text-label text-ink-600">
+                <p class="flex flex-wrap gap-4 text-label text-ink-600" data-tour="month-legend">
                     <span class="flex items-center gap-1.5"><span class="h-3 w-3 rounded-sm bg-brand-100"></span>Cargado</span>
                     <span class="flex items-center gap-1.5"><span class="h-3 w-3 rounded-sm border border-dashed border-warning-600/60 bg-warning-100"></span>Falta</span>
                     <span class="flex items-center gap-1.5"><span class="h-3 w-3 rounded-sm bg-accent-100"></span>Atípico</span>
@@ -140,18 +140,18 @@
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <h2 class="text-sub font-semibold">Cuadro de indicadores</h2>
                 <div class="flex flex-wrap items-center gap-4 print:hidden">
-                    <label class="relative block">
+                    <label class="relative block" data-tour="month-search">
                         <span class="sr-only">Buscar fecha</span>
                         <x-lucide name="search" class="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
                         <input type="search" wire:model.live.debounce.300ms="search" placeholder="Buscar fecha: 16, 16/09, mar" class="w-56 rounded-control border-line bg-surface py-1.5 pl-8 pr-3 text-label focus:border-brand-500 focus:ring-2 focus:ring-brand-500" aria-label="Buscar fecha en el cuadro">
                     </label>
-                    <label class="flex items-center gap-2 text-label text-ink-600">
+                    <label class="flex items-center gap-2 text-label text-ink-600" data-tour="month-exclude">
                         <input type="checkbox" wire:model.live="excludeAtypical" class="h-4 w-4 rounded border-line text-accent-600 focus:ring-accent-600">
                         Excluir días atípicos de los promedios
                     </label>
                 </div>
             </div>
-            <div class="overflow-x-auto rounded-card border border-line bg-surface">
+            <div class="overflow-x-auto rounded-card border border-line bg-surface" data-tour="month-table">
                 <table class="w-full min-w-[960px] border-collapse text-label">
                     <thead class="bg-panel text-ink-600">
                         <tr>
@@ -184,7 +184,7 @@
                             @php $status = $m->data->status; @endphp
                             <tr wire:key="row-{{ $m->data->date->toDateString() }}-{{ $m->data->branchId }}" class="{{ $loop->even ? 'bg-brand-50/40' : '' }} hover:bg-brand-100/40">
                                 <td class="sticky left-0 z-10 whitespace-nowrap bg-inherit px-3 py-2">
-                                    <a href="{{ route('records.create', ['date' => $m->data->date->toDateString()]) }}" wire:navigate class="flex items-center gap-2 font-medium text-brand-800 hover:underline">
+                                    <a href="{{ route('records.create', ['date' => $m->data->date->toDateString()]) }}" wire:navigate data-tour="month-row-date" class="flex items-center gap-2 font-medium text-brand-800 hover:underline">
                                         <span class="tnum">{{ $formatter->date($m->data->date, 'weekday') }}</span>
                                         @if ($status === \App\Enums\DayStatus::Atypical)<x-badge tone="accent" icon="warning">Atípico</x-badge>@endif
                                         @if ($status === \App\Enums\DayStatus::Closed)<x-badge tone="neutral" icon="power">Cerrado</x-badge>@endif
@@ -206,7 +206,7 @@
                             </tr>
                         @endforeach
                     </tbody>
-                    <tfoot class="sticky bottom-0 border-t-2 border-line bg-surface font-semibold">
+                    <tfoot class="sticky bottom-0 border-t-2 border-line bg-surface font-semibold" data-tour="month-totals">
                         <tr>
                             <td class="sticky left-0 z-10 whitespace-nowrap bg-surface px-3 py-2.5">Total del mes <span class="font-normal text-ink-400">(ponderado{{ $view->summary->excludedAtypical > 0 ? ', sin '.$view->summary->excludedAtypical.' atípico' : '' }})</span></td>
                             @foreach ($columns as $col)
@@ -225,7 +225,7 @@
                     </tfoot>
                 </table>
             </div>
-            <p class="text-label text-ink-400">
+            <p class="text-label text-ink-400" data-tour="month-summary-line">
                 {{ $view->summary->days }} días cargados · inventario contado {{ $view->summary->daysWithInventory }} días · tasa de {{ $formatter->number($view->summary->rateFirst, 2) }} a {{ $formatter->number($view->summary->rateLast, 2) }} ({{ $formatter->pct($view->summary->rateVariationPct) }})
             </p>
         </section>
@@ -233,7 +233,7 @@
 
     {{-- Historial de cierre y reapertura (RN-13, RN-14): bitácora visible --}}
     @if ($events->isNotEmpty())
-        <section class="space-y-3" aria-labelledby="history-title">
+        <section class="space-y-3" aria-labelledby="history-title" data-tour="month-history">
             <h2 id="history-title" class="text-sub font-semibold">Historial del mes</h2>
             <ul class="divide-y divide-line rounded-card border border-line bg-surface">
                 @foreach ($events as $event)

@@ -70,7 +70,7 @@ class DailyRecordForm extends Form
             'inventory_units' => ['nullable', 'integer', 'min:0'],
             'inventory_value_usd' => ['nullable', $number()],
             'shifts' => ['required', 'integer', 'min:0', 'max:6'],
-            'notes' => ['nullable', 'string', 'max:500'],
+            'notes' => ['nullable', 'string', 'max:500', 'required_if:atypical,true'],
             'atypical' => ['boolean'],
         ];
     }
@@ -82,6 +82,7 @@ class DailyRecordForm extends Form
     {
         return [
             'date.before_or_equal' => 'No se puede cargar un día que no ha ocurrido.',
+            'notes.required_if' => 'Escribe el motivo del día atípico (por ejemplo: corte de luz, media jornada).',
             'date.required' => 'Elige la fecha.',
             'sales_bs.required' => 'Escribe la venta del día.',
             'transactions.required' => 'Escribe las transacciones.',

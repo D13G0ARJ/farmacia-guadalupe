@@ -66,9 +66,15 @@ def shot(page, name):
     page.screenshot(path=os.path.join(SHOTS, f"{name}.png"), full_page=True)
 
 
+TOUR_ROUTES = ["dashboard", "records.create", "month", "charts", "goals", "annual", "rates", "imports", "admin", "profile", "shell"]
+# Los recorridos guiados arrancan solos la primera vez que un usuario entra a cada pantalla; el recorrido
+# base los marca como vistos para que no tapen los demás pasos, y los prueba aparte al final.
+SEEN_SCRIPT = "localStorage.setItem('tours-seen', JSON.stringify({1: {" + ", ".join(f"'{r}': 1" for r in TOUR_ROUTES) + "}}))"
+
 with sync_playwright() as p:
     browser = p.chromium.launch()
     ctx = browser.new_context(viewport={"width": 1366, "height": 768}, locale="es-VE", accept_downloads=True)
+    ctx.add_init_script(SEEN_SCRIPT)
     page = ctx.new_page()
     console_errors = []
     page.on("console", lambda m: console_errors.append(m.text) if m.type == "error" else None)
@@ -78,7 +84,7 @@ with sync_playwright() as p:
     # ---------- 1. Login ----------
     def login():
         page.goto(f"{BASE}/login", wait_until="networkidle")
-        expect(page.get_by_text("Farmacia Guadalupe")).to_be_visible()
+        expect(page.get_by_text("Farmacia Guadalupe").first).to_be_visible()  # la marca aparece varias veces en el acceso rediseñado
         expect(page.get_by_role("button", name="Entrar")).to_be_visible()
         assert page.locator("text=Log in").count() == 0
         shot(page, "01-login")
@@ -460,7 +466,7 @@ with sync_playwright() as p:
         page.goto(f"{BASE}/cargar/{day(1)}", wait_until="networkidle")
         expect(page.get_by_role("heading", name=heading(1))).to_be_visible()
         badge = page.locator("#rate").evaluate("e => e.parentElement.parentElement.innerText")
-        assert "Arrastrada" in badge or "BCV" in badge, badge
+        assert any(k in badge for k in ("Arrastrada", "BCV", "Manual")), badge  # según lo que haya en la tabla de tasas
         # La tasa propuesta depende de lo que haya en la tabla (demo: 177,61; con histórico del BCV, la del día)
         RATE["text"] = page.input_value("#rate")
         RATE["value"] = float(RATE["text"].replace(".", "").replace(",", "."))
@@ -510,7 +516,7 @@ with sync_playwright() as p:
         page.locator("#rate").blur()
         expect(page.locator("#rate")).to_have_value(RATE["text"], timeout=8000)
         badge = page.locator("#rate").evaluate("e => e.parentElement.parentElement.innerText")
-        assert "Arrastrada" in badge or "BCV" in badge, badge
+        assert any(k in badge for k in ("Arrastrada", "BCV", "Manual")), badge
         page.fill("#inventory_units", "9029")
         page.fill("#inventory_value_usd", "21848,73")
         page.locator("#inventory_value_usd").blur()
@@ -877,7 +883,10 @@ with sync_playwright() as p:
         expect(bar).to_be_visible()
         expect(bar.get_by_role("button", name="Guardar día")).to_be_visible()
         mp.fill("#sales_bs", "91154,02"); mp.fill("#transactions", "119"); mp.fill("#units", "300"); mp.locator("#units").blur()
-        expect(bar).to_contain_text(RATE["usd"])
+        # La tasa del formulario móvil es la del día (puede ser la guardada, no la propuesta al inicio del recorrido)
+        mobile_rate = float(mp.input_value("#rate").replace(".", "").replace(",", "."))
+        mobile_usd = "$ " + f"{91154.02 / mobile_rate:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        expect(bar).to_contain_text(mobile_usd)
         expect(bar).to_contain_text("2,5")
         bar_bottom = bar.evaluate("e => e.getBoundingClientRect().bottom")
         nav_top = mp.locator("nav[aria-label='Navegación']").evaluate("e => e.getBoundingClientRect().top")
@@ -902,6 +911,86 @@ with sync_playwright() as p:
         mp.screenshot(path=os.path.join(SHOTS, "15-movil-menu.png"), full_page=False)
         m.close()
     step("móvil 360 px: sin scroll horizontal, navegación inferior y menú", mobile)
+
+    # ---------- 6b. Recorridos guiados (driver.js): cada pantalla, hasta el final ----------
+    def run_tour(expected_min):
+        popover = page.locator(".driver-popover")
+        expect(popover).to_be_visible(timeout=10000)
+        progress = page.locator(".driver-popover-progress-text")
+        total = int(progress.inner_text().split(" de ")[1])
+        assert total >= expected_min, f"recorrido demasiado corto: {total} pasos"
+        # Los pasos cuyo elemento no está en pantalla (una sola sede, mes sin faltantes…) se saltan solos,
+        # así que el progreso puede avanzar de a más de uno; lo que se exige es llegar al final.
+        last = 0
+        for _ in range(total + 2):
+            if popover.count() == 0:
+                break
+            expect(progress).to_be_visible(timeout=10000)
+            # Entrar a un paso con demostración puede tardar (escribe datos y espera al elemento): se le da margen.
+            current = last
+            limite = time.time() + 8
+            while current <= last and time.time() < limite:
+                current = int(progress.inner_text().split(" de ")[0])
+                if current <= last:
+                    time.sleep(0.2)
+            assert current > last, f"el recorrido no avanzó ({current} de {total})"
+            last = current
+            assert page.locator(".driver-popover-title").inner_text().strip(), "paso sin título"
+            page.locator(".driver-popover-next-btn").click()
+            time.sleep(0.3)
+        expect(popover).to_be_hidden(timeout=10000)
+        assert last == total, f"el recorrido terminó en el paso {last} de {total}"
+        return total
+
+    def tour_from_help(path, name, expected_min):
+        page.goto(f"{BASE}/{path}", wait_until="networkidle")
+        # El botón de la barra (la tecla "?" no aplica cuando el foco está en un campo, como en Cargar día)
+        page.get_by_role("button", name="Ayuda de esta pantalla").click()
+        page.get_by_role("button", name="Ver el recorrido de esta pantalla").click()
+        total = run_tour(expected_min)
+        print(f"      recorrido {name}: {total} pasos")
+
+    def tours_all_screens():
+        page.select_option("#context-period", "2025-09") if page.url.endswith("/dashboard") else page.goto(f"{BASE}/dashboard", wait_until="networkidle")
+        page.select_option("#context-period", "2025-09")
+        page.wait_for_load_state("networkidle")
+        tour_from_help("dashboard", "Panel", 25)
+        shot(page, "21-recorrido-panel")
+        tour_from_help("cargar/2025-09-10", "Cargar día", 14)
+        tour_from_help("mes/2025-09", "Mes", 14)
+        tour_from_help("graficas", "Gráficas", 10)
+        tour_from_help("metas", "Metas", 6)
+        tour_from_help("anio", "Año", 6)
+        tour_from_help("tasas", "Tasa BCV", 10)
+        tour_from_help("importar", "Importar", 4)
+        tour_from_help("administracion", "Administración", 20)
+        tour_from_help("profile", "Perfil", 6)
+        # Un diálogo abierto por el recorrido queda cerrado al terminar
+        expect(page.get_by_role("dialog")).to_have_count(0)
+    step("recorridos guiados: los diez recorridos llegan al final desde el panel de ayuda", tours_all_screens)
+
+    def tour_autostart_and_seen():
+        fresh = browser.new_context(viewport={"width": 1366, "height": 768}, locale="es-VE")
+        fp = fresh.new_page()
+        fp.goto(f"{BASE}/login", wait_until="networkidle")
+        fp.fill("input[type=email]", "supervision@guadalupe.local")
+        fp.fill("input[type=password]", "password")
+        fp.click("button[type=submit]")
+        fp.wait_for_url(f"{BASE}/dashboard", timeout=30000)
+        # Primera visita: el recorrido del panel arranca solo
+        expect(fp.locator(".driver-popover")).to_be_visible(timeout=10000)
+        expect(fp.locator(".driver-popover-title")).to_have_text("Recorrido: Panel")
+        # Supervisión no ve el paso de Administración del menú
+        fp.locator(".driver-popover-close-btn").click()
+        expect(fp.locator(".driver-popover")).to_be_hidden()
+        fp.reload(wait_until="networkidle")
+        time.sleep(1.2)
+        assert fp.locator(".driver-popover").count() == 0, "el recorrido volvió a arrancar tras verlo"
+        fp.keyboard.press("?")
+        expect(fp.get_by_text("visto").first).to_be_visible()
+        shot(fp, "22-recorridos-lista")
+        fresh.close()
+    step("recorridos guiados: arranca solo la primera vez, se marca como visto y no vuelve a molestar", tour_autostart_and_seen)
 
     # ---------- 7. Logout ----------
     def logout():

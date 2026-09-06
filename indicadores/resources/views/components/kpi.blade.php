@@ -17,7 +17,7 @@
         @if ($explanation)
             {{-- "¿Cómo se calcula?" (§13.5): popover en línea con la fórmula en palabras y el último día; nunca navega --}}
             <div class="relative" x-data="{ open: false }" x-on:keydown.escape.window="open = false">
-                <button type="button" x-on:click="open = ! open" x-bind:aria-expanded="open" aria-controls="{{ $popoverId }}" class="rounded-full p-0.5 text-ink-400 hover:text-brand-700 focus-visible:ring-2 focus-visible:ring-brand-500" aria-label="¿Cómo se calcula {{ mb_strtolower($label) }}?" title="¿Cómo se calcula?">
+                <button type="button" data-tour="kpi-help" x-on:click="open = ! open" x-bind:aria-expanded="open" aria-controls="{{ $popoverId }}" class="rounded-full p-0.5 text-ink-400 hover:text-brand-700 focus-visible:ring-2 focus-visible:ring-brand-500" aria-label="¿Cómo se calcula {{ mb_strtolower($label) }}?" title="¿Cómo se calcula?">
                     <x-lucide name="info" class="h-4 w-4" />
                 </button>
                 <div x-cloak x-show="open" x-on:click.outside="open = false" id="{{ $popoverId }}" role="note" class="absolute right-0 z-20 mt-1 w-64 rounded-card border border-line bg-surface p-3 text-left shadow-overlay">
