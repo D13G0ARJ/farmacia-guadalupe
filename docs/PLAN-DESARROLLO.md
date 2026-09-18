@@ -6,8 +6,8 @@
 | **Alcance** | Etapa 1: dashboard de indicadores y metas (sin Chatwoot, sin pedidos) |
 | **Stack** | Laravel 13 · PHP 8.4 · MySQL 8 (SQLite en desarrollo y pruebas) · Livewire 4 · Tailwind 3 · Alpine · ECharts 6 |
 | **Tasa** | BCV (Banco Central de Venezuela), con arrastre en días no publicados |
-| **Versión del plan** | 13 (Fases 0 a 7 implementadas y probadas; entrega en `DESPLIEGUE.md` y `MANUAL-USUARIO.md`; estado por caso de uso en §21) |
-| **Fecha** | 04-09-2026 |
+| **Versión del plan** | 14 (Fases 0 a 7 implementadas y probadas; recorridos guiados y auditoría de robustez en §20 iteraciones 18 y 19; entrega en `DESPLIEGUE.md` y `MANUAL-USUARIO.md`; estado por caso de uso en §21) |
+| **Fecha** | 18-09-2026 |
 
 ---
 
@@ -1684,6 +1684,62 @@ Hallazgos del code review y del recorrido en navegador (corregidos):
 | 17.10 | Sin cron (desarrollo, o un servidor recién instalado), la tasa se arrastraba durante meses en silencio: el formulario proponía 177,61 de septiembre 2025 cuando el BCV iba por 807 | Un arrastre de más de una semana se marca como viejo: insignia roja con fecha completa y antigüedad, advertencia que exige confirmar al guardar, aviso ámbar en el panel con acceso a "Consultar ahora" y fila en rojo en Tasa BCV |
 | 17.11 | No había forma de traer las tasas de meses pasados (las API comunitarias no dan histórico) | Se leen los libros trimestrales oficiales del BCV ("Tipo de cambio de referencia", una hoja por día con la fecha de vigencia): `rates:backfill --from=2025-01-01` y el botón "Traer histórico del BCV" en Tasa BCV; solo crea los días sin tasa |
 | 17.12 | Los avisos tras una redirección (día guardado, borrado, atípico) se perdían a veces: una petición intermedia del navegador consumía el `flash` de sesión | El aviso se guarda con `put` y el layout lo consume con `pull`: sobrevive a peticiones intermedias y se muestra una sola vez |
+
+### Iteración 18 — Recorridos guiados con driver.js (rama `recorridos-guiados`)
+
+Objetivo: que el sistema se explique solo, botón por botón, sin que haga falta una capacitación presencial.
+
+Entregado en `indicadores/`:
+
+- **driver.js 1.8** (MIT, 25 KB, sin dependencias) empaquetado con Vite. `resources/js/tour.js` monta los recorridos, resuelve las anclas `data-tour`, abre pestañas y diálogos cuando un paso lo pide (`click`, `wait`, `close`), y recuerda por usuario qué recorridos vio (`localStorage`, clave `tours-seen`). Globo con los tokens de la marca (`.tour-guadalupe`), textos "Anterior / Siguiente / Listo", progreso "3 de 24", teclado (flechas, Esc) y respeto a "reducir movimiento".
+- **Definiciones en PHP** (`App\Support\GuidedTours`): un recorrido por pantalla (Panel, Cargar día, Mes, Gráficas, Metas, Año, Tasa BCV, Importar, Administración, Perfil) más el recorrido general del menú y la barra superior. Cada paso lleva título, explicación completa (qué es, para qué sirve, qué pasa después) y el permiso necesario: el operador no ve pasos de cierre, reapertura, metas ni administración. Los pasos cuyo elemento no está en pantalla (mes vacío, borrador, advertencias, pestañas del importador) se saltan solos.
+- **Anclas `data-tour`** (149) en todas las vistas: menú, barra de contexto, botón de ayuda, y en cada botón, enlace, campo, pestaña, diálogo y tabla de las diez pantallas.
+- **Panel de ayuda**: sección "Recorridos guiados" con "Ver el recorrido de esta pantalla", "Cómo moverte por el sistema" y la lista de los diez recorridos con la marca "visto"; cualquier pantalla arranca su recorrido con `?recorrido=1`. La primera vez que un usuario entra a una pantalla (en escritorio) el recorrido arranca solo, una vez.
+- **Demostraciones con datos de ejemplo** (`resources/js/demos.js`, 34 acciones): el recorrido no solo señala, hace. En Cargar día escribe un día de ejemplo campo por campo y el panel "Se calculará" responde en vivo; en Mes busca "16" y marca "excluir atípicos"; en Gráficas abre "Datos" y cambia el indicador de la comparación anual; en Metas abre la cuadrícula y escribe una meta; en Tasa BCV abre la edición en línea y el diálogo del histórico con una fecha; en Importar sube un cuadro de ejemplo (enero 2020, ficticio, con una fecha repetida y un día faltante a propósito), lo analiza, despliega la revisión, elige una decisión y muestra la pantalla de confirmación en imagen; en Administración llena el formulario de usuario y de sede y filtra la bitácora; en Perfil escribe un nombre. Nada se guarda: cada paso deshace lo suyo al abandonarlo y cada pantalla tiene una limpieza final (`GuidedTours::cleanup`), y "Volver a empezar" del importador ahora descarta lo analizado y no confirmado. Al terminar, la observación pasó a ser obligatoria cuando el día es atípico (la pantalla ya lo prometía) y se corrigieron tres afirmaciones de los textos que no coincidían con el sistema.
+- **Verificación automática** (`GuidedToursTest`): (1) cada recorrido tiene introducción, cierre en la ayuda y descripciones de al menos 40 caracteres; (2) para cada pantalla renderizada con datos: todo botón, enlace, campo, selector, área de texto y desplegable dentro de `<main>` está dentro de un ancla, cada ancla tiene su paso y cada paso apunta a un ancla real de la vista; (3) los permisos filtran pasos y catálogo; (4) el panel expone los pasos. Con eso, agregar un botón sin recorrido rompe la suite.
+- **Recorrido Playwright**: dos pasos nuevos: los diez recorridos se ejecutan hasta el final desde el panel de ayuda (con los diálogos que abren y cierran) y, en un navegador nuevo, el recorrido arranca solo en la primera visita, se marca como visto y no vuelve a aparecer.
+
+- **Video de demostración completo** (`videos/sistema-completo/`, método de `COMO-CREAR-VIDEOS-DE-CAPACITACION.md`): 32 escenas narradas (voz es-VE), unos 13 minutos, grabadas con Playwright a 1920×1080 con cursor visible sobre una copia desechable de la base (`prep_escenario.php` deja el mes en curso con días cargados y uno cerrado). Muestra cada módulo con datos de prueba: entra, recorre el panel y la barra de contexto, carga un día completo, cierra y reabre un mes, exporta, recorre las gráficas, fija metas, edita una tasa, importa el cuadro de ejemplo hasta confirmar, crea un usuario, revisa la bitácora y termina en la ayuda con un recorrido guiado en marcha. El MP4 se entrega aparte (no va al repositorio); `videos/sistema-completo/README.md` explica cómo regenerarlo.
+Desvíos y decisiones:
+
+| # | Decisión | Motivo |
+|---|---|---|
+| 18.1 | driver.js en lugar de Shepherd o Intro.js | Los otros dos exigen licencia comercial para uso interno en una empresa; driver.js es MIT y pesa cinco veces menos |
+| 18.2 | "Visto" en el navegador, no en la base | No exige migración ni tocar el perfil; si el usuario cambia de equipo, el recorrido se ofrece una vez más, que es inofensivo |
+| 18.3 | Los diálogos se recorren abriéndolos y cerrándolos con "Cancelar" | driver.js solo resalta lo que existe en pantalla; así el recorrido explica también lo que hay dentro de cada diálogo sin ejecutar nada |
+| 18.4 | Sin arranque automático en móvil | El menú lateral está oculto y el globo taparía el formulario; el recorrido sigue disponible desde la ayuda |
+
+### Iteración 19 — Auditoría de robustez de pies a cabeza (rama `recorridos-guiados`)
+
+Objetivo: comprobar, pensando como usuario, que nada falla ni deja un error crudo, y endurecer lo que sí fallaba.
+
+Método: (1) suite completa y Larastan como línea base (289 pruebas en verde); (2) tres revisiones de código en paralelo por módulo (carga diaria; importar, exportar, tasas y correo; administración, metas, panel y armazón), cada una con casos de uso concretos y cita de archivo y línea; (3) pruebas exploratorias en el navegador (`tests/Browser/exploratorio.py`, unos 70 casos: datos raros, URL inválidas, mes cerrado a mitad de edición, dos usuarios a la vez, archivos falsos, rol limitado, móvil); (4) corrección con prueba Pest por hallazgo, en tres tandas paralelas sin archivos compartidos; (5) suite completa, Larastan, recorrido E2E y exploración repetida.
+
+Hallazgos corregidos (severidad alta):
+
+| # | Hallazgo | Corrección |
+|---|---|---|
+| 19.1 | Editar cualquier campo de un día reescribía la tasa con 2 decimales, la marcaba manual y pisaba la tasa global del BCV | La tasa se muestra con su precisión real; solo se envía si el usuario la cambió de verdad |
+| 19.2 | Mes cerrado entre abrir y guardar → 403 crudo | Comprobación previa con mensaje amable en guardar, borrar y día cerrado |
+| 19.3 | Sin tope numérico: un valor grande desbordaba la columna y daba error 500 (confirmado en vivo) | `max` en formulario y dominio con mensaje "Es demasiado grande"; metas y parámetros igual |
+| 19.4 | Dos usuarios guardando el mismo día nuevo a la vez → violación de clave única → 500 | Se captura y se traduce a "El día ya está cargado" (alta, día cerrado y deshacer) |
+| 19.5 | Recalcular tasas modificaba los días de un mes cerrado | Bloqueado en la acción y oculto en pantalla |
+| 19.6 | Una fila en blanco en medio del cuadro truncaba la importación en silencio | El lector salta filas vacías y avisa de filas con datos sin fecha |
+| 19.7 | Excel y PDF se podían descargar por URL sin el permiso `reports.export` | Comprobación en el controlador y botones ocultos por permiso |
+| 19.8 | Un valor fuera de rango en el archivo (jornadas 300) rompía la importación a medias | Anomalía "valor fuera de rango" antes de la base; cada lote captura cualquier error y sigue con los demás |
+| 19.9 | Un fallo de SMTP abortaba el reporte mensual de todas las sedes sin registro | Envío por sede con registro de error; `onFailure` en todas las tareas programadas |
+| 19.10 | Un usuario sin sede activa veía el consolidado de todas las sedes | Estado vacío explícito; ninguna pantalla consulta sin filtro de sede |
+| 19.11 | Vaciar o escribir letras en un parámetro numérico o en las jornadas de la sede → TypeError 500 | Propiedades de formulario como texto, validadas y convertidas después |
+| 19.12 | Las gráficas perdían su `wire:key` al cambiar de moneda y quedaban bajo el título equivocado | El componente imprime sus atributos |
+| 19.13 | Correo de usuario repetido con otras mayúsculas → 500 (confirmado en vivo) | Normalización antes de validar y captura del índice único |
+
+Hallazgos corregidos (media y baja), en resumen: formato inglés "1,234.56" rechazado con pista; espacios duros al pegar; día cerrado conserva su estado al editarlo; deshacer un borrado exige acceso a esa sede; borrador local por usuario y limpieza al cambiar de fecha; día cerrado con tasa escrita; al editar se vuelve al mes (no al primer faltante); ocultar inventario borra lo escrito; motivo atípico mínimo 10 caracteres también en el formulario; `/cargar/2026-02-30` y `/mes/2025-13` dan 404; días cerrados fuera de las estadísticas de tasa; dos archivos del mismo mes en un lote se detectan; "Reemplazar" pasa a "Actualizar los días que trae el archivo"; importar no degrada tasas BCV a manuales; histórico BCV acotado a 3 años desde pantalla y por tramos; "Consultar ahora" guarda solo la fecha vigente; temporales borrados; lotes huérfanos podados (`imports:prune`); PNG del PDF por sede y reutilizables; `editingDate` bloqueada; metas con tope y redondeo a la precisión del indicador; aviso antes de descartar metas sin guardar; selector de período acotado a 24 meses; parámetros de URL inválidos ya no rompen; proyección "pendiente" cuando todos los días son atípicos; recuperar contraseña con SMTP roto avisa y no manda enlaces a desactivados; gráficas con mensaje si ECharts no carga; "Ver 4 indicadores más" recuerda su estado; Esc sin peticiones inútiles; cambio de contraseña y nombre desde el perfil en bitácora y con rotación de sesión; moneda disponible en móvil; tabla de tasas sin desborde en móvil; `Setting::get` memorizado por petición; `RemindMonthClose` tolera roles sin sembrar.
+
+Resultado: 368 pruebas en verde (79 nuevas en archivos `Robustez*`), Larastan 0, Pint limpio, recorrido E2E 48/48 y exploración sin errores 500.
+
+Lo verificado como correcto y que no se tocó: parseo es-VE, fecha futura bloqueada en tres capas, bloqueo optimista con nombre y hora, franja de advertencias sin bucle, políticas en servidor (no solo en la interfaz), invalidación de caché al guardar, escape de HTML en bitácora, último administrador protegido, BCV caído no rompe, tareas programadas con zona horaria y sin solape, `demo:clear` exige `--force` en producción.
+
+Pendiente conocido (no bloquea la entrega): la tasa escrita a mano en Cargar día sigue publicándose como tasa global de esa fecha (diseño de una sola sede); revisar si se activa la Fase 8 multi-sede. Rendimiento: Metas › Este mes y la tabla anual hacen decenas de consultas por render; aceptable con una sede y 24 meses, optimizar si crece.
 
 ### Estado final
 

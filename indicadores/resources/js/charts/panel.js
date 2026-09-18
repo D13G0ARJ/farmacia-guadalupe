@@ -9,6 +9,7 @@ export default function chartPanel(id) {
     return {
         id,
         ready: false,
+        failed: false,
         showData: false,
         handle: null,
 
@@ -28,13 +29,21 @@ export default function chartPanel(id) {
 
         async mount(spec) {
             if (!spec || spec.empty || !this.$refs.canvas || this.handle) return;
-            const { mountChart } = await window.loadCharts();
-            if (this.handle || !this.$refs.canvas?.isConnected) return;
-            this.handle = mountChart(this.$refs.canvas, spec);
-            this.ready = true;
-            // Registro global: el reporte PDF recoge las gráficas en pantalla como PNG (§11.2).
-            window.__charts = window.__charts || {};
-            window.__charts[this.id] = this.handle;
+            try {
+                const { mountChart } = await window.loadCharts();
+                if (this.handle || !this.$refs.canvas?.isConnected) return;
+                this.handle = mountChart(this.$refs.canvas, spec);
+                this.ready = true;
+                this.failed = false;
+                // Registro global: el reporte PDF recoge las gráficas en pantalla como PNG (§11.2).
+                window.__charts = window.__charts || {};
+                window.__charts[this.id] = this.handle;
+            } catch (error) {
+                // Sin ECharts el esqueleto latiría para siempre: se dice qué pasó y qué hacer (M28).
+                console.error('No se pudo montar la gráfica', this.id, error);
+                this.ready = false;
+                this.failed = true;
+            }
         },
 
         apply(spec) {

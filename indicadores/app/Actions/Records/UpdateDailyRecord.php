@@ -6,9 +6,11 @@ namespace App\Actions\Records;
 
 use App\Actions\Rates\UpsertExchangeRate;
 use App\Domain\Records\DailyRecordInput;
+use App\Domain\Records\Exceptions\InvalidRecordException;
 use App\Domain\Records\Exceptions\PeriodClosedException;
 use App\Domain\Records\Exceptions\StaleRecordException;
 use App\Domain\Shared\Period;
+use App\Enums\DayStatus;
 use App\Enums\RateSource;
 use App\Models\DailyRecord;
 use App\Models\ExchangeRate;
@@ -41,8 +43,17 @@ final class UpdateDailyRecord
                 throw StaleRecordException::for($fresh);
             }
 
+            // Un día cerrado no operó: editarlo no lo convierte en normal y no admite la marca de atípico (M11).
+            $status = $input->status;
+            if ($fresh->status === DayStatus::Closed) {
+                if ($status === DayStatus::Atypical) {
+                    throw InvalidRecordException::because(['Un día cerrado no se puede marcar como atípico. Si ese día sí operó, bórralo y cárgalo de nuevo.']);
+                }
+                $status = DayStatus::Closed;
+            }
+
             $attributes = [
-                'status' => $input->status,
+                'status' => $status,
                 'sales_bs' => $input->salesBs,
                 'transactions' => $input->transactions,
                 'units' => $input->units,
@@ -53,6 +64,7 @@ final class UpdateDailyRecord
                 'updated_by' => $user->id,
             ];
 
+            // Solo si la tasa que llega es distinta de la guardada se toca el snapshot y la tasa global del día (A1).
             if ($input->rate !== null && ! $input->rate->isEqualTo($fresh->exchange_rate)) {
                 $published = ExchangeRate::query()->where('date', $fresh->date->toDateString())->first();
                 if ($published === null || ! $published->rate->isEqualTo($input->rate)) {

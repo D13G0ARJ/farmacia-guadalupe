@@ -37,6 +37,16 @@ final class CurrentBranch
         return $branch;
     }
 
+    /**
+     * ¿El usuario puede ver datos? Quien ve todas las sedes siempre; los demás necesitan al menos
+     * una sede activa asignada. Sin ella `resolve()` devuelve null, que significa "todas": las
+     * pantallas deben mostrar el estado vacío en vez de consultar sin filtro de sede (RN-23).
+     */
+    public function hasAccess(User $user): bool
+    {
+        return $user->canSeeAllBranches() || $user->accessibleBranches()->isNotEmpty();
+    }
+
     public function set(User $user, ?int $branchId): void
     {
         if ($branchId === null) {

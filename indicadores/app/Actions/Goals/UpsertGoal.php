@@ -12,6 +12,7 @@ use App\Models\Goal;
 use App\Models\User;
 use Brick\Math\BigDecimal;
 use Brick\Math\Exception\MathException;
+use Brick\Math\RoundingMode;
 
 /**
  * Define, cambia o borra la meta de (sede | consolidado, indicador, mes) (UC-11, RN-17).
@@ -19,6 +20,9 @@ use Brick\Math\Exception\MathException;
  */
 final class UpsertGoal
 {
+    /** La columna es decimal(14,4): por encima de esto el guardado reventaría (M21). */
+    public const MAX_TARGET = '10000000000';
+
     public function __construct(private readonly Formatter $formatter) {}
 
     /** @return Goal|null  null cuando la meta quedó eliminada o no existía */
@@ -51,6 +55,15 @@ final class UpsertGoal
         }
         if (! $value->isPositive()) {
             throw InvalidGoalException::notPositive();
+        }
+
+        // Se redondea a los decimales con que se muestra el indicador (B17) y se pone techo (M21).
+        $value = $value->toScale($indicator->precision(), RoundingMode::HalfUp);
+        if (! $value->isPositive()) {
+            throw InvalidGoalException::notPositive();
+        }
+        if ($value->isGreaterThanOrEqualTo(BigDecimal::of(self::MAX_TARGET))) {
+            throw new InvalidGoalException('La meta es demasiado grande.');
         }
 
         if ($existing !== null) {

@@ -66,6 +66,14 @@ it('marcar un día como atípico deja "Deshacer" en el aviso y deshacerlo lo dev
     $admin = friendlyAdmin();
     $record = DailyRecord::query()->where('date', '2025-09-10')->firstOrFail();
 
+    // Sin observación no se puede marcar atípico: la pantalla lo dice y la validación lo exige
+    Livewire::actingAs($admin)->test(DailyForm::class, ['date' => '2025-09-10'])
+        ->set('form.atypical', true)
+        ->set('form.notes', '')
+        ->call('save')
+        ->assertHasErrors(['form.notes'])
+        ->assertSee('Escribe el motivo del día atípico');
+
     Livewire::actingAs($admin)->test(DailyForm::class, ['date' => '2025-09-10'])
         ->set('form.atypical', true)
         ->set('form.notes', 'Media jornada por inventario')

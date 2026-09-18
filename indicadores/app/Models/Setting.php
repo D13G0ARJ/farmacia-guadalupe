@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Once;
 
 /**
  * Parámetro global (branch_id null) o por sede (§4.5). El valor es JSON.
@@ -38,34 +39,45 @@ class Setting extends Model
         return ['value' => 'json'];
     }
 
-    /** Lee la clave para una sede, con caída al valor global y luego al defecto. */
+    /**
+     * Lee la clave para una sede, con caída al valor global y luego al defecto.
+     *
+     * Memorizado por petición (`once`): Metas y Año leen los mismos parámetros muchas veces en un
+     * solo render. `put()` y `forget()` lo invalidan.
+     */
     public static function get(string $key, ?int $branchId = null): mixed
     {
-        $rows = static::query()
-            ->where('key', $key)
-            ->where(fn ($q) => $q->whereNull('branch_id')->when($branchId !== null, fn ($q) => $q->orWhere('branch_id', $branchId)))
-            ->get()
-            ->keyBy(fn (self $s) => $s->branch_id ?? 0);
+        return once(function () use ($key, $branchId): mixed {
+            $rows = static::query()
+                ->where('key', $key)
+                ->where(fn ($q) => $q->whereNull('branch_id')->when($branchId !== null, fn ($q) => $q->orWhere('branch_id', $branchId)))
+                ->get()
+                ->keyBy(fn (self $s) => $s->branch_id ?? 0);
 
-        if ($branchId !== null && $rows->has($branchId)) {
-            return $rows[$branchId]->value;
-        }
+            if ($branchId !== null && $rows->has($branchId)) {
+                return $rows[$branchId]->value;
+            }
 
-        if ($rows->has(0)) {
-            return $rows[0]->value;
-        }
+            if ($rows->has(0)) {
+                return $rows[0]->value;
+            }
 
-        return self::DEFAULTS[$key] ?? null;
+            return self::DEFAULTS[$key] ?? null;
+        });
     }
 
     public static function put(string $key, mixed $value, ?int $branchId = null): self
     {
+        Once::flush();
+
         return static::query()->updateOrCreate(['key' => $key, 'branch_id' => $branchId], ['value' => $value]);
     }
 
     /** Borra la fila: la lectura vuelve al valor global o al defecto. */
     public static function forget(string $key, ?int $branchId = null): void
     {
+        Once::flush();
+
         static::query()->where('key', $key)->where('branch_id', $branchId)->delete();
     }
 }

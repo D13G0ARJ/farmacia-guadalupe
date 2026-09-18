@@ -10,8 +10,10 @@ use App\Models\Branch;
 use App\Models\Setting;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use InvalidArgumentException;
+use Throwable;
 
 /**
  * Envío programado del reporte mensual (§11.2): corre a diario y solo actúa el día configurado
@@ -48,13 +50,32 @@ class SendMonthlyReport extends Command
         }
 
         $sent = 0;
+        $failed = [];
         foreach (Branch::query()->where('is_active', true)->orderBy('id')->get() as $branch) {
-            Mail::to($recipients)->send($builder->handle($branch, $period));
-            $sent++;
-            $this->line("Enviado: {$period->label()} · {$branch->name} → ".implode(', ', $recipients));
+            // Un SMTP caído en una sede no puede dejar a las demás sin su reporte (A9).
+            try {
+                Mail::to($recipients)->send($builder->handle($branch, $period));
+                $sent++;
+                $this->line("Enviado: {$period->label()} · {$branch->name} → ".implode(', ', $recipients));
+            } catch (Throwable $e) {
+                $failed[] = $branch->name;
+                Log::error('Reporte mensual: no se pudo enviar', [
+                    'sede' => $branch->name,
+                    'periodo' => $period->key(),
+                    'error' => $e->getMessage(),
+                ]);
+                report($e);
+                $this->error("No se pudo enviar el de {$branch->name}: {$e->getMessage()}");
+            }
         }
 
         $this->info("Reportes enviados: {$sent}.");
+
+        if ($failed !== []) {
+            $this->error('Sedes sin reporte: '.implode(', ', $failed).'.');
+
+            return self::FAILURE;
+        }
 
         return self::SUCCESS;
     }

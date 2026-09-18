@@ -35,7 +35,13 @@ final class BcvHistoryProvider
 
         foreach ($this->quarters($from, $to) as $file) {
             $url = str_replace('{file}', $file, $this->urlTemplate);
-            $path = tempnam(sys_get_temp_dir(), 'bcv').'.xls';
+            $temp = tempnam(sys_get_temp_dir(), 'bcv');
+            if ($temp === false) {
+                $failed[] = $file;
+
+                continue;
+            }
+            $path = $temp.'.xls';
             try {
                 $response = $this->http->withoutVerifying()->connectTimeout(10)->timeout(90)->retry(2, 1000, throw: false)->get($url);
                 if (! $response->successful() || strlen($response->body()) < 1000) {
@@ -54,7 +60,9 @@ final class BcvHistoryProvider
                 Log::warning('Histórico BCV: no se pudo leer un trimestre', ['archivo' => $file, 'error' => $e->getMessage()]);
                 $failed[] = $file;
             } finally {
+                // `tempnam` crea su propio archivo además del .xls: se borran los dos (M7).
                 @unlink($path);
+                @unlink($temp);
             }
         }
         ksort($rates);

@@ -30,6 +30,24 @@ it('el operador edita solo dentro de su ventana de días (§15.1)', function ():
     expect($operador->can('update', $old))->toBeTrue();
 });
 
+it('la ventana del operador se lee por sede, como en el formulario (B20)', function (): void {
+    $operador = userWithRole(Role::Operador);
+    $branch = $operador->branches->first();
+    $old = DailyRecord::factory()->for($branch)->create(['date' => '2025-09-01', 'created_by' => $operador->id]);
+
+    expect($operador->can('update', $old))->toBeFalse();
+
+    // Parámetro solo para esta sede: la política debe verlo igual que el formulario.
+    Setting::put('operator_edit_window_days', 30, $branch->id);
+    expect($operador->can('update', $old))->toBeTrue();
+
+    // En otra sede sigue mandando el valor global.
+    $other = Branch::factory()->create();
+    $operador->branches()->attach($other->id);
+    $foreign = DailyRecord::factory()->for($other)->create(['date' => '2025-09-01', 'created_by' => $operador->id]);
+    expect($operador->fresh()->can('update', $foreign))->toBeFalse();
+});
+
 it('supervisión edita y borra sin ventana, pero nadie edita un mes cerrado', function (): void {
     $supervisor = userWithRole(Role::Supervision);
     $branch = $supervisor->branches->first();

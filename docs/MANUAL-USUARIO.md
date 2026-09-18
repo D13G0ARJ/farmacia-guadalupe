@@ -2,6 +2,10 @@
 
 Qué hace cada pantalla y cómo se usa en el día a día. Dentro del sistema, el botón **?** de la barra superior abre la ayuda de la pantalla en la que estás, con las fórmulas de cada indicador y el glosario.
 
+## El sistema se explica solo
+
+La primera vez que entras a cada pantalla arranca un **recorrido guiado**: la pantalla se oscurece, se ilumina un botón o una sección y un globo explica qué es, para qué sirve y qué pasa al usarlo. Avanza con **Siguiente** (o la flecha derecha), vuelve con **Anterior** y sal con **Esc**. Cada recorrido se ofrece una sola vez; puedes repetirlo cuando quieras desde el botón **?** → "Ver el recorrido de esta pantalla", y desde ahí también está "Cómo moverte por el sistema" y la lista de los diez recorridos.
+
 ## Entrar
 
 Abre la dirección del sistema, escribe tu correo y tu contraseña y pulsa **Entrar**. Si el administrador te dio una contraseña temporal, cámbiala en **Perfil** (abajo a la izquierda). Si la olvidaste, usa "¿Olvidaste tu contraseña?" y llegará un correo.

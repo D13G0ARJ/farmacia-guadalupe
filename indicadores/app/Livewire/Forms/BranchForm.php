@@ -19,7 +19,8 @@ class BranchForm extends Form
 
     public string $legal_name = '';
 
-    public int $default_shifts = 3;
+    /** Texto: vacío o con letras debe dar mensaje de validación, no un TypeError (A11). */
+    public string $default_shifts = '3';
 
     /** @var list<int> */
     public array $inventory_days = Branch::DEFAULT_INVENTORY_DAYS;
@@ -34,7 +35,7 @@ class BranchForm extends Form
         $this->name = $branch->name;
         $this->code = $branch->code;
         $this->legal_name = $branch->legal_name;
-        $this->default_shifts = $branch->default_shifts;
+        $this->default_shifts = (string) $branch->default_shifts;
         $this->inventory_days = array_map('intval', $branch->inventory_days ?? Branch::DEFAULT_INVENTORY_DAYS);
         $this->sales_deviation_pct = $branch->sales_deviation_pct === null ? '' : (string) (int) $branch->sales_deviation_pct;
         $this->is_active = $branch->is_active;
@@ -64,6 +65,8 @@ class BranchForm extends Form
             'code.unique' => 'Ya hay una sede con ese código.',
             'legal_name.required' => 'Escribe la razón social: va en el encabezado de los reportes.',
             'default_shifts.between' => 'Las jornadas por defecto van de 1 a 6.',
+            'default_shifts.required' => 'Escribe cuántas jornadas trabaja la sede.',
+            'default_shifts.integer' => 'Escribe un número entero de jornadas.',
             'sales_deviation_pct.between' => 'El umbral va de 5 a 100 por ciento.',
             'sales_deviation_pct.integer' => 'Escribe un número entero de por ciento.',
         ];
@@ -76,7 +79,7 @@ class BranchForm extends Form
             'name' => $this->name,
             'code' => $this->code,
             'legal_name' => $this->legal_name,
-            'default_shifts' => $this->default_shifts,
+            'default_shifts' => (int) $this->default_shifts,
             'inventory_days' => array_map('intval', $this->inventory_days),
             'sales_deviation_pct' => $this->sales_deviation_pct === '' ? null : $this->sales_deviation_pct,
             'is_active' => $this->is_active,

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Actions\Rates\FetchBcvRate;
 use App\Jobs\FetchDailyBcvRate;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schedule;
 
 /*
@@ -16,7 +17,8 @@ Schedule::job(new FetchDailyBcvRate)
     ->name('bcv-rate-today')
     ->dailyAt('08:00')
     ->timezone(config('app.timezone'))
-    ->withoutOverlapping(30);
+    ->withoutOverlapping(30)
+    ->onFailure(fn () => Log::critical('Programado: la consulta de la tasa BCV de hoy terminó con error.'));
 
 Schedule::call(function (): void {
     FetchDailyBcvRate::dispatch(FetchBcvRate::nextBusinessDay(CarbonImmutable::today())->toDateString());
@@ -24,7 +26,8 @@ Schedule::call(function (): void {
     ->name('bcv-rate-next-business-day')
     ->dailyAt('17:30')
     ->timezone(config('app.timezone'))
-    ->withoutOverlapping(30);
+    ->withoutOverlapping(30)
+    ->onFailure(fn () => Log::critical('Programado: la consulta de la tasa BCV del siguiente día hábil terminó con error.'));
 
 /*
  * Correo (§11.2, §13.8): el reporte mensual corre a diario y solo envía el día configurado;
@@ -33,18 +36,29 @@ Schedule::call(function (): void {
 Schedule::command('reports:send-monthly')
     ->dailyAt('07:00')
     ->timezone(config('app.timezone'))
-    ->withoutOverlapping(30);
+    ->withoutOverlapping(30)
+    ->onFailure(fn () => Log::critical('Programado: reports:send-monthly terminó con error; revisa el correo saliente.'));
 
 Schedule::command('periods:remind-close')
     ->monthlyOn(1, '08:30')
     ->timezone(config('app.timezone'))
-    ->withoutOverlapping(30);
+    ->withoutOverlapping(30)
+    ->onFailure(fn () => Log::critical('Programado: periods:remind-close terminó con error; el recordatorio de cierre no salió.'));
 
 /*
  * Respaldo diario de la base de datos (§15.2) a storage/app/backups, 30 días de retención.
  */
 Schedule::command('db:backup')
     ->dailyAt('02:00')
+    ->timezone(config('app.timezone'))
+    ->withoutOverlapping(30)
+    ->onFailure(fn () => Log::critical('Programado: db:backup terminó con error; hoy no hay respaldo.'));
+
+/*
+ * Limpieza (M8): lo analizado en el importador y nunca confirmado se descarta a la semana.
+ */
+Schedule::command('imports:prune')
+    ->dailyAt('03:00')
     ->timezone(config('app.timezone'))
     ->withoutOverlapping(30);
 

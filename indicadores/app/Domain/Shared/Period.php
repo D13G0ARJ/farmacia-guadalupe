@@ -24,7 +24,13 @@ final readonly class Period implements Stringable
 
         $normalized = preg_match('/^\d{4}-\d{2}$/', $value) === 1 ? $value.'-01' : $value;
 
-        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $normalized) !== 1) {
+        if (preg_match('/^(\d{4})-(\d{2})-\d{2}$/', $normalized, $parts) !== 1) {
+            throw new InvalidArgumentException("Período inválido: {$value}");
+        }
+
+        // Sin desbordar: "2025-13" no es enero de 2026, es un mes que no existe.
+        $month = (int) $parts[2];
+        if ($month < 1 || $month > 12) {
             throw new InvalidArgumentException("Período inválido: {$value}");
         }
 

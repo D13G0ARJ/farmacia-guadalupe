@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Actions\Rates;
 
+use App\Domain\Periods\Exceptions\PeriodStateException;
 use App\Domain\Rates\RateResolver;
 use App\Domain\Shared\Period;
 use App\Models\DailyRecord;
+use App\Models\PeriodEvent;
 use App\Models\User;
 use App\Support\PeriodSummaryCache;
 use Illuminate\Support\Facades\DB;
@@ -41,8 +43,13 @@ final class RecalculateMonthRates
         return $pending;
     }
 
+    /** @throws PeriodStateException si el mes está cerrado (RN-13): sus días no se tocan. */
     public function handle(int $branchId, Period $period, User $user): int
     {
+        if (PeriodEvent::isClosed($branchId, $period)) {
+            throw PeriodStateException::alreadyClosed($period);
+        }
+
         return DB::transaction(function () use ($branchId, $period, $user): int {
             $changed = 0;
 

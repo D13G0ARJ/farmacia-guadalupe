@@ -88,7 +88,7 @@ it('edita una tasa en línea: valida, guarda como manual, avisa y deja bitácora
     $component->assertSee('1 día cargado tiene una tasa distinta');
 });
 
-it('"Consultar ahora" pide la cotización al proveedor y la guarda para el siguiente día hábil', function (): void {
+it('"Consultar ahora" guarda la cotización solo para la fecha en que rige (M6)', function (): void {
     $admin = ratesAdmin();
     app()->instance(ExchangeRateProvider::class, new class implements ExchangeRateProvider
     {
@@ -98,13 +98,30 @@ it('"Consultar ahora" pide la cotización al proveedor y la guarda para el sigui
         }
     });
 
+    // Viernes 03/10 a las 09:00: el BCV todavía no publicó la del lunes, así que solo rige hoy.
     Livewire::actingAs($admin)->test(RatesPage::class)->call('fetchNow')->assertDispatched('toast');
 
-    // Viernes 03/10: se guarda hoy y el lunes 06/10
     expect((string) ExchangeRate::query()->where('date', '2025-10-03')->firstOrFail()->rate)->toBe('180.5000')
-        ->and((string) ExchangeRate::query()->where('date', '2025-10-06')->firstOrFail()->rate)->toBe('180.5000')
+        ->and(ExchangeRate::query()->where('date', '2025-10-06')->exists())->toBeFalse()
         ->and(Setting::get('rates_last_success_at'))->not->toBeNull()
         ->and(Setting::get('rates_last_error'))->toBeNull();
+});
+
+it('"Consultar ahora" después de las 17:00 guarda la tasa del siguiente día hábil, no la de hoy (M6)', function (): void {
+    $admin = ratesAdmin();
+    CarbonImmutable::setTestNow('2025-10-03 17:40:00'); // viernes por la tarde: rige el lunes
+    app()->instance(ExchangeRateProvider::class, new class implements ExchangeRateProvider
+    {
+        public function fetch(): ?RateQuote
+        {
+            return new RateQuote(BigDecimal::of('181.0000'), CarbonImmutable::now(), 'prueba');
+        }
+    });
+
+    Livewire::actingAs($admin)->test(RatesPage::class)->call('fetchNow')->assertDispatched('toast');
+
+    expect((string) ExchangeRate::query()->where('date', '2025-10-06')->firstOrFail()->rate)->toBe('181.0000')
+        ->and(ExchangeRate::query()->where('date', '2025-10-03')->exists())->toBeFalse();
 });
 
 it('si el proveedor no responde lo dice sin bloquear y deja el error visible', function (): void {
@@ -140,4 +157,25 @@ it('recalcular el mes aplica la tabla a los días cargados con confirmación y c
 
     $component->assertDontSee('tienen una tasa distinta');
     unset($branch);
+});
+
+it('una tasa escrita a mano muy distinta de la anterior pide confirmar, y un valor que no cabe se rechaza', function (): void {
+    $admin = ratesAdmin();
+
+    $component = Livewire::actingAs($admin)->test(RatesPage::class)
+        ->call('startEdit', '2025-09-15')
+        ->set('editValue', '1.589,20')
+        ->call('saveRate')
+        ->assertHasErrors(['editValue'])
+        ->assertSee('guarda otra vez para confirmar')
+        ->assertSet('editingDate', '2025-09-15');
+    expect((string) ExchangeRate::query()->where('date', '2025-09-15')->firstOrFail()->rate)->toBe('158.9200');
+
+    // Segunda vez con el mismo valor: se acepta
+    $component->call('saveRate')->assertHasNoErrors()->assertSet('editingDate', null);
+    expect((string) ExchangeRate::query()->where('date', '2025-09-15')->firstOrFail()->rate)->toBe('1589.2000');
+
+    // Cambiar el valor tras el aviso vuelve a pedir confirmación; un valor que desborda la columna nunca pasa
+    $component->call('startEdit', '2025-09-16')->set('editValue', '999999999999')->call('saveRate')
+        ->assertHasErrors(['editValue'])->assertSee('demasiado grande');
 });

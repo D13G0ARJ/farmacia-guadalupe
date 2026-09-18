@@ -29,10 +29,16 @@ final class AnomalyDetector
         $anomalies = [];
         $period = Period::of($month->period);
 
+        // El texto dice lo que de verdad pasa (M2): actualizar no borra los días que el archivo no trae.
+        $whatReplaceDoes = ' Al actualizar, los días que trae el archivo se sobrescriben; los que no trae se quedan como están.';
         if ($context->alreadyImportedAt !== null) {
-            $anomalies[] = new Anomaly(AnomalyType::AlreadyImported, 'Este mismo archivo se importó el '.$context->alreadyImportedAt.'.');
+            $anomalies[] = new Anomaly(AnomalyType::AlreadyImported, 'Este mismo archivo se importó el '.$context->alreadyImportedAt.'.'.$whatReplaceDoes);
         } elseif ($context->existingRecords > 0) {
-            $anomalies[] = new Anomaly(AnomalyType::AlreadyImported, mb_strtolower($period->label()).' ya tiene '.$context->existingRecords.' días cargados en esta sede.');
+            $anomalies[] = new Anomaly(AnomalyType::AlreadyImported, mb_strtolower($period->label()).' ya tiene '.$context->existingRecords.' días cargados en esta sede.'.$whatReplaceDoes);
+        }
+
+        if ($context->duplicatePeriodInBatch) {
+            $anomalies[] = new Anomaly(AnomalyType::DuplicatePeriodInBatch, 'Dos archivos del mismo mes en este lote ('.mb_strtolower($period->label()).'): elige cuál importar; el otro se guardaría encima sin avisar.');
         }
 
         $byDate = [];
@@ -90,6 +96,14 @@ final class AnomalyDetector
                 continue;
             }
 
+            // Ningún valor imposible llega a la base (A8): la columna lo rechazaría con un error técnico.
+            $outOfRange = $this->outOfRange($row);
+            if ($outOfRange !== []) {
+                $anomalies[] = new Anomaly(AnomalyType::ValueOutOfRange, "El {$label} tiene valores fuera del rango que admite el sistema: ".implode('; ', $outOfRange).'.', $date, $row->row);
+
+                continue;
+            }
+
             $rate = BigDecimal::of((string) $row->rate);
             if ($rate->isZero()) {
                 $anomalies[] = new Anomaly(AnomalyType::MissingValue, "El {$label} tiene tasa 0.", $date, $row->row);
@@ -131,6 +145,39 @@ final class AnomalyDetector
         $this->checkSalesDeviation($sales, $context->salesDeviationPct, $anomalies);
 
         return $anomalies;
+    }
+
+    /**
+     * Límites de las columnas de `daily_records` (§2.2): jornadas 0–255, enteros hasta 4.294.967.295,
+     * venta y valuación decimal(14,2), tasa decimal(12,4).
+     *
+     * @return list<string> explicación por cada valor imposible
+     */
+    private function outOfRange(ParsedRow $row): array
+    {
+        $problems = [];
+
+        if ($row->shifts !== null && ($row->shifts < 0 || $row->shifts > 255)) {
+            $problems[] = "jornadas {$row->shifts} (debe estar entre 0 y 255)";
+        }
+        foreach (['transactions' => 'transacciones', 'units' => 'unidades', 'inventoryUnits' => 'unidades cargadas'] as $field => $name) {
+            $value = $row->{$field};
+            if ($value !== null && ($value < 0 || $value > 4294967295)) {
+                $problems[] = "{$name} {$value} (debe estar entre 0 y 4.294.967.295)";
+            }
+        }
+        foreach (['salesBs' => ['venta', '999999999999.99'], 'inventoryValueUsd' => ['valuación de inventario', '999999999999.99'], 'rate' => ['tasa', '99999999.9999']] as $field => [$name, $max]) {
+            $value = $row->{$field};
+            if ($value === null) {
+                continue;
+            }
+            $decimal = BigDecimal::of($value);
+            if ($decimal->abs()->isGreaterThan(BigDecimal::of($max))) {
+                $problems[] = $name.' '.$this->formatter->number($decimal, 2).' (el máximo es '.$this->formatter->number(BigDecimal::of($max), 2).')';
+            }
+        }
+
+        return $problems;
     }
 
     /** @param  list<Anomaly>  $anomalies */

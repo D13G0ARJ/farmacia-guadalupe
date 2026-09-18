@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use App\Support\CurrentBranch;
 use Carbon\CarbonImmutable;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\DemoGoalsSeeder;
@@ -32,18 +33,23 @@ it('descarga el reporte PDF del mes con KPI, cuadro y metas, aun sin gráficas (
         ->and(substr((string) $response->getContent(), 0, 4))->toBe('%PDF');
 });
 
-it('recibe las gráficas del navegador, las valida y las usa una sola vez', function (): void {
+it('recibe las gráficas del navegador, las valida y las guarda por sede (M9)', function (): void {
     $this->seed([DatabaseSeeder::class, DemoSeeder::class]);
     $admin = User::query()->where('email', 'admin@guadalupe.local')->firstOrFail();
+    $branchId = app(CurrentBranch::class)->resolve($admin)?->id ?? 'all';
+    $key = "report-charts:{$admin->id}:{$branchId}:2025-09";
 
     $this->actingAs($admin)->postJson(route('exports.charts', ['period' => '2025-09']), [
         'images' => ['g2' => tinyPng(), 'g8' => 'data:image/jpeg;base64,AAAA', 'malo/../x' => tinyPng(), 'g9' => 'no es una imagen'],
     ])->assertOk()->assertJson(['stored' => 1]);
 
-    expect(cache()->get("report-charts:{$admin->id}:2025-09"))->toHaveKey('g2');
+    // La clave lleva la sede: el PDF de una sede nunca toma las gráficas de otra.
+    expect(cache()->get($key))->toHaveKey('g2')
+        ->and(cache()->get("report-charts:{$admin->id}:2025-09"))->toBeNull();
 
     $this->actingAs($admin)->get(route('exports.pdf', ['period' => '2025-09']))->assertOk();
-    expect(cache()->get("report-charts:{$admin->id}:2025-09"))->toBeNull(); // se consumen al generar
+    // Siguen ahí: bajar el PDF dos veces seguidas no deja el segundo sin gráficas (M9).
+    expect(cache()->get($key))->toHaveKey('g2');
 
     $this->actingAs($admin)->postJson(route('exports.charts', ['period' => '2025-09']), ['images' => 'nada'])->assertStatus(422);
     $this->actingAs($admin)->postJson(route('exports.charts', ['period' => 'nada']), ['images' => []])->assertNotFound();

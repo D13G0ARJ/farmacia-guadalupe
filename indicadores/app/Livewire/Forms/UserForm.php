@@ -35,6 +35,24 @@ class UserForm extends Form
         $this->password = '';
     }
 
+    /**
+     * El correo se normaliza antes de validar: `SaveUser` lo guarda en minúsculas y en SQLite
+     * `unique` distingue mayúsculas, así que sin esto "OPERADOR@…" pasaba la validación y reventaba
+     * contra el índice único al guardar (M24).
+     *
+     * @param  array<string, mixed>|null  $rules
+     * @param  array<string, string>  $messages
+     * @param  array<string, string>  $attributes
+     * @return array<string, mixed>
+     */
+    public function validate($rules = null, $messages = [], $attributes = [])
+    {
+        $this->email = mb_strtolower(trim($this->email));
+        $this->name = trim($this->name);
+
+        return parent::validate($rules, $messages, $attributes);
+    }
+
     /** @return array<string, mixed> */
     public function rules(): array
     {

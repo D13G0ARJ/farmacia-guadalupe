@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Notifications\MonthCloseReminder;
 use App\Queries\MonthRecordsQuery;
 use Illuminate\Console\Command;
+use Spatie\Permission\Exceptions\PermissionDoesNotExist;
 
 /**
  * Recordatorio de cierre (§13.8): a quien puede cerrar el mes, si el anterior tiene días
@@ -43,8 +44,15 @@ class RemindMonthClose extends Command
                 continue;
             }
 
-            $users = User::query()->where('is_active', true)->permission(Permission::PeriodsClose->value)->get()
-                ->filter(fn (User $u) => $u->canSeeAllBranches() || $u->branches->contains('id', $branch->id));
+            try {
+                $users = User::query()->where('is_active', true)->permission(Permission::PeriodsClose->value)->get()
+                    ->filter(fn (User $u) => $u->canSeeAllBranches() || $u->branches->contains('id', $branch->id));
+            } catch (PermissionDoesNotExist) {
+                // Base sin roles sembrados (instalación a medias): no hay a quién avisar, y no es un error.
+                $this->warn('Los permisos no están sembrados todavía: no se envió ningún recordatorio.');
+
+                return self::SUCCESS;
+            }
 
             foreach ($users as $user) {
                 $user->notify(new MonthCloseReminder($branch, $period->key(), $missing, $closed));

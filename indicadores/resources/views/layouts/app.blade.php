@@ -15,19 +15,19 @@
         $toast = session()->pull('toast');
         $nav = [
             ['title' => 'Día a día', 'items' => [
-                ['label' => 'Panel', 'icon' => 'panel', 'route' => 'dashboard', 'active' => request()->routeIs('dashboard')],
-                ['label' => 'Cargar día', 'icon' => 'plus', 'route' => 'records.create', 'active' => request()->routeIs('records.create')],
-                ['label' => 'Mes', 'icon' => 'calendar', 'route' => 'month', 'active' => request()->routeIs('month')],
+                ['label' => 'Panel', 'icon' => 'panel', 'tour' => 'nav-panel', 'route' => 'dashboard', 'active' => request()->routeIs('dashboard')],
+                ['label' => 'Cargar día', 'icon' => 'plus', 'tour' => 'nav-cargar', 'route' => 'records.create', 'active' => request()->routeIs('records.create')],
+                ['label' => 'Mes', 'icon' => 'calendar', 'tour' => 'nav-mes', 'route' => 'month', 'active' => request()->routeIs('month')],
             ]],
             ['title' => 'Análisis', 'items' => [
-                ['label' => 'Gráficas', 'icon' => 'chart', 'route' => 'charts', 'active' => request()->routeIs('charts')],
-                ['label' => 'Metas', 'icon' => 'target', 'route' => 'goals', 'active' => request()->routeIs('goals'), 'hidden' => ! $user->can('goals.view')],
-                ['label' => 'Año', 'icon' => 'year', 'route' => 'annual', 'active' => request()->routeIs('annual')],
+                ['label' => 'Gráficas', 'icon' => 'chart', 'tour' => 'nav-graficas', 'route' => 'charts', 'active' => request()->routeIs('charts')],
+                ['label' => 'Metas', 'icon' => 'target', 'tour' => 'nav-metas', 'route' => 'goals', 'active' => request()->routeIs('goals'), 'hidden' => ! $user->can('goals.view')],
+                ['label' => 'Año', 'icon' => 'year', 'tour' => 'nav-anio', 'route' => 'annual', 'active' => request()->routeIs('annual')],
             ]],
             ['title' => 'Configuración', 'items' => [
-                ['label' => 'Tasa BCV', 'icon' => 'rate', 'route' => 'rates', 'active' => request()->routeIs('rates'), 'hidden' => ! $user->can('rates.manage')],
-                ['label' => 'Importar', 'icon' => 'upload', 'route' => 'imports', 'active' => request()->routeIs('imports'), 'hidden' => ! $user->can('imports.run')],
-                ['label' => 'Administración', 'icon' => 'settings', 'route' => 'admin', 'active' => request()->routeIs('admin'), 'hidden' => ! $user->can('admin.manage')],
+                ['label' => 'Tasa BCV', 'icon' => 'rate', 'tour' => 'nav-tasas', 'route' => 'rates', 'active' => request()->routeIs('rates'), 'hidden' => ! $user->can('rates.manage')],
+                ['label' => 'Importar', 'icon' => 'upload', 'tour' => 'nav-importar', 'route' => 'imports', 'active' => request()->routeIs('imports'), 'hidden' => ! $user->can('imports.run')],
+                ['label' => 'Administración', 'icon' => 'settings', 'tour' => 'nav-admin', 'route' => 'admin', 'active' => request()->routeIs('admin'), 'hidden' => ! $user->can('admin.manage')],
             ]],
         ];
     @endphp
@@ -52,20 +52,20 @@
                             <div class="space-y-0.5">
                                 @foreach ($group['items'] as $item)
                                     @continue($item['hidden'] ?? false)
-                                    <x-nav-item :icon="$item['icon']" :href="isset($item['route']) ? route($item['route']) : null" :active="$item['active'] ?? false" :soon="$item['soon'] ?? false">{{ $item['label'] }}</x-nav-item>
+                                    <x-nav-item :icon="$item['icon']" :href="isset($item['route']) ? route($item['route']) : null" :active="$item['active'] ?? false" :soon="$item['soon'] ?? false" :data-tour="$item['tour'] ?? null">{{ $item['label'] }}</x-nav-item>
                                 @endforeach
                             </div>
                         </div>
                     @endforeach
                 </nav>
                 <div class="border-t border-line px-3 py-3">
-                    <a href="{{ route('profile') }}" wire:navigate class="flex items-center gap-3 rounded-control px-3 py-2 text-body text-brand-800 hover:bg-brand-100/60">
+                    <a href="{{ route('profile') }}" wire:navigate data-tour="nav-perfil" class="flex items-center gap-3 rounded-control px-3 py-2 text-body text-brand-800 hover:bg-brand-100/60">
                         <x-lucide name="user" class="h-5 w-5" />
                         <span class="truncate">{{ $user->name }}</span>
                     </a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit" class="flex w-full items-center gap-3 rounded-control px-3 py-2 text-body text-ink-600 hover:bg-brand-100/60">
+                        <button type="submit" data-tour="nav-salir" class="flex w-full items-center gap-3 rounded-control px-3 py-2 text-body text-ink-600 hover:bg-brand-100/60">
                             <x-lucide name="logout" class="h-5 w-5" />Salir
                         </button>
                     </form>
@@ -83,11 +83,11 @@
                         <div class="ml-auto flex items-center gap-2">
                             {{-- Sin conexión (§13.8): Livewire lo detecta; el aviso no bloquea nada --}}
                             <span wire:offline class="hidden items-center gap-1.5 rounded-control bg-warning-100 px-2.5 py-1.5 text-label font-medium text-warning-600 [&[wire\:offline]]:flex" role="status"><x-lucide name="warning" class="h-4 w-4" />Sin conexión</span>
-                            <button type="button" x-on:click="help = ! help" class="rounded-control p-2 text-ink-600 hover:bg-brand-100/60 focus-visible:ring-2 focus-visible:ring-brand-500" aria-label="Ayuda de esta pantalla" title="Ayuda (?)">
+                            <button type="button" data-tour="help-button" x-on:click="help = ! help" class="rounded-control p-2 text-ink-600 hover:bg-brand-100/60 focus-visible:ring-2 focus-visible:ring-brand-500" aria-label="Ayuda de esta pantalla" title="Ayuda (?)">
                                 <x-lucide name="help" />
                             </button>
                             @can('records.create')
-                                <span class="hidden sm:block"><x-btn :href="route('records.create')" icon="plus" wire:navigate title="Alt + N">Cargar día</x-btn></span>
+                                <span class="hidden sm:block"><x-btn :href="route('records.create')" icon="plus" wire:navigate title="Alt + N" data-tour="new-day-button">Cargar día</x-btn></span>
                             @endcan
                         </div>
                     </div>

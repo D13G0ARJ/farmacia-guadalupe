@@ -19,6 +19,7 @@ use App\Enums\ImportStatus;
 use App\Enums\RateSource;
 use App\Models\Branch;
 use App\Models\DailyRecord;
+use App\Models\ExchangeRate;
 use App\Models\ImportBatch;
 use App\Models\PeriodEvent;
 use App\Models\User;
@@ -77,8 +78,11 @@ final class ConfirmImport
                 $rate = BigDecimal::of((string) $row->rate);
                 $atypical = ($decisions[AnomalyType::SalesDeviation->value.':'.$row->date] ?? null) === 'atypical';
 
+                // La tasa del archivo solo se escribe si ese día no tiene ninguna, o si se pidió
+                // reemplazar la registrada (M3): una tasa oficial del BCV no se degrada a manual sola.
                 $conflict = $decisions[AnomalyType::RateConflict->value.':'.$row->date] ?? null;
-                if ($conflict !== 'keep') {
+                $hasRate = ExchangeRate::query()->where('date', $row->date)->exists();
+                if (! $hasRate || $conflict === 'replace') {
                     $this->rates->handle($date, $rate, RateSource::Manual, $user);
                     $result['rates']++;
                 }
@@ -209,7 +213,8 @@ final class ConfirmImport
     private function fileRejected(array $decisions): bool
     {
         return ($decisions[AnomalyType::AlreadyImported->value] ?? null) === 'skip'
-            || ($decisions[AnomalyType::MonthMismatch->value] ?? null) === 'skip';
+            || ($decisions[AnomalyType::MonthMismatch->value] ?? null) === 'skip'
+            || ($decisions[AnomalyType::DuplicatePeriodInBatch->value] ?? null) === 'skip';
     }
 
     /**

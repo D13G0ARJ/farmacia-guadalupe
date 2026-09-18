@@ -24,14 +24,18 @@ enum AnomalyType: string
     case MonthMismatch = 'month_mismatch';
     case AlreadyImported = 'already_imported';
     case RateConflict = 'rate_conflict';
+    case ValueOutOfRange = 'value_out_of_range';
+    case DuplicatePeriodInBatch = 'duplicate_period_in_batch';
+    case RowWithoutDate = 'row_without_date';
 
     public function severity(): AnomalySeverity
     {
         return match ($this) {
             self::MissingDay, self::DuplicateDate, self::DateOutOfPeriod, self::NegativeValue,
-            self::MissingValue, self::AlreadyImported, self::MonthMismatch => AnomalySeverity::High,
+            self::MissingValue, self::AlreadyImported, self::MonthMismatch,
+            self::ValueOutOfRange, self::DuplicatePeriodInBatch => AnomalySeverity::High,
             self::RateJump, self::UnitsLtTransactions, self::SalesDeviation, self::RateConflict => AnomalySeverity::Medium,
-            self::InventoryMissingOnCountDay => AnomalySeverity::Low,
+            self::InventoryMissingOnCountDay, self::RowWithoutDate => AnomalySeverity::Low,
             self::WeekdayMismatch, self::DerivedMismatch, self::HeaderMismatch => AnomalySeverity::Info,
         };
     }
@@ -54,6 +58,9 @@ enum AnomalyType: string
             self::MonthMismatch => 'El mes del encabezado no coincide con las fechas',
             self::AlreadyImported => 'Este mes ya tiene datos',
             self::RateConflict => 'Tasa distinta a la ya registrada',
+            self::ValueOutOfRange => 'Valor fuera del rango permitido',
+            self::DuplicatePeriodInBatch => 'Dos archivos del mismo mes en este lote',
+            self::RowWithoutDate => 'Filas sin fecha omitidas',
         };
     }
 
@@ -74,8 +81,12 @@ enum AnomalyType: string
                 ['value' => 'last', 'label' => 'Usar la última fila'],
                 ['value' => 'omit', 'label' => 'Omitir ese día'],
             ],
-            self::DateOutOfPeriod, self::NegativeValue, self::MissingValue => [
+            self::DateOutOfPeriod, self::NegativeValue, self::MissingValue, self::ValueOutOfRange => [
                 ['value' => 'omit', 'label' => 'Omitir ese día'],
+            ],
+            self::DuplicatePeriodInBatch => [
+                ['value' => 'import', 'label' => 'Importar este archivo'],
+                ['value' => 'skip', 'label' => 'No importar este archivo'],
             ],
             self::MonthMismatch => [
                 ['value' => 'dates', 'label' => 'Confiar en las fechas'],
@@ -89,8 +100,9 @@ enum AnomalyType: string
                 ['value' => 'accept', 'label' => 'Aceptar tal cual'],
                 ['value' => 'omit', 'label' => 'Omitir ese día'],
             ],
+            // "Reemplazar" sería mentira: los días que el archivo no trae se quedan como están (M2).
             self::AlreadyImported => [
-                ['value' => 'replace', 'label' => 'Reemplazar con el archivo'],
+                ['value' => 'replace', 'label' => 'Actualizar los días que trae el archivo'],
                 ['value' => 'skip', 'label' => 'No importar este archivo'],
             ],
             self::RateConflict => [

@@ -69,7 +69,8 @@ final class DailyRecordPolicy
             return true;
         }
 
-        $window = (int) Setting::get('operator_edit_window_days');
+        // Por sede: el formulario lee el parámetro de la sede del día y la política debe decir lo mismo (B20).
+        $window = (int) Setting::get('operator_edit_window_days', $record->branch_id);
 
         return $record->date->gte(CarbonImmutable::today()->subDays($window));
     }

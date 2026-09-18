@@ -5,15 +5,15 @@
             <p class="text-ink-600">Quién entra, con qué rol, en qué sede, y cómo se comporta el sistema.</p>
         </div>
         @if ($tab === 'usuarios')
-            <x-btn icon="plus" wire:click="openUser">Nuevo usuario</x-btn>
+            <x-btn icon="plus" wire:click="openUser" data-tour="admin-new-user">Nuevo usuario</x-btn>
         @elseif ($tab === 'sedes')
-            <x-btn icon="plus" wire:click="openBranch">Nueva sede</x-btn>
+            <x-btn icon="plus" wire:click="openBranch" data-tour="admin-new-branch">Nueva sede</x-btn>
         @endif
     </div>
 
-    <div class="flex gap-1 overflow-x-auto border-b border-line" role="tablist" aria-label="Secciones de administración">
+    <div class="flex gap-1 overflow-x-auto border-b border-line" role="tablist" aria-label="Secciones de administración" data-tour="admin-tabs">
         @foreach ($tabs as $key => $label)
-            <button type="button" role="tab" id="tab-{{ $key }}" wire:click="$set('tab', '{{ $key }}')"
+            <button type="button" role="tab" id="tab-{{ $key }}" data-tour="admin-tab-{{ $key }}" wire:click="$set('tab', '{{ $key }}')"
                     aria-selected="{{ $tab === $key ? 'true' : 'false' }}" aria-controls="panel-{{ $key }}"
                     class="-mb-px whitespace-nowrap border-b-2 px-4 py-2.5 text-body font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 {{ $tab === $key ? 'border-brand-600 text-brand-700' : 'border-transparent text-ink-600 hover:text-ink-900' }}">
                 {{ $label }}
@@ -23,7 +23,7 @@
 
     {{-- Credenciales recién emitidas: se muestran una sola vez, para entregarlas en persona --}}
     @if ($issued)
-        <div class="flex flex-wrap items-start gap-3 rounded-card border border-success-100 bg-success-100/60 p-4" role="status" x-data="{ copied: false }">
+        <div class="flex flex-wrap items-start gap-3 rounded-card border border-success-100 bg-success-100/60 p-4" role="status" x-data="{ copied: false }" data-tour="admin-issued">
             <x-lucide name="key" class="mt-0.5 h-5 w-5 shrink-0 text-success-600" />
             <div class="min-w-0 flex-1 space-y-1">
                 <p class="font-medium text-ink-900">Entrégale estos datos a {{ $issued['name'] }}. La contraseña no se vuelve a mostrar.</p>
@@ -40,7 +40,7 @@
 
     {{-- ===================== Usuarios ===================== --}}
     @if ($tab === 'usuarios')
-        <section id="panel-usuarios" role="tabpanel" aria-labelledby="tab-usuarios" class="overflow-x-auto rounded-card border border-line bg-surface">
+        <section id="panel-usuarios" role="tabpanel" aria-labelledby="tab-usuarios" class="overflow-x-auto rounded-card border border-line bg-surface" data-tour="admin-users-table">
             <table class="w-full min-w-[720px] border-collapse text-body">
                 <thead class="bg-panel text-label text-ink-600">
                     <tr>
@@ -70,10 +70,10 @@
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex flex-wrap justify-end gap-1">
-                                    <x-btn variant="ghost" icon="pencil" wire:click="openUser({{ $user->id }})" class="min-h-[36px] px-2.5 text-label">Editar</x-btn>
-                                    <x-btn variant="ghost" icon="key" wire:click="openPassword({{ $user->id }})" class="min-h-[36px] px-2.5 text-label">Contraseña</x-btn>
+                                    <x-btn variant="ghost" icon="pencil" wire:click="openUser({{ $user->id }})" class="min-h-[36px] px-2.5 text-label" data-tour="admin-user-edit">Editar</x-btn>
+                                    <x-btn variant="ghost" icon="key" wire:click="openPassword({{ $user->id }})" class="min-h-[36px] px-2.5 text-label" data-tour="admin-user-password">Contraseña</x-btn>
                                     @unless ($user->is($me))
-                                        <x-btn variant="ghost" icon="power" wire:click="toggleUser({{ $user->id }})" wire:loading.attr="disabled" class="min-h-[36px] px-2.5 text-label {{ $user->is_active ? 'text-danger-600 hover:bg-danger-100' : '' }}">{{ $user->is_active ? 'Desactivar' : 'Activar' }}</x-btn>
+                                        <x-btn variant="ghost" icon="power" wire:click="toggleUser({{ $user->id }})" wire:loading.attr="disabled" data-tour="admin-user-toggle" class="min-h-[36px] px-2.5 text-label {{ $user->is_active ? 'text-danger-600 hover:bg-danger-100' : '' }}">{{ $user->is_active ? 'Desactivar' : 'Activar' }}</x-btn>
                                     @endunless
                                 </div>
                             </td>
@@ -83,7 +83,7 @@
             </table>
         </section>
 
-        <x-dialog show="$wire.userDialog" id="user-dialog" :title="$userForm->id ? 'Editar usuario' : 'Nuevo usuario'" max-width="max-w-lg">
+        <x-dialog show="$wire.userDialog" id="user-dialog" data-tour="dialog-user" :title="$userForm->id ? 'Editar usuario' : 'Nuevo usuario'" max-width="max-w-lg">
             <div class="space-y-4">
                 <x-field label="Nombre" for="user-name" :error="$errors->first('userForm.name')">
                     <x-input id="user-name" type="text" wire:model="userForm.name" autocomplete="off" :invalid="$errors->has('userForm.name')" />
@@ -124,7 +124,7 @@
             </x-slot:actions>
         </x-dialog>
 
-        <x-dialog show="$wire.passwordDialog" id="password-dialog" title="Cambiar contraseña">
+        <x-dialog show="$wire.passwordDialog" id="password-dialog" data-tour="dialog-password" title="Cambiar contraseña">
             <p>Se reemplaza la contraseña actual. Entrégale la nueva en persona.</p>
             <x-field label="Contraseña nueva" for="new-password" :error="$errors->first('newPassword')">
                 <div class="flex gap-2">
@@ -143,7 +143,7 @@
     @if ($tab === 'sedes')
         <section id="panel-sedes" role="tabpanel" aria-labelledby="tab-sedes" class="grid gap-4 md:grid-cols-2">
             @foreach ($branches as $branch)
-                <article wire:key="branch-{{ $branch->id }}" class="rounded-card border border-line bg-surface p-5 {{ $branch->is_active ? '' : 'opacity-70' }}">
+                <article wire:key="branch-{{ $branch->id }}" data-tour="admin-branch-card" class="rounded-card border border-line bg-surface p-5 {{ $branch->is_active ? '' : 'opacity-70' }}">
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                             <h2 class="text-sub font-semibold text-ink-900">{{ $branch->name }}</h2>
@@ -168,7 +168,7 @@
             @endforeach
         </section>
 
-        <x-dialog show="$wire.branchDialog" id="branch-dialog" :title="$branchForm->id ? 'Editar sede' : 'Nueva sede'" max-width="max-w-lg">
+        <x-dialog show="$wire.branchDialog" id="branch-dialog" data-tour="dialog-branch" :title="$branchForm->id ? 'Editar sede' : 'Nueva sede'" max-width="max-w-lg">
             <div class="space-y-4">
                 <x-field label="Nombre" for="branch-name" :error="$errors->first('branchForm.name')">
                     <x-input id="branch-name" type="text" wire:model="branchForm.name" :invalid="$errors->has('branchForm.name')" />
@@ -212,7 +212,7 @@
     {{-- ===================== Parámetros ===================== --}}
     @if ($tab === 'parametros')
         <form id="panel-parametros" role="tabpanel" aria-labelledby="tab-parametros" wire:submit="saveSettings" class="space-y-6">
-            <section class="rounded-card border border-line bg-surface p-5">
+            <section class="rounded-card border border-line bg-surface p-5" data-tour="admin-settings-warnings">
                 <h2 class="text-sub font-semibold text-ink-900">Advertencias al cargar el día</h2>
                 <p class="mt-1 text-label text-ink-600">Nunca bloquean: avisan y piden confirmar.</p>
                 <div class="mt-4 grid gap-5 sm:grid-cols-2">
@@ -225,7 +225,7 @@
                 </div>
             </section>
 
-            <section class="rounded-card border border-line bg-surface p-5">
+            <section class="rounded-card border border-line bg-surface p-5" data-tour="admin-settings-edit">
                 <h2 class="text-sub font-semibold text-ink-900">Edición</h2>
                 <div class="mt-4 grid gap-5 sm:grid-cols-2">
                     <x-field label="Ventana del operador (días)" for="s-window" :error="$errors->first('settingsForm.operator_edit_window_days')" help="El operador solo edita días de hasta este número de días atrás. Supervisión y dirección no tienen límite.">
@@ -234,7 +234,7 @@
                 </div>
             </section>
 
-            <section class="rounded-card border border-line bg-surface p-5">
+            <section class="rounded-card border border-line bg-surface p-5" data-tour="admin-settings-goals">
                 <h2 class="text-sub font-semibold text-ink-900">Metas</h2>
                 <div class="mt-4 grid gap-5 sm:grid-cols-2">
                     <x-field label="Crecimiento sugerido (%)" for="s-growth" :error="$errors->first('settingsForm.goal_growth_pct')" help="La sugerencia de meta parte del mes anterior más este porcentaje.">
@@ -255,19 +255,19 @@
                 </div>
             </section>
 
-            <section class="rounded-card border border-line bg-surface p-5">
+            <section class="rounded-card border border-line bg-surface p-5" data-tour="admin-settings-other">
                 <h2 class="text-sub font-semibold text-ink-900">Otros</h2>
                 <div class="mt-4 grid gap-5 sm:grid-cols-2">
                     <x-field label="Nombre del sistema" for="s-name" :error="$errors->first('settingsForm.app_name')" help="Aparece en la pestaña del navegador y en los reportes.">
                         <x-input id="s-name" type="text" wire:model="settingsForm.app_name" :invalid="$errors->has('settingsForm.app_name')" />
                     </x-field>
-                    <x-field label="Margen bruto (%)" for="s-margin" :error="$errors->first('settingsForm.gross_margin_pct')" help="Opcional. Con él se activan la rotación y los días de inventario.">
+                    <x-field label="Margen bruto (%)" for="s-margin" :error="$errors->first('settingsForm.gross_margin_pct')" help="Opcional. Por ahora solo se guarda: está previsto para los indicadores de rotación de inventario de una etapa posterior.">
                         <x-input id="s-margin" numeric wire:model="settingsForm.gross_margin_pct" placeholder="Sin definir" :invalid="$errors->has('settingsForm.gross_margin_pct')" />
                     </x-field>
                 </div>
             </section>
 
-            <section class="rounded-card border border-line bg-surface p-5">
+            <section class="rounded-card border border-line bg-surface p-5" data-tour="admin-settings-mail">
                 <h2 class="text-sub font-semibold text-ink-900">Correo</h2>
                 <p class="mt-1 text-label text-ink-600">Necesita el correo saliente configurado en el servidor (SMTP). Los avisos de reapertura y de tasa desviada van a quien tiene el permiso.</p>
                 <div class="mt-4 grid gap-5 sm:grid-cols-2">
@@ -288,7 +288,7 @@
             </section>
 
             <div class="flex justify-end">
-                <x-btn type="submit" wire:loading.attr="disabled" wire:target="saveSettings">Guardar parámetros</x-btn>
+                <x-btn type="submit" wire:loading.attr="disabled" wire:target="saveSettings" data-tour="admin-settings-save">Guardar parámetros</x-btn>
             </div>
         </form>
     @endif
@@ -297,14 +297,14 @@
     @if ($tab === 'bitacora')
         <section id="panel-bitacora" role="tabpanel" aria-labelledby="tab-bitacora" class="space-y-4">
             <div class="flex flex-wrap items-end gap-3">
-                <x-field label="Mostrar" for="log-type" class="w-48">
+                <x-field label="Mostrar" for="log-type" class="w-48" data-tour="admin-log-type">
                     <select id="log-type" wire:model.live="logType" class="block w-full rounded-control border-line bg-surface px-3 py-2.5 text-body focus:border-brand-500 focus:ring-2 focus:ring-brand-500">
                         @foreach ($logTypes as $key => $label)
                             <option value="{{ $key }}">{{ $label }}</option>
                         @endforeach
                     </select>
                 </x-field>
-                <x-field label="Quién" for="log-search" class="w-64">
+                <x-field label="Quién" for="log-search" class="w-64" data-tour="admin-log-search">
                     <x-input id="log-search" type="search" wire:model.live.debounce.400ms="logSearch" placeholder="Nombre de la persona" />
                 </x-field>
             </div>
@@ -312,7 +312,7 @@
             @if ($entries === [])
                 <div class="rounded-card border border-dashed border-line bg-surface px-6 py-10 text-center text-ink-400">Nada en la bitácora con ese filtro.</div>
             @else
-                <ul class="divide-y divide-line rounded-card border border-line bg-surface">
+                <ul class="divide-y divide-line rounded-card border border-line bg-surface" data-tour="admin-log-list">
                     @foreach ($entries as $entry)
                         <li wire:key="log-{{ $entry['id'] }}" class="px-4 py-3" x-data="{ open: false }">
                             <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -334,7 +334,7 @@
                     @endforeach
                 </ul>
                 @if ($hasMore)
-                    <div class="flex justify-center"><x-btn variant="secondary" wire:click="loadMore" wire:loading.attr="disabled">Ver más</x-btn></div>
+                    <div class="flex justify-center"><x-btn variant="secondary" wire:click="loadMore" wire:loading.attr="disabled" data-tour="admin-log-more">Ver más</x-btn></div>
                 @endif
             @endif
         </section>

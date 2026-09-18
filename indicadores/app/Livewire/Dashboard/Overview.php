@@ -18,6 +18,7 @@ use App\Support\PeriodContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -32,9 +33,11 @@ class Overview extends Component
 {
     use AuthorizesRequests;
 
+    #[Locked]
     public string $period = '';
 
     /** @var array<string, array<string, mixed>> especificaciones de ECharts que leen los paneles (Alpine `$wire.specs`) */
+    #[Locked]
     public array $specs = [];
 
     public function mount(): void
@@ -61,7 +64,14 @@ class Overview extends Component
     public function render(DashboardQuery $query, Formatter $formatter, CurrencyContext $currency): View
     {
         $user = auth()->user();
-        $branch = app(CurrentBranch::class)->resolve($user);
+        $branchContext = app(CurrentBranch::class);
+
+        // Sin sede activa asignada no hay nada que consultar: null significaría "todas" (A10, RN-23).
+        if (! $branchContext->hasAccess($user)) {
+            return view('livewire.shared.no-branch');
+        }
+
+        $branch = $branchContext->resolve($user);
         $period = Period::of($this->period);
         $dashboard = $query->run($branch?->id, $period);
 

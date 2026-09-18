@@ -5,7 +5,7 @@
     </div>
 
     {{-- Pasos (§10.4) --}}
-    <ol class="flex flex-wrap gap-2 text-label" aria-label="Pasos">
+    <ol class="flex flex-wrap gap-2 text-label" aria-label="Pasos" data-tour="import-steps">
         @foreach (['Archivos', 'Revisión', 'Confirmación'] as $i => $label)
             @php $n = $i + 1; @endphp
             <li class="flex items-center gap-2 rounded-full border px-3 py-1 {{ $step === $n ? 'border-brand-600 bg-brand-100 text-brand-800' : ($step > $n ? 'border-success-100 bg-success-100 text-success-600' : 'border-line text-ink-400') }}" @if ($step === $n) aria-current="step" @endif>
@@ -18,14 +18,14 @@
     @if ($step === 1)
         <form wire:submit="analyze" class="space-y-5 rounded-card border border-line bg-surface p-5">
             @if ($branches->count() > 1)
-                <x-field label="Sede" for="import-branch" :error="$errors->first('branchId')" help="A qué sede pertenecen estos archivos.">
+                <x-field label="Sede" for="import-branch" :error="$errors->first('branchId')" help="A qué sede pertenecen estos archivos." data-tour="import-branch">
                     <select id="import-branch" wire:model="branchId" class="block w-full max-w-xs rounded-control border-line bg-surface px-3 py-2.5 text-body focus:border-brand-500 focus:ring-2 focus:ring-brand-500">
                         @foreach ($branches as $b)<option value="{{ $b->id }}">{{ $b->name }}</option>@endforeach
                     </select>
                 </x-field>
             @endif
 
-            <div x-data="{ dragging: false }">
+            <div x-data="{ dragging: false }" data-tour="import-dropzone">
                 <p class="text-label font-medium text-ink-600">Archivos</p>
                 <label for="import-files" x-on:dragover.prevent="dragging = true" x-on:dragleave="dragging = false" x-on:drop.prevent="dragging = false; $refs.input.files = $event.dataTransfer.files; $refs.input.dispatchEvent(new Event('change'))"
                        class="mt-1.5 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-card border-2 border-dashed px-6 py-10 text-center transition-colors"
@@ -56,7 +56,7 @@
 
             <div class="flex items-center justify-between gap-3">
                 <p class="text-label text-ink-400">El nombre del archivo no importa: se lee el mes de su contenido.</p>
-                <x-btn type="submit" wire:loading.attr="disabled" wire:target="analyze,files">
+                <x-btn type="submit" wire:loading.attr="disabled" wire:target="analyze,files" data-tour="import-analyze">
                     <span wire:loading.remove wire:target="analyze">Analizar {{ count($files) > 1 ? count($files).' archivos' : 'archivo' }}</span>
                     <span wire:loading wire:target="analyze">Leyendo…</span>
                 </x-btn>
@@ -69,7 +69,7 @@
         <div class="space-y-4">
             @foreach ($review as $item)
                 @php $batch = $item['batch']; $month = $item['month']; $skipped = $skip[$batch->id] ?? false; @endphp
-                <section wire:key="batch-{{ $batch->id }}" class="rounded-card border bg-surface {{ $errors->has('batch.'.$batch->id) ? 'border-danger-600' : 'border-line' }}">
+                <section wire:key="batch-{{ $batch->id }}" data-tour="import-review" class="rounded-card border bg-surface {{ $errors->has('batch.'.$batch->id) ? 'border-danger-600' : 'border-line' }}">
                     <div class="flex flex-wrap items-center gap-3 px-5 py-4">
                         <x-lucide name="table" class="h-5 w-5 shrink-0 text-ink-400" />
                         <div class="min-w-0 flex-1">
@@ -92,8 +92,8 @@
                                     <x-badge tone="success" icon="check">Sin anomalías</x-badge>
                                 @endif
                             </div>
-                            <label class="flex items-center gap-2 text-label text-ink-600"><input type="checkbox" wire:model.live="skip.{{ $batch->id }}" class="h-4 w-4 rounded border-line text-brand-600 focus:ring-brand-500">No importar</label>
-                            <x-btn variant="ghost" wire:click="toggle({{ $batch->id }})" class="min-h-[36px] px-2.5 text-label">{{ $expanded === $batch->id ? 'Ocultar' : 'Revisar' }}</x-btn>
+                            <label class="flex items-center gap-2 text-label text-ink-600" data-tour="import-skip"><input type="checkbox" wire:model.live="skip.{{ $batch->id }}" class="h-4 w-4 rounded border-line text-brand-600 focus:ring-brand-500">No importar</label>
+                            <x-btn variant="ghost" wire:click="toggle({{ $batch->id }})" class="min-h-[36px] px-2.5 text-label" data-tour="import-toggle">{{ $expanded === $batch->id ? 'Ocultar' : 'Revisar' }}</x-btn>
                         @endif
                     </div>
 
@@ -129,7 +129,7 @@
                                                     <x-badge :tone="$severity->tone()">{{ $anomaly->type->label() }}</x-badge>
                                                     <p class="min-w-0 flex-1 text-body text-ink-900">{{ $anomaly->message }}</p>
                                                     @if ($options !== [])
-                                                        <select wire:model.live="decisions.{{ $batch->id }}.{{ $id }}" aria-label="Decisión: {{ $anomaly->type->label() }}"
+                                                        <select wire:model.live="decisions.{{ $batch->id }}.{{ $id }}" data-tour="import-decision" aria-label="Decisión: {{ $anomaly->type->label() }}"
                                                                 class="rounded-control border-line bg-surface px-2 py-1.5 text-label focus:border-brand-500 focus:ring-2 focus:ring-brand-500 {{ $severity === \App\Enums\AnomalySeverity::High && ! isset($decisions[$batch->id][$id]) ? 'border-danger-600' : '' }}">
                                                             @if ($severity === \App\Enums\AnomalySeverity::High)<option value="">Elige…</option>@endif
                                                             @foreach ($options as $option)<option value="{{ $option['value'] }}">{{ $option['label'] }}</option>@endforeach
@@ -142,7 +142,7 @@
                                 @endif
                             @endforeach
 
-                            <div>
+                            <div data-tour="import-preview">
                                 <h3 class="text-label font-medium text-ink-600">Vista previa ({{ count($item['preview']) }} días con los derivados recalculados)</h3>
                                 <div class="mt-2 overflow-x-auto rounded-card border border-line">
                                     <table class="w-full min-w-[840px] border-collapse text-label">
@@ -186,10 +186,10 @@
                 $confirmDisabled = $blocking > 0 || $importable === 0;
             @endphp
             <div class="flex flex-wrap items-center justify-between gap-3 rounded-card border border-line bg-surface px-5 py-4">
-                <label class="flex items-center gap-2 text-body text-ink-900"><input type="checkbox" wire:model="closeAfter" class="h-4 w-4 rounded border-line text-brand-600 focus:ring-brand-500">Cerrar los meses al importar <span class="text-label text-ink-600">(quedan de solo lectura hasta que dirección los reabra)</span></label>
+                <label class="flex items-center gap-2 text-body text-ink-900" data-tour="import-close-after"><input type="checkbox" wire:model="closeAfter" class="h-4 w-4 rounded border-line text-brand-600 focus:ring-brand-500">Cerrar los meses al importar <span class="text-label text-ink-600">(quedan de solo lectura hasta que dirección los reabra)</span></label>
                 <div class="flex items-center gap-2">
-                    <x-btn variant="ghost" wire:click="restart">Volver a empezar</x-btn>
-                    <x-btn wire:click="confirm" wire:loading.attr="disabled" wire:target="confirm" :disabled="$confirmDisabled" :title="$blocking > 0 ? $pendingLabel : null">
+                    <x-btn variant="ghost" wire:click="restart" data-tour="import-restart">Volver a empezar</x-btn>
+                    <x-btn wire:click="confirm" wire:loading.attr="disabled" wire:target="confirm" :disabled="$confirmDisabled" :title="$blocking > 0 ? $pendingLabel : null" data-tour="import-confirm">
                         <span wire:loading.remove wire:target="confirm">{{ $confirmLabel }}</span>
                         <span wire:loading wire:target="confirm">Importando…</span>
                     </x-btn>
@@ -203,7 +203,7 @@
         <div class="space-y-4">
             @foreach ($review as $item)
                 @php $batch = $item['batch']; $r = $results[$batch->id] ?? null; @endphp
-                <section wire:key="result-{{ $batch->id }}" class="flex flex-wrap items-center gap-3 rounded-card border border-line bg-surface px-5 py-4">
+                <section wire:key="result-{{ $batch->id }}" data-tour="import-result" class="flex flex-wrap items-center gap-3 rounded-card border border-line bg-surface px-5 py-4">
                     @if ($r === null)
                         <x-lucide name="minus" class="h-5 w-5 shrink-0 text-ink-400" />
                         <p class="min-w-0 flex-1 text-body text-ink-600">{{ $batch->original_filename }}: no se importó.</p>
@@ -220,7 +220,7 @@
                     @endif
                 </section>
             @endforeach
-            <div class="flex justify-end"><x-btn variant="secondary" icon="upload" wire:click="restart">Importar más archivos</x-btn></div>
+            <div class="flex justify-end"><x-btn variant="secondary" icon="upload" wire:click="restart" data-tour="import-more">Importar más archivos</x-btn></div>
         </div>
     @endif
 </div>

@@ -5,6 +5,7 @@ import { fmt } from './charts/formatters';
 import dailyPreview from './daily-preview';
 import chartPanel from './charts/panel';
 import goalGrid from './goal-grid';
+import './tour';
 
 window.fmt = fmt;
 

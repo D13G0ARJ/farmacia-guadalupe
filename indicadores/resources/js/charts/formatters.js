@@ -31,6 +31,18 @@ export const fmt = {
         }).format(n).replace(/ /g, '.');
     },
 
+    /**
+     * Como num, pero sin ceros de relleno más allá de `min` decimales: la tasa 148,4421 se
+     * conserva entera y 148,4400 se muestra como 148,44 (A1). Espejo de Formatter::numberFlexible.
+     */
+    numFlexible(value, min = 2, max = 4) {
+        const n = toNumber(value);
+        if (n === null) return '—';
+        let precision = max;
+        while (precision > min && Number(n.toFixed(precision - 1)) === Number(n.toFixed(max))) precision--;
+        return fmt.num(n, precision);
+    },
+
     /** money(91154.02, 'BS') → "Bs 91.154,02"; money(614, 'USD', 0) → "$ 614" */
     money(value, currency = 'USD', precision = 2) {
         const n = toNumber(value);
@@ -55,8 +67,11 @@ export const fmt = {
      */
     parse(input) {
         if (input === null || input === undefined) return null;
-        const s = String(input).trim().replace(/ /g, '');
+        // Espacios duros del portapapeles o de Excel (B17): cuentan como separador de miles.
+        const s = String(input).trim().replace(/[   ]/g, '');
         if (s === '') return null;
+        // Formato inglés "1,234.56": leerlo como es-VE daría 1,23 en silencio (M16).
+        if (s.includes(',') && s.includes('.') && s.lastIndexOf('.') > s.lastIndexOf(',')) return null;
         let normalized;
         if (s.includes(',')) {
             normalized = s.replace(/\./g, '').replace(',', '.');
