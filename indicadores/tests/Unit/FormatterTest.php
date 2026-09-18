@@ -70,6 +70,34 @@ it('lee números escritos a la venezolana o en notación técnica (espejo de fmt
         ->and($f->parseNumber(null))->toBeNull();
 });
 
+it('rechaza el formato inglés en vez de leerlo como 1,23 (M16)', function (): void {
+    $f = new Formatter;
+
+    expect($f->parseNumber('1,234.56'))->toBeNull()
+        ->and($f->parseNumber('1,234,567.89'))->toBeNull()
+        ->and($f->parseNumber('91.154,02'))->toBe('91154.02')   // el local sigue valiendo
+        ->and($f->parseNumber('148.44'))->toBe('148.44');
+});
+
+it('trata los espacios duros como separador de miles (B17)', function (): void {
+    $f = new Formatter;
+
+    expect($f->parseNumber("91\u{A0}154,02"))->toBe('91154.02')
+        ->and($f->parseNumber("91\u{202F}154,02"))->toBe('91154.02')
+        ->and($f->parseNumber("\u{A0}3853\u{A0}"))->toBe('3853');
+});
+
+it('muestra la tasa con su precisión real, sin ceros de relleno (A1)', function (Closure $make): void {
+    $f = $make();
+
+    expect($f->numberFlexible(BigDecimal::of('148.4421')))->toBe('148,4421')
+        ->and($f->numberFlexible(BigDecimal::of('148.4400')))->toBe('148,44')
+        ->and($f->numberFlexible(BigDecimal::of('148.4420')))->toBe('148,442')
+        ->and($f->numberFlexible(BigDecimal::of('150.0000')))->toBe('150,00')
+        ->and($f->numberFlexible(BigDecimal::of('0.0000')))->toBe('0,00')
+        ->and($f->numberFlexible(null))->toBe('—');
+})->with('formatters');
+
 it('el archivo original tenía la columna de días corrida: el sistema no puede reproducir ese error', function (): void {
     // H1: el Excel decía "v" (viernes) para el 01/09/2025, que es lunes.
     expect((new Formatter)->weekday(CarbonImmutable::parse('2025-09-01')))->not->toBe('vie');

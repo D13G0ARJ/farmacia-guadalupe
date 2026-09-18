@@ -110,6 +110,8 @@ final class ActivityDescriber
             'activated' => 'activó el acceso de',
             'deactivated' => 'desactivó el acceso de',
             'password_reset' => 'cambió la contraseña de',
+            'password_changed' => 'cambió su contraseña',
+            'name_changed' => 'cambió su nombre',
             'settings_updated' => 'cambió',
             'imported' => 'importó',
             default => $event,
@@ -132,6 +134,10 @@ final class ActivityDescriber
         }
         if ($type === User::class && in_array($event, ['created', 'updated', 'deleted'], true)) {
             $what = 'al usuario '.$what;
+        }
+        if (in_array($event, ['password_changed', 'name_changed'], true)) {
+            // Desde el perfil: el sujeto es la misma persona, el verbo ya lo dice todo.
+            $what = '';
         }
 
         return [$verb, $what];

@@ -30,11 +30,11 @@
         </div>
     @endif
 
-    {{-- Moneda: control segmentado --}}
-    <div class="hidden items-center rounded-control border border-line bg-surface p-0.5 sm:flex" role="group" aria-label="Moneda" data-tour="context-currency">
+    {{-- Moneda: control segmentado. También en el teléfono (B23): elegir Bs o $ es parte del trabajo diario --}}
+    <div class="flex items-center rounded-control border border-line bg-surface p-0.5" role="group" aria-label="Moneda" data-tour="context-currency">
         @foreach (['BS' => 'Bs', 'USD' => '$', 'BOTH' => 'Bs y $'] as $value => $label)
             <button type="button" wire:click="$set('currency', '{{ $value }}')"
-                    class="rounded-[4px] px-3 py-1.5 text-label font-medium transition-colors {{ $currency === $value ? 'bg-brand-600 text-white' : 'text-ink-600 hover:bg-panel' }}"
+                    class="rounded-[4px] px-2.5 py-1.5 text-label font-medium transition-colors sm:px-3 {{ $currency === $value ? 'bg-brand-600 text-white' : 'text-ink-600 hover:bg-panel' }}"
                     @if ($currency === $value) aria-pressed="true" @endif>{{ $label }}</button>
         @endforeach
     </div>

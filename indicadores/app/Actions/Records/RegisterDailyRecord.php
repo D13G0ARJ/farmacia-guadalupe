@@ -17,6 +17,7 @@ use App\Models\PeriodEvent;
 use App\Models\User;
 use Brick\Math\BigDecimal;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -44,6 +45,17 @@ final class RegisterDailyRecord
             throw DuplicateDayException::for($input->date);
         }
 
+        // La comprobación anterior no evita la carrera entre dos usuarios: el índice único es el árbitro
+        // y su violación se traduce al mismo aviso claro (RN-01, A4).
+        try {
+            return $this->create($input, $user);
+        } catch (UniqueConstraintViolationException) {
+            throw DuplicateDayException::for($input->date);
+        }
+    }
+
+    private function create(DailyRecordInput $input, User $user): DailyRecord
+    {
         return DB::transaction(function () use ($input, $user): DailyRecord {
             [$rate, $source] = $this->resolveRate($input, $user);
 

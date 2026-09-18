@@ -54,9 +54,14 @@ final class IndicatorCalculator
         $withInventory = array_values(array_filter($all, fn (DailyMetrics $m) => ! $m->data->isClosed() && $m->data->hasInventory()));
         $lastInventory = $withInventory === [] ? null : end($withInventory);
 
-        $rates = array_map(fn (DailyMetrics $m) => $m->data->rate, $all);
-        $rateFirst = $rates[0];
-        $rateLast = $rates[array_key_last($rates)];
+        // Un día cerrado no operó: su tasa (a menudo un arrastre o un relleno) no debe mover
+        // la primera, la última ni el promedio del mes (M4).
+        $rates = array_values(array_map(
+            fn (DailyMetrics $m) => $m->data->rate,
+            array_filter($all, fn (DailyMetrics $m) => ! $m->data->isClosed()),
+        ));
+        $rateFirst = $rates === [] ? null : $rates[0];
+        $rateLast = $rates === [] ? null : $rates[array_key_last($rates)];
 
         return new PeriodSummary(
             days: count($all),

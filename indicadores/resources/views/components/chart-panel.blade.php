@@ -1,6 +1,8 @@
 @props(['spec'])
 {{-- Gráfica sin marco (§13.5): título, subtítulo y lienzo sobre la superficie; acciones discretas (datos, PNG). --}}
-<section x-data="chartPanel(@js($spec['id']))" data-tour="chart-panel" class="min-w-0 p-5" aria-labelledby="chart-{{ $spec['id'] }}-title">
+{{-- El `wire:key` que pasa la pantalla tiene que llegar al nodo raíz: sin él Livewire reordena los
+     paneles sin mover los lienzos `wire:ignore` y los títulos dejan de corresponder (A12). --}}
+<section x-data="chartPanel(@js($spec['id']))" data-tour="chart-panel" {{ $attributes->merge(['class' => 'min-w-0 p-5']) }} aria-labelledby="chart-{{ $spec['id'] }}-title">
     <div class="flex items-start justify-between gap-3">
         <div class="min-w-0" data-tour="chart-title">
             <h3 id="chart-{{ $spec['id'] }}-title" class="text-sub font-semibold text-ink-900">{{ $spec['title'] }}</h3>
@@ -49,7 +51,11 @@
         </div>
     @else
         <div class="relative mt-4 h-[220px] md:h-[280px]">
-            <div x-show="! ready" class="absolute inset-0 animate-pulse rounded-card bg-panel motion-reduce:animate-none" aria-hidden="true"></div>
+            <div x-show="! ready && ! failed" class="absolute inset-0 animate-pulse rounded-card bg-panel motion-reduce:animate-none" aria-hidden="true"></div>
+            {{-- Si la librería de gráficas no carga, el esqueleto no puede latir para siempre (M28) --}}
+            <div x-cloak x-show="failed" class="absolute inset-0 flex items-center justify-center rounded-card border border-dashed border-line px-4 text-center">
+                <p class="text-label text-ink-600" role="status">No se pudieron cargar las gráficas. Recarga la página.</p>
+            </div>
             <div x-ref="canvas" wire:ignore class="h-full w-full" role="img" aria-label="{{ $spec['title'] }}, {{ $spec['subtitle'] }}"></div>
         </div>
         <div x-cloak x-show="showData" class="mt-3 overflow-x-auto rounded-card border border-line">

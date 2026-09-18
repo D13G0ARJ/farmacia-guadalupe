@@ -16,6 +16,7 @@ use App\Support\PeriodContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
@@ -40,16 +41,28 @@ class ChartsPage extends Component
         'anio' => ['label' => 'Año', 'charts' => ['g11']],
     ];
 
+    /**
+     * Sin tipo: la URL puede traer cualquier cosa (`?tab[]=x`) y un tipo declarado reventaría al
+     * hidratar; `normalize()` la deja siempre en una pestaña válida (M23).
+     *
+     * @var string|array<mixed>
+     */
     #[Url]
-    public string $tab = 'ventas';
+    public $tab = 'ventas';
 
-    /** Indicador de la comparativa interanual (G11). */
+    /**
+     * Indicador de la comparativa interanual (G11).
+     *
+     * @var string|array<mixed>
+     */
     #[Url(as: 'indicador')]
-    public string $annualIndicator = 'sales_usd';
+    public $annualIndicator = 'sales_usd';
 
+    #[Locked]
     public string $period = '';
 
     /** @var array<string, array<string, mixed>> */
+    #[Locked]
     public array $specs = [];
 
     public function mount(): void
@@ -78,11 +91,18 @@ class ChartsPage extends Component
     public function render(ChartSeriesQuery $query, AnnualComparisonQuery $annualQuery, ChartSpecBuilder $builder, CurrencyContext $currency): View
     {
         $user = auth()->user();
-        $branch = app(CurrentBranch::class)->resolve($user);
-        $period = Period::of($this->period);
+        $branchContext = app(CurrentBranch::class);
 
-        if ($this->tab === 'anio') {
-            $indicator = Indicator::from($this->annualIndicator);
+        if (! $branchContext->hasAccess($user)) {
+            return view('livewire.shared.no-branch');
+        }
+
+        $branch = $branchContext->resolve($user);
+        $period = Period::of($this->period);
+        $tab = $this->tabKey();
+
+        if ($tab === 'anio') {
+            $indicator = Indicator::from($this->indicatorKey());
             $annual = $annualQuery->run($branch?->id, $period->start->year);
             $current = [];
             $previous = [];
@@ -92,12 +112,12 @@ class ChartsPage extends Component
             }
             $this->specs = ['g11' => $builder->annualComparison($annual->year, $current, $previous, $indicator)->toArray()];
         } else {
-            $this->specs = $query->specs($branch?->id, $period, $this->chartsFor($this->tab, $currency));
+            $this->specs = $query->specs($branch?->id, $period, $this->chartsFor($tab, $currency));
         }
 
         return view('livewire.charts.charts-page', [
             'branch' => $branch,
-            'periodLabel' => $this->tab === 'anio' ? 'Año '.$period->start->year : $period->label(),
+            'periodLabel' => $tab === 'anio' ? 'Año '.$period->start->year : $period->label(),
             'tabs' => self::TABS,
             'annualIndicators' => Indicator::annualOrder(),
         ]);
@@ -120,11 +140,22 @@ class ChartsPage extends Component
 
     private function normalize(): void
     {
-        if (! array_key_exists($this->tab, self::TABS)) {
-            $this->tab = 'ventas';
-        }
-        if (Indicator::tryFrom($this->annualIndicator) === null || ! in_array(Indicator::from($this->annualIndicator), Indicator::annualOrder(), true)) {
-            $this->annualIndicator = Indicator::SalesUsd->value;
-        }
+        $this->tab = $this->tabKey();
+        $this->annualIndicator = $this->indicatorKey();
+    }
+
+    /** Pestaña válida: lo que venga de la URL o del cliente no se usa sin pasar por aquí (M23). */
+    private function tabKey(): string
+    {
+        return is_string($this->tab) && array_key_exists($this->tab, self::TABS) ? $this->tab : 'ventas';
+    }
+
+    private function indicatorKey(): string
+    {
+        $indicator = is_string($this->annualIndicator) ? Indicator::tryFrom($this->annualIndicator) : null;
+
+        return $indicator !== null && in_array($indicator, Indicator::annualOrder(), true)
+            ? $indicator->value
+            : Indicator::SalesUsd->value;
     }
 }

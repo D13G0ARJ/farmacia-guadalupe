@@ -36,9 +36,10 @@ it('crea, actualiza y borra la meta de (sede, indicador, mes) con bitácora (UC-
         ->and($goal?->currency)->toBe(Currency::Usd)
         ->and($goal?->period->toDateString())->toBe('2025-09-01');
 
+    // La meta se guarda con los decimales con que se muestra el indicador (B17): la venta en $ no lleva
     $updated = $action->handle($branch->id, Indicator::SalesUsd, $period, '21500,50', $user);
     expect($updated?->id)->toBe($goal?->id)
-        ->and((string) $updated?->target)->toBe('21500.5000')
+        ->and((string) $updated?->target)->toBe('21501.0000')
         ->and(Goal::query()->count())->toBe(1)
         ->and(Activity::query()->where('subject_type', Goal::class)->count())->toBe(2);
 
@@ -55,6 +56,21 @@ it('rechaza metas no positivas, texto o indicadores sin meta', function (): void
         ->and(fn () => $action->handle($branch->id, Indicator::SalesUsd, Period::of('2025-09'), 'abc', $user))->toThrow(InvalidGoalException::class)
         ->and(fn () => $action->handle($branch->id, Indicator::AvgRate, Period::of('2025-09'), '150', $user))->toThrow(InvalidGoalException::class)
         ->and(Goal::query()->count())->toBe(0);
+});
+
+it('rechaza una meta que no cabe en la columna en vez de reventar al guardar (M21)', function (): void {
+    $user = userWithRole(Role::Direccion);
+    $branch = $user->branches->first();
+    $action = app(UpsertGoal::class);
+
+    expect(fn () => $action->handle($branch->id, Indicator::SalesUsd, Period::of('2025-09'), '10000000000', $user))
+        ->toThrow(InvalidGoalException::class, 'La meta es demasiado grande.')
+        ->and(fn () => $action->handle($branch->id, Indicator::SalesUsd, Period::of('2025-09'), '99.999.999.999.999', $user))
+        ->toThrow(InvalidGoalException::class, 'La meta es demasiado grande.')
+        ->and(Goal::query()->count())->toBe(0);
+
+    // Justo por debajo del techo sí entra
+    expect((string) $action->handle($branch->id, Indicator::SalesUsd, Period::of('2025-09'), '9999999999', $user)?->target)->toBe('9999999999.0000');
 });
 
 it('la meta consolidada (sin sede) convive con la de la sede', function (): void {

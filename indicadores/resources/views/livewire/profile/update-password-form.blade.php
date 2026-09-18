@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Livewire\Volt\Component;
@@ -35,9 +36,14 @@ new class extends Component
             throw $e;
         }
 
-        Auth::user()->update([
-            'password' => Hash::make($validated['password']),
-        ]);
+        // Igual que cuando la cambia el administrador (SetUserPassword): se rota el "recordarme" para
+        // cerrar las sesiones viejas y queda constancia en la bitácora, sin la contraseña (B19).
+        $user = Auth::user();
+        $user->password = Hash::make($validated['password']);
+        $user->setRememberToken(Str::random(60));
+        $user->save();
+
+        activity()->performedOn($user)->causedBy($user)->event('password_changed')->log('password_changed');
 
         $this->reset('current_password', 'password', 'password_confirmation');
 

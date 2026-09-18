@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Domain\Indicators\Indicator;
 use App\Domain\Shared\Formatter;
 use App\Domain\Shared\Period;
+use App\Enums\Permission;
 use App\Exports\AnnualWorkbookExport;
 use App\Exports\MonthWorkbookExport;
 use App\Models\DailyRecord;
@@ -38,6 +39,7 @@ class ExportController extends Controller
     {
         $user = $request->user();
         abort_unless($user->can('viewAny', DailyRecord::class), 403);
+        abort_unless($user->can(Permission::ReportsExport->value), 403);
         $target = $this->period($period);
 
         $branch = app(CurrentBranch::class)->resolve($user);
@@ -58,6 +60,7 @@ class ExportController extends Controller
     {
         $user = $request->user();
         abort_unless($user->can('viewAny', DailyRecord::class), 403);
+        abort_unless($user->can(Permission::ReportsExport->value), 403);
         abort_unless($year >= 2000 && $year <= 2100, 404);
 
         $branch = app(CurrentBranch::class)->resolve($user);
@@ -73,6 +76,7 @@ class ExportController extends Controller
     {
         $user = $request->user();
         abort_unless($user->can('viewAny', DailyRecord::class), 403);
+        abort_unless($user->can(Permission::ReportsExport->value), 403);
         $target = $this->period($period);
 
         $images = $request->input('images');
@@ -95,7 +99,8 @@ class ExportController extends Controller
             $accepted[$id] = $dataUrl;
         }
 
-        Cache::put($this->chartsKey($user->id, $target), $accepted, self::CHART_TTL_SECONDS);
+        $branch = app(CurrentBranch::class)->resolve($user);
+        Cache::put($this->chartsKey($user->id, $branch?->id, $target), $accepted, self::CHART_TTL_SECONDS);
 
         return response()->json(['stored' => count($accepted)]);
     }
@@ -104,11 +109,13 @@ class ExportController extends Controller
     {
         $user = $request->user();
         abort_unless($user->can('viewAny', DailyRecord::class), 403);
+        abort_unless($user->can(Permission::ReportsExport->value), 403);
         $target = $this->period($period);
 
         $branch = app(CurrentBranch::class)->resolve($user);
         $dashboard = $dashboardQuery->run($branch?->id, $target);
-        $images = Cache::pull($this->chartsKey($user->id, $target), []);
+        // Con `get` (y no `pull`) el segundo PDF del mismo mes sigue llevando sus gráficas (M9).
+        $images = Cache::get($this->chartsKey($user->id, $branch?->id, $target), []);
 
         $pdf = Pdf::loadView('reports.month', [
             'dashboard' => $dashboard,
@@ -138,8 +145,9 @@ class ExportController extends Controller
         }
     }
 
-    private function chartsKey(int $userId, Period $period): string
+    /** La sede entra en la clave: si no, el PDF de una sede podría llevar las gráficas de otra (M9). */
+    private function chartsKey(int $userId, ?int $branchId, Period $period): string
     {
-        return "report-charts:{$userId}:{$period->key()}";
+        return "report-charts:{$userId}:".($branchId ?? 'all').":{$period->key()}";
     }
 }

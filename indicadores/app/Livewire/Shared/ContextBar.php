@@ -18,6 +18,9 @@ use Livewire\Component;
  */
 class ContextBar extends Component
 {
+    /** Meses hacia atrás que ofrece el selector; no se navega más allá ni al futuro (M22). */
+    public const MONTHS_BACK = 24;
+
     public string $period = '';
 
     public string $branch = '';
@@ -81,16 +84,37 @@ class ContextBar extends Component
         try {
             $period = Period::of($key);
         } catch (InvalidArgumentException) {
+            $this->period = app(PeriodContext::class)->current()->key();
+
             return;
         }
+
+        // El mes que viene todavía no existe y más de dos años atrás no hay cuadros: se recorta (M22).
+        $period = $this->clamp($period);
 
         app(PeriodContext::class)->set($period);
         $this->period = $period->key();
         $this->dispatch('context-changed');
     }
 
+    /** Recorta el período a [mes actual − MONTHS_BACK, mes actual]. */
+    private function clamp(Period $period): Period
+    {
+        $newest = Period::current();
+        $oldest = $newest;
+        for ($i = 0; $i < self::MONTHS_BACK; $i++) {
+            $oldest = $oldest->previous();
+        }
+
+        if ($period->start->gt($newest->start)) {
+            return $newest;
+        }
+
+        return $period->start->lt($oldest->start) ? $oldest : $period;
+    }
+
     /**
-     * Últimos 24 meses para el selector.
+     * Los meses que se pueden elegir: del actual hacia atrás, nunca el futuro (M22).
      *
      * @return list<array{key: string, label: string}>
      */
@@ -98,7 +122,7 @@ class ContextBar extends Component
     {
         $options = [];
         $cursor = Period::current();
-        for ($i = 0; $i < 24; $i++) {
+        for ($i = 0; $i <= self::MONTHS_BACK; $i++) {
             $options[] = ['key' => $cursor->key(), 'label' => $cursor->label()];
             $cursor = $cursor->previous();
         }

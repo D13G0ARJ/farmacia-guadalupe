@@ -7,11 +7,13 @@
         @unless ($dashboard->isEmpty())
             {{-- Reporte PDF (UC-14): el navegador envía primero las gráficas en pantalla; si no puede, el PDF sale sin ellas --}}
             <div x-data="{ busy: false }" class="flex flex-wrap items-center gap-2 print:hidden">
-                <x-btn variant="secondary" icon="download" data-tour="dash-pdf" data-images-url="{{ route('exports.charts', ['period' => $view->period->key()]) }}" data-pdf-url="{{ route('exports.pdf', ['period' => $view->period->key()]) }}"
-                       x-on:click="busy = true; window.downloadReport($el.dataset.imagesUrl, $el.dataset.pdfUrl).finally(() => setTimeout(() => busy = false, 3000))" x-bind:disabled="busy">
-                    <span x-show="! busy">Descargar PDF</span>
-                    <span x-cloak x-show="busy">Generando…</span>
-                </x-btn>
+                @can('reports.export')
+                    <x-btn variant="secondary" icon="download" data-tour="dash-pdf" data-images-url="{{ route('exports.charts', ['period' => $view->period->key()]) }}" data-pdf-url="{{ route('exports.pdf', ['period' => $view->period->key()]) }}"
+                           x-on:click="busy = true; window.downloadReport($el.dataset.imagesUrl, $el.dataset.pdfUrl).finally(() => setTimeout(() => busy = false, 3000))" x-bind:disabled="busy">
+                        <span x-show="! busy">Descargar PDF</span>
+                        <span x-cloak x-show="busy">Generando…</span>
+                    </x-btn>
+                @endcan
                 <x-btn variant="secondary" icon="printer" class="print:hidden" data-tour="dash-print" x-on:click="window.print()">Imprimir</x-btn>
             </div>
         @endunless
@@ -105,8 +107,9 @@
             @endforeach
         </div>
 
-        <details class="group" data-tour="dash-more">
-            <summary class="cursor-pointer list-none text-body text-brand-700 hover:underline">Ver 4 indicadores más</summary>
+        {{-- Se recuerda abierto o cerrado entre recargas y el texto acompaña al estado (M29) --}}
+        <details class="group" data-tour="dash-more" x-data="{ open: $persist(false).as('dash-more') }" x-bind:open="open" x-on:toggle="open = $event.target.open">
+            <summary class="cursor-pointer list-none text-body text-brand-700 hover:underline"><span x-text="open ? 'Ver menos' : 'Ver 4 indicadores más'">Ver 4 indicadores más</span></summary>
             <div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 @foreach ($secondary as $ind)
                     <x-kpi :label="$ind->label()" :explanation="$ind->explanation()" :hint="$hints[$ind->value] ?? null"

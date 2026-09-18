@@ -113,6 +113,36 @@ it('deriva cada día correctamente: el 01/09/2025 es lunes y vende $ 614 a 148,4
         ->and($first->value(Indicator::Transactions))->toEqual(BigDecimal::of(119));
 });
 
+it('los días cerrados no mueven la tasa del período: ni la primera, ni la última, ni el promedio (M4)', function () use ($calc): void {
+    $open = DailyRecordData::fromArray([
+        'date' => '2025-10-01', 'sales_bs' => '10000', 'exchange_rate' => '200', 'transactions' => 10,
+        'units' => 20, 'shifts' => 3,
+    ]);
+    $closedBefore = DailyRecordData::fromArray([
+        'date' => '2025-09-30', 'sales_bs' => '0', 'exchange_rate' => '1', 'transactions' => 0,
+        'units' => 0, 'shifts' => 0, 'status' => DayStatus::Closed->value,
+    ]);
+    $closedAfter = DailyRecordData::fromArray([
+        'date' => '2025-10-02', 'sales_bs' => '0', 'exchange_rate' => '1', 'transactions' => 0,
+        'units' => 0, 'shifts' => 0, 'status' => DayStatus::Closed->value,
+    ]);
+
+    $s = $calc->summarize([$closedBefore, $open, $closedAfter]);
+
+    expect((string) $s->rateFirst)->toBe('200')
+        ->and((string) $s->rateLast)->toBe('200')
+        ->and((string) $s->avgRateSimple?->toScale(2, RoundingMode::HalfUp))->toBe('200.00')
+        ->and($s->rateVariationPct?->isZero())->toBeTrue()
+        ->and($s->days)->toBe(3);
+
+    // Un mes entero de días cerrados no tiene tasa que mostrar, y tampoco revienta.
+    $onlyClosed = $calc->summarize([$closedBefore, $closedAfter]);
+    expect($onlyClosed->rateFirst)->toBeNull()
+        ->and($onlyClosed->rateLast)->toBeNull()
+        ->and($onlyClosed->avgRateSimple)->toBeNull()
+        ->and($onlyClosed->rateVariationPct)->toBeNull();
+});
+
 it('un período vacío devuelve un resumen vacío sin excepciones', function () use ($calc): void {
     $s = $calc->summarize([]);
 

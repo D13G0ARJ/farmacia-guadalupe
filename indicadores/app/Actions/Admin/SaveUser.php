@@ -7,6 +7,7 @@ namespace App\Actions\Admin;
 use App\Domain\Admin\Exceptions\AdminException;
 use App\Enums\Role;
 use App\Models\User;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -36,7 +37,13 @@ final class SaveUser
                 $user->is_active = $data['is_active'] ?? true;
                 $user->forceFill(['email_verified_at' => now()]);
             }
-            $user->save();
+
+            try {
+                $user->save();
+            } catch (UniqueConstraintViolationException) {
+                // Última red: la validación ya normaliza el correo, pero una carrera no debe dar un 500 (M24).
+                throw new AdminException('Ya hay un usuario con ese correo.');
+            }
 
             $user->syncRoles([$data['role']->value]);
             $user->branches()->sync($data['branch_ids']);

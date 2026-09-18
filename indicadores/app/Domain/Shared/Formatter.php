@@ -55,6 +55,26 @@ final class Formatter
         return number_format($decimal->toFloat(), $precision, ',', '.');
     }
 
+    /**
+     * Como `number`, pero sin ceros sobrantes más allá de `$min` decimales: la tasa guardada
+     * 148,4421 se muestra completa y 148,4400 se muestra como 148,44 (A1).
+     */
+    public function numberFlexible(BigDecimal|string|int|float|null $value, int $min = 2, int $max = 4): string
+    {
+        if ($value === null) {
+            return '—';
+        }
+
+        $decimal = self::toDecimal($value)->toScale($max, RoundingMode::HalfUp);
+
+        $precision = $max;
+        while ($precision > $min && $decimal->toScale($precision - 1, RoundingMode::Down)->isEqualTo($decimal)) {
+            $precision--;
+        }
+
+        return $this->number($decimal, $precision);
+    }
+
     /** "Bs 91.154,02" · "$ 614". */
     public function money(BigDecimal|string|int|float|null $value, Currency $currency, int $precision = 2): string
     {
@@ -110,7 +130,14 @@ final class Formatter
             return null;
         }
 
-        $s = str_replace(' ', '', $s);
+        // Espacios duros del portapapeles o de Excel (B17): cuentan como separador de miles.
+        $s = str_replace([' ', "\u{A0}", "\u{202F}"], '', $s);
+
+        // Formato inglés "1,234.56": la coma agrupa y el punto decimal va al final. Leerlo como
+        // es-VE daría 1,23 en silencio (M16): mejor rechazarlo y pedir el formato local.
+        if (str_contains($s, ',') && str_contains($s, '.') && strrpos($s, '.') > strrpos($s, ',')) {
+            return null;
+        }
 
         if (str_contains($s, ',')) {
             // Coma = decimal; los puntos son miles: "91.154,02" → 91154.02

@@ -43,6 +43,7 @@ export default function dailyPreview($wire, options = {}) {
         inventoryUnits: $wire.entangle('form.inventory_units'),
         inventoryValue: $wire.entangle('form.inventory_value_usd'),
         notes: $wire.entangle('form.notes'),
+        date: $wire.entangle('form.date'),
 
         draftRestored: false,
         draftSavedAt: null,
@@ -52,10 +53,17 @@ export default function dailyPreview($wire, options = {}) {
             if (options.clear) storage.remove(options.clear);
             if (! options.edit) this.restoreDraft();
             DRAFT_FIELDS.forEach((field) => this.$watch(field, () => this.scheduleDraft()));
+            // Otro día es otro borrador: el servidor ya limpió los campos y aquí se busca el que corresponda (M13).
+            this.$watch('date', () => {
+                this.draftRestored = false;
+                this.draftSavedAt = null;
+                if (! options.edit) this.restoreDraft();
+            });
         },
 
+        /** Por usuario, sede y fecha (M13): en un equipo compartido cada quien ve lo suyo. */
         get draftKey() {
-            return `draft:${options.branch}:${$wire.form?.date ?? ''}`;
+            return `draft:${options.user ?? ''}:${options.branch}:${this.date ?? ''}`;
         },
 
         /** Al abrir un día nuevo sin nada escrito, vuelve lo que quedó en este navegador. */
@@ -125,11 +133,14 @@ export default function dailyPreview($wire, options = {}) {
             return value === null ? '—' : fmt.num(value, precision);
         },
 
-        /** Al perder el foco, muestra el número con separadores es-VE y avisa a Livewire. */
-        format(event, key, precision) {
+        /**
+         * Al perder el foco, muestra el número con separadores es-VE y avisa a Livewire.
+         * Con `max` conserva hasta esos decimales: recortar la tasa a dos la volvía manual (A1).
+         */
+        format(event, key, precision, max = null) {
             const n = fmt.parse(event.target.value);
             if (n === null) return;
-            const pretty = fmt.num(n, precision);
+            const pretty = max === null ? fmt.num(n, precision) : fmt.numFlexible(n, precision, max);
             event.target.value = pretty;
             this[key] = pretty;
             event.target.dispatchEvent(new Event('input', { bubbles: true }));

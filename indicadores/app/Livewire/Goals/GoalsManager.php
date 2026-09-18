@@ -18,7 +18,9 @@ use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
@@ -42,20 +44,33 @@ class GoalsManager extends Component
         Indicator::SalesBs, Indicator::AvgTicketBs,
     ];
 
+    /**
+     * Sin tipo: `?view[]=x` no debe reventar al hidratar; `normalizeView()` la deja válida (M23).
+     *
+     * @var string|array<mixed>
+     */
     #[Url]
-    public string $view = 'month';
+    public $view = 'month';
 
+    #[Locked]
     public string $period = '';
 
+    #[Locked]
     public int $year = 2025;
 
     /** @var array<string, string> meta del mes por indicador, formateada es-VE */
     public array $targets = [];
 
-    /** @var array<string, array<string, string>> indicador → 'YYYY-MM' → meta formateada */
+    /**
+     * Indicador → 'YYYY-MM' → meta formateada. El servidor la escribe así, pero llega del cliente:
+     * cada recorrido comprueba las claves y los valores antes de usarlos (B25).
+     *
+     * @var array<mixed>
+     */
     public array $grid = [];
 
     /** @var array<string, array<string, string>> */
+    #[Locked]
     public array $gridOriginal = [];
 
     public string $growth = '5';
@@ -81,11 +96,39 @@ class GoalsManager extends Component
         $this->loadYear();
     }
 
+    /**
+     * ¿Hay ediciones sin guardar en la cuadrícula del año? La vista pide confirmación antes de
+     * recargarla (cambiar de año o de vista la descarta) (M20).
+     */
+    #[Computed]
+    public function dirty(): bool
+    {
+        foreach ($this->grid as $indicator => $months) {
+            if (! is_array($months)) {
+                continue;
+            }
+            foreach ($months as $key => $value) {
+                if (! is_scalar($value)) {
+                    continue;
+                }
+                if (trim((string) $value) !== trim($this->gridOriginal[(string) $indicator][(string) $key] ?? '')) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     /** Edición en línea de la vista del mes: cada campo se guarda al perder el foco. */
     public function updatedTargets(mixed $value, string $key): void
     {
         $this->authorizeManage();
-        $indicator = Indicator::from($key);
+        // La clave llega del cliente: un indicador inventado se ignora, no revienta (B25).
+        $indicator = Indicator::tryFrom($key);
+        if ($indicator === null) {
+            return;
+        }
         $period = Period::of($this->period);
 
         try {
@@ -111,7 +154,10 @@ class GoalsManager extends Component
         }
 
         foreach ($previous as $key => $target) {
-            app(UpsertGoal::class)->handle($this->branchId(), Indicator::from($key), $period, (string) $target, auth()->user());
+            $indicator = Indicator::tryFrom((string) $key);
+            if ($indicator !== null) {
+                app(UpsertGoal::class)->handle($this->branchId(), $indicator, $period, (string) $target, auth()->user());
+            }
         }
 
         $this->dispatch('toast', type: 'success', message: count($previous).' metas copiadas de '.mb_strtolower($period->previous()->label()).'.');
@@ -154,6 +200,7 @@ class GoalsManager extends Component
     public function increaseAll(): void
     {
         $this->authorizeManage();
+        $this->resetErrorBag('growth');
         $formatter = app(Formatter::class);
         $pct = $formatter->parseNumber($this->growth);
         if ($pct === null) {
@@ -161,18 +208,41 @@ class GoalsManager extends Component
 
             return;
         }
-        $factor = BigDecimal::one()->plus(BigDecimal::of($pct)->dividedBy(100, 6, RoundingMode::HalfUp));
+        // Un porcentaje desbocado dispararía metas imposibles de guardar (M21).
+        $percent = BigDecimal::of($pct);
+        if ($percent->isLessThan(-100) || $percent->isGreaterThan(1000)) {
+            $this->addError('growth', 'El porcentaje va de -100 a 1000.');
 
-        foreach ($this->grid as $indicator => $months) {
-            $precision = Indicator::from($indicator)->precision();
-            foreach ($months as $key => $value) {
-                $number = $formatter->parseNumber($value);
+            return;
+        }
+        $factor = BigDecimal::one()->plus($percent->dividedBy(100, 6, RoundingMode::HalfUp));
+
+        $grid = $this->grid;
+        foreach ($grid as $key => $months) {
+            if (! is_string($key) || ! is_array($months)) {
+                continue;
+            }
+            $indicator = Indicator::tryFrom($key);
+            if ($indicator === null) {
+                continue;
+            }
+            $precision = $indicator->precision();
+            foreach ($months as $month => $value) {
+                $number = $formatter->parseNumber(is_scalar($value) ? (string) $value : null);
                 if ($number === null) {
                     continue;
                 }
-                $this->grid[$indicator][$key] = $formatter->number(BigDecimal::of($number)->multipliedBy($factor)->toScale($precision, RoundingMode::HalfUp), $precision);
+                $increased = BigDecimal::of($number)->multipliedBy($factor)->toScale($precision, RoundingMode::HalfUp);
+                if ($increased->abs()->isGreaterThanOrEqualTo(UpsertGoal::MAX_TARGET)) {
+                    $this->addError('growth', 'La meta es demasiado grande.');
+
+                    return;
+                }
+                $grid[$key][$month] = $formatter->number($increased, $precision);
             }
         }
+
+        $this->grid = $grid;
     }
 
     public function saveYear(): void
@@ -181,16 +251,27 @@ class GoalsManager extends Component
         $saved = 0;
         $errors = 0;
 
-        foreach ($this->grid as $indicator => $months) {
-            foreach ($months as $key => $value) {
-                if (trim((string) $value) === trim($this->gridOriginal[$indicator][$key] ?? '')) {
+        foreach ($this->grid as $key => $months) {
+            // Indicador y mes llegan del cliente: lo que no se reconoce se ignora (B25).
+            if (! is_string($key) || ! is_array($months)) {
+                continue;
+            }
+            $indicator = Indicator::tryFrom($key);
+            if ($indicator === null) {
+                continue;
+            }
+            foreach ($months as $month => $value) {
+                if (! is_string($month) || preg_match('/^\d{4}-\d{2}$/', $month) !== 1 || ! is_scalar($value)) {
+                    continue;
+                }
+                if (trim((string) $value) === trim($this->gridOriginal[$key][$month] ?? '')) {
                     continue;
                 }
                 try {
-                    app(UpsertGoal::class)->handle($this->branchId(), Indicator::from($indicator), Period::of($key), (string) $value, auth()->user());
+                    app(UpsertGoal::class)->handle($this->branchId(), $indicator, Period::of($month), (string) $value, auth()->user());
                     $saved++;
                 } catch (InvalidGoalException $e) {
-                    $this->addError("grid.{$indicator}.{$key}", $e->getMessage());
+                    $this->addError("grid.{$key}.{$month}", $e->getMessage());
                     $errors++;
                 }
             }
@@ -207,7 +288,14 @@ class GoalsManager extends Component
     public function render(GoalProgressQuery $query, SuggestGoal $suggest, Formatter $formatter): View
     {
         $user = auth()->user();
-        $branch = app(CurrentBranch::class)->resolve($user);
+        $branchContext = app(CurrentBranch::class);
+
+        // Sin sede activa asignada no hay nada que consultar: null significaría "todas" (A10, RN-23).
+        if (! $branchContext->hasAccess($user)) {
+            return view('livewire.shared.no-branch');
+        }
+
+        $branch = $branchContext->resolve($user);
         $period = Period::of($this->period);
         $tracking = $query->run($branch?->id, $period);
 
@@ -249,7 +337,7 @@ class GoalsManager extends Component
     private function loadMonth(): void
     {
         $formatter = app(Formatter::class);
-        $targets = app(GoalProgressQuery::class)->targets($this->branchId(), Period::of($this->period));
+        $targets = $this->hasBranchAccess() ? app(GoalProgressQuery::class)->targets($this->branchId(), Period::of($this->period)) : [];
 
         $this->targets = [];
         foreach (self::INDICATORS as $indicator) {
@@ -262,11 +350,6 @@ class GoalsManager extends Component
     private function loadYear(): void
     {
         $formatter = app(Formatter::class);
-        $branchId = $this->branchId();
-        $goals = Goal::query()
-            ->whereBetween('period', [$this->year.'-01-01', $this->year.'-12-01'])
-            ->where(fn ($q) => $branchId === null ? $q->whereNull('branch_id') : $q->where('branch_id', $branchId))
-            ->get();
 
         $grid = [];
         foreach (self::INDICATORS as $indicator) {
@@ -274,8 +357,17 @@ class GoalsManager extends Component
                 $grid[$indicator->value][$key] = '';
             }
         }
-        foreach ($goals as $goal) {
-            $grid[$goal->indicator->value][$goal->period->format('Y-m')] = $formatter->number($goal->target, $goal->indicator->precision());
+
+        if ($this->hasBranchAccess()) {
+            $branchId = $this->branchId();
+            $goals = Goal::query()
+                ->whereBetween('period', [$this->year.'-01-01', $this->year.'-12-01'])
+                ->where(fn ($q) => $branchId === null ? $q->whereNull('branch_id') : $q->where('branch_id', $branchId))
+                ->get();
+
+            foreach ($goals as $goal) {
+                $grid[$goal->indicator->value][$goal->period->format('Y-m')] = $formatter->number($goal->target, $goal->indicator->precision());
+            }
         }
 
         $this->grid = $grid;
@@ -288,6 +380,12 @@ class GoalsManager extends Component
         return app(CurrentBranch::class)->resolve(auth()->user())?->id;
     }
 
+    /** Quien no tiene ninguna sede activa asignada no consulta nada: null sería "todas" (A10). */
+    private function hasBranchAccess(): bool
+    {
+        return app(CurrentBranch::class)->hasAccess(auth()->user());
+    }
+
     private function authorizeManage(): void
     {
         $this->authorize('manage', [Goal::class, app(CurrentBranch::class)->resolve(auth()->user())]);
@@ -295,7 +393,7 @@ class GoalsManager extends Component
 
     private function normalizeView(): void
     {
-        if (! in_array($this->view, ['month', 'year'], true)) {
+        if (! is_string($this->view) || ! in_array($this->view, ['month', 'year'], true)) {
             $this->view = 'month';
         }
     }

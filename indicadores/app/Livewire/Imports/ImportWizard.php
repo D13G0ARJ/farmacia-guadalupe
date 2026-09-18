@@ -22,6 +22,7 @@ use App\Support\CurrentBranch;
 use Brick\Math\BigDecimal;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
@@ -29,6 +30,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
+use Throwable;
 
 /**
  * UC-15: asistente de importación en tres pasos (Archivos → Revisión → Confirmación, §10.4).
@@ -74,6 +76,17 @@ class ImportWizard extends Component
         abort_unless(auth()->user()->can(Permission::ImportsRun->value), 403);
         $this->branchId = app(CurrentBranch::class)->resolve(auth()->user())?->id;
         $this->groupId = (string) Str::uuid();
+        $this->pruneAbandonedBatches();
+    }
+
+    /** Lo analizado y nunca confirmado no sirve para nada pasado un día: se limpia al entrar (M8). */
+    private function pruneAbandonedBatches(): void
+    {
+        ImportBatch::query()
+            ->where('user_id', auth()->id())
+            ->whereIn('status', [ImportStatus::Parsed, ImportStatus::Failed])
+            ->where('created_at', '<', now()->subDay())
+            ->delete();
     }
 
     public function analyze(ImportWorkbook $action): void
@@ -100,12 +113,25 @@ class ImportWizard extends Component
         $this->skip = [];
         foreach ($this->files as $file) {
             // El nombre temporal de Livewire lleva metadatos codificados que el lector de Excel no abre: se lee desde una copia limpia.
-            $clean = tempnam(sys_get_temp_dir(), 'imp').'.xlsx';
-            copy($file->getRealPath(), $clean);
+            $temp = tempnam(sys_get_temp_dir(), 'imp');
+            if ($temp === false) {
+                $this->addError('files', 'No se pudo preparar el archivo para leerlo. Inténtalo de nuevo.');
+
+                return;
+            }
+            $clean = $temp.'.xlsx';
             try {
+                // Un disco lleno o sin permisos no debe reventar la pantalla (B21).
+                if (! @copy($file->getRealPath(), $clean)) {
+                    $this->addError('files', 'No se pudo leer «'.$file->getClientOriginalName().'»: vuelve a subirlo.');
+
+                    return;
+                }
                 $batch = $action->handle($clean, $file->getClientOriginalName(), $branch, auth()->user(), $this->groupId);
             } finally {
+                // `tempnam` deja su propio archivo además del .xlsx: se borran los dos (M7).
                 @unlink($clean);
+                @unlink($temp);
             }
             $this->batchIds[] = $batch->id;
             $this->decisions[$batch->id] = [];
@@ -135,6 +161,8 @@ class ImportWizard extends Component
         abort_unless(auth()->user()->can(Permission::ImportsRun->value), 403);
         $this->resetErrorBag();
         $results = [];
+        /** @var array<int, string> $failed */
+        $failed = [];
 
         foreach ($this->batches() as $batch) {
             if (($this->skip[$batch->id] ?? false) || $batch->status !== ImportStatus::Parsed) {
@@ -145,17 +173,37 @@ class ImportWizard extends Component
             } catch (ImportException $e) {
                 $this->addError('batch.'.$batch->id, $e->getMessage());
                 $this->expanded = $batch->id;
+            } catch (Throwable $e) {
+                // Un fallo técnico de un archivo (columna desbordada, base caída) no debe tumbar el lote
+                // entero ni dejar el asistente a medias (A8): se marca fallido y se sigue con los demás.
+                Log::error('Importación: un archivo no se pudo guardar', [
+                    'batch' => $batch->id,
+                    'archivo' => $batch->original_filename,
+                    'error' => $e->getMessage(),
+                ]);
+                report($e);
+                $failed[$batch->id] = $batch->original_filename;
+                $batch->status = ImportStatus::Failed;
+                $batch->summary = [...($batch->summary ?? []), 'error' => 'No se pudo importar este archivo: '.$e->getMessage()];
+                $batch->save();
+                $this->addError('batch.'.$batch->id, 'No se pudo importar este archivo: hubo un problema al guardarlo. Revísalo y vuelve a intentarlo; los demás sí se importaron.');
+                $this->expanded = $batch->id;
             }
         }
 
-        if ($this->getErrorBag()->isNotEmpty()) {
+        // Solo se vuelve atrás si nada se pudo importar; si algunos entraron, se muestra el resultado.
+        if ($results === [] || ($failed === [] && $this->getErrorBag()->isNotEmpty())) {
             return;
         }
 
         $this->results = $results;
         $this->step = 3;
         $imported = count(array_filter($results, fn (array $r) => ! $r['rejected']));
-        $this->dispatch('toast', type: 'success', message: $imported === 1 ? 'Mes importado.' : "{$imported} meses importados.");
+        $message = $imported === 1 ? 'Mes importado.' : "{$imported} meses importados.";
+        if ($failed !== []) {
+            $message .= ' No se pudo importar: '.implode(', ', $failed).'.';
+        }
+        $this->dispatch('toast', type: $failed === [] ? 'success' : 'warning', message: $message);
     }
 
     public function restart(): void

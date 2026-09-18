@@ -9,6 +9,7 @@ use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use RuntimeException;
 
@@ -35,20 +36,19 @@ final class WorkbookParser
 
     private const MAX_HEADER_SCAN = 25;
 
+    /** Tantas filas seguidas en blanco dan por terminada la tabla de días (A6). */
+    private const MAX_BLANK_ROWS = 5;
+
+    /** Última columna de la plantilla (N). */
+    private const LAST_COLUMN = 14;
+
     public function parse(string $path): ParsedMonth
     {
         $reader = IOFactory::createReaderForFile($path);
         $reader->setReadDataOnly(true);
         $spreadsheet = $reader->load($path);
 
-        $sheet = null;
-        foreach ($spreadsheet->getWorksheetIterator() as $candidate) {
-            if (self::normalize($candidate->getTitle()) === 'indicadores') {
-                $sheet = $candidate;
-                break;
-            }
-        }
-        $sheet ??= $spreadsheet->getSheet(0);
+        $sheet = $this->findSheet($spreadsheet);
 
         $monthName = self::text($sheet->getCell('B2')->getValue());
         $legalName = self::text($sheet->getCell('C2')->getValue());
@@ -57,13 +57,37 @@ final class WorkbookParser
         $anomalies = $this->headerAnomalies($sheet, $headerRow);
 
         $rows = [];
+        $withoutDate = 0;
+        $blankStreak = 0;
         $r = $headerRow + 1;
         $max = $sheet->getHighestDataRow();
         while ($r <= $max) {
-            $date = self::date($sheet->getCell([2, $r])->getValue());
+            $cell = $sheet->getCell([2, $r])->getValue();
+            $date = self::date($cell);
             if ($date === null) {
-                break;
+                // La fila de totales (o el inicio de otra tabla) trae texto donde iba la fecha: ahí termina el mes.
+                if (self::text($cell) !== null) {
+                    break;
+                }
+                if (self::rowIsBlank($sheet, $r)) {
+                    // Un hueco en medio no corta la importación (A6); un bloque de filas vacías sí.
+                    if (++$blankStreak >= self::MAX_BLANK_ROWS) {
+                        break;
+                    }
+                    $r++;
+
+                    continue;
+                }
+                // Fila con cifras del día pero sin fecha: no se puede cargar, se avisa al final.
+                if (self::looksLikeDataRow($sheet, $r)) {
+                    $withoutDate++;
+                }
+                $blankStreak = 0;
+                $r++;
+
+                continue;
             }
+            $blankStreak = 0;
             $rows[] = new ParsedRow(
                 row: $r,
                 date: $date->toDateString(),
@@ -92,6 +116,15 @@ final class WorkbookParser
             throw new RuntimeException('No se encontraron filas con fecha debajo del encabezado.');
         }
 
+        if ($withoutDate > 0) {
+            $anomalies[] = new Anomaly(
+                AnomalyType::RowWithoutDate,
+                $withoutDate === 1
+                    ? 'Se omitió 1 fila con datos pero sin fecha en la columna B.'
+                    : "Se omitieron {$withoutDate} filas con datos pero sin fecha en la columna B.",
+            );
+        }
+
         $period = $this->dominantPeriod($rows);
         $declared = $monthName === null ? null : (self::MONTHS[self::normalize($monthName)] ?? null);
         if ($declared !== null && $declared !== (int) substr($period, 5, 2)) {
@@ -101,7 +134,34 @@ final class WorkbookParser
         return new ParsedMonth($period, $monthName, $legalName, $rows, $anomalies);
     }
 
+    /**
+     * La hoja "Indicadores"; si no está, la primera cuyo encabezado de la columna B diga "Fecha"
+     * (los libros viejos la llaman de otras formas); en último caso, la primera hoja (B23).
+     */
+    private function findSheet(Spreadsheet $spreadsheet): Worksheet
+    {
+        $withHeader = null;
+        foreach ($spreadsheet->getWorksheetIterator() as $candidate) {
+            if (self::normalize($candidate->getTitle()) === 'indicadores') {
+                return $candidate;
+            }
+            if ($withHeader === null && $this->headerRowIn($candidate) !== null) {
+                $withHeader = $candidate;
+            }
+        }
+
+        return $withHeader ?? $spreadsheet->getSheet(0);
+    }
+
     private function findHeaderRow(Worksheet $sheet): int
+    {
+        return $this->headerRowIn($sheet) ?? throw new RuntimeException(
+            'No se encontró la fila de encabezados (la celda "Fecha" en la columna B) en la hoja "'.$sheet->getTitle().'". '
+            .'Revisa que la hoja con el cuadro del mes se llame "Indicadores" y que su columna B diga "Fecha".'
+        );
+    }
+
+    private function headerRowIn(Worksheet $sheet): ?int
     {
         for ($r = 1; $r <= self::MAX_HEADER_SCAN; $r++) {
             if (self::normalize(self::text($sheet->getCell([2, $r])->getValue()) ?? '') === 'fecha') {
@@ -109,7 +169,28 @@ final class WorkbookParser
             }
         }
 
-        throw new RuntimeException('No se encontró la fila de encabezados (la celda "Fecha" en la columna B).');
+        return null;
+    }
+
+    /** Ninguna celda A–N con contenido. */
+    private static function rowIsBlank(Worksheet $sheet, int $row): bool
+    {
+        for ($c = 1; $c <= self::LAST_COLUMN; $c++) {
+            if (self::text($sheet->getCell([$c, $row])->getValue()) !== null) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Distingue un día al que le falta la fecha de la fila de totales: la plantilla siempre
+     * escribe la letra del día en la columna A, y la de totales la deja vacía.
+     */
+    private static function looksLikeDataRow(Worksheet $sheet, int $row): bool
+    {
+        return self::text($sheet->getCell([1, $row])->getValue()) !== null;
     }
 
     /** @return list<Anomaly> */

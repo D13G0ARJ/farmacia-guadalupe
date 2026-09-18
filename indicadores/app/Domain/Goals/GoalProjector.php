@@ -84,6 +84,10 @@ final class GoalProjector
         $expected = $target?->multipliedBy($share);
         $hasData = $toDate !== [];
 
+        // Si todos los días cargados son atípicos no hay ritmo con que proyectar: mientras queden días
+        // el estado es "sin base para proyectar", no "fuera de meta" (M26).
+        $noBasis = $rate === null && $remaining !== [];
+
         $strongest = $pattern->strongestDay();
 
         return new GoalProgress(
@@ -93,7 +97,7 @@ final class GoalProjector
             expected: $expected,
             projection: $hasData ? $projection : null,
             gap: $target === null || ! $hasData ? null : $target->minus($projection),
-            status: $this->status($target, $hasData ? $projection : null, $onTrackPct, $atRiskPct),
+            status: $this->status($target, $noBasis || ! $hasData ? null : $projection, $onTrackPct, $atRiskPct),
             method: $method,
             daysElapsed: count($elapsed),
             daysRemaining: count($remaining),

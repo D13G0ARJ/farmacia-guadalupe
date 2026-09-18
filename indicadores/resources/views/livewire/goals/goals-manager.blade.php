@@ -4,9 +4,11 @@
             <h1 class="text-title text-brand-800">Metas</h1>
             <p class="text-ink-600">{{ $branch?->name ?? 'Consolidado' }} · metas mensuales, en dólares las de venta y ticket</p>
         </div>
+        {{-- Con metas escritas sin guardar, cambiar de vista o de año las descarta: se pregunta antes (M20) --}}
+        @php $unsaved = 'Hay metas escritas sin guardar. Si sales ahora se pierden. ¿Continuar?'; @endphp
         <div class="inline-flex rounded-control border border-line bg-surface p-0.5" role="group" aria-label="Vista" data-tour="goals-view">
             @foreach (['month' => 'Este mes', 'year' => 'Año'] as $key => $label)
-                <button type="button" wire:click="$set('view', '{{ $key }}')"
+                <button type="button" wire:click="$set('view', '{{ $key }}')" @if ($this->dirty) wire:confirm="{{ $unsaved }}" @endif
                         class="rounded-[4px] px-3 py-1.5 text-label font-medium transition-colors {{ $view === $key ? 'bg-brand-600 text-white' : 'text-ink-600 hover:bg-panel' }}"
                         @if ($view === $key) aria-pressed="true" @endif>{{ $label }}</button>
             @endforeach
@@ -95,10 +97,13 @@
         <section class="space-y-3" aria-labelledby="goals-year-title" x-data="goalGrid()">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div class="flex items-center gap-1" data-tour="goals-year-nav">
-                    <button type="button" wire:click="previousYear" class="rounded-control p-1.5 text-ink-600 hover:bg-panel" aria-label="Año anterior"><x-lucide name="chevron-left" class="h-5 w-5" /></button>
+                    <button type="button" wire:click="previousYear" @if ($this->dirty) wire:confirm="{{ $unsaved }}" @endif class="rounded-control p-1.5 text-ink-600 hover:bg-panel" aria-label="Año anterior"><x-lucide name="chevron-left" class="h-5 w-5" /></button>
                     <h2 id="goals-year-title" class="text-sub font-semibold text-ink-900 tnum">{{ $year }}</h2>
-                    <button type="button" wire:click="nextYear" class="rounded-control p-1.5 text-ink-600 hover:bg-panel" aria-label="Año siguiente"><x-lucide name="chevron-right" class="h-5 w-5" /></button>
+                    <button type="button" wire:click="nextYear" @if ($this->dirty) wire:confirm="{{ $unsaved }}" @endif class="rounded-control p-1.5 text-ink-600 hover:bg-panel" aria-label="Año siguiente"><x-lucide name="chevron-right" class="h-5 w-5" /></button>
                 </div>
+                @if ($this->dirty)
+                    <p class="text-label text-warning-600" role="status">Hay metas sin guardar.</p>
+                @endif
                 @if ($canManage)
                     <div class="flex flex-wrap items-center gap-2">
                         <x-btn variant="secondary" wire:click="copyPreviousYear" wire:loading.attr="disabled" data-tour="goals-copy-year">Copiar {{ $year - 1 }}</x-btn>

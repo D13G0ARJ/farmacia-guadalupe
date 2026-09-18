@@ -33,8 +33,14 @@ class AnnualComparison extends Component
 
     public const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
+    /**
+     * Sin tipo: `?anio=abc` o `?anio[]=1` no deben reventar al hidratar; `normalizeYear()` lo deja
+     * siempre en un año válido (M23).
+     *
+     * @var int|string|array<mixed>
+     */
     #[Url(as: 'anio')]
-    public int $year = 0;
+    public $year = 0;
 
     public function mount(): void
     {
@@ -55,29 +61,48 @@ class AnnualComparison extends Component
 
     public function previousYear(): void
     {
-        $this->year--;
+        $this->normalizeYear();
+        $this->year = $this->yearValue() - 1;
         $this->normalizeYear();
     }
 
     public function nextYear(): void
     {
-        $this->year++;
+        $this->normalizeYear();
+        $this->year = $this->yearValue() + 1;
         $this->normalizeYear();
     }
 
     /** Un año fuera de rango (URL editada, flechas sin freno) vuelve al del período activo. */
     private function normalizeYear(): void
     {
-        if ($this->year < 2000 || $this->year > 2100) {
-            $this->year = app(PeriodContext::class)->current()->start->year;
+        $year = filter_var($this->year, FILTER_VALIDATE_INT);
+
+        if ($year === false || $year < 2000 || $year > 2100) {
+            $year = app(PeriodContext::class)->current()->start->year;
         }
+
+        $this->year = $year;
+    }
+
+    private function yearValue(): int
+    {
+        $year = filter_var($this->year, FILTER_VALIDATE_INT);
+
+        return $year === false ? app(PeriodContext::class)->current()->start->year : $year;
     }
 
     public function render(AnnualComparisonQuery $query, CurrencyContext $currency, Formatter $formatter): View
     {
         $user = auth()->user();
-        $branch = app(CurrentBranch::class)->resolve($user);
-        $annual = $query->run($branch?->id, $this->year);
+        $branchContext = app(CurrentBranch::class);
+
+        if (! $branchContext->hasAccess($user)) {
+            return view('livewire.shared.no-branch');
+        }
+
+        $branch = $branchContext->resolve($user);
+        $annual = $query->run($branch?->id, $this->yearValue());
 
         $rows = array_values(array_filter(Indicator::annualOrder(), fn (Indicator $i) => match ($i->unit()) {
             Unit::Bs => $currency->showsBs(),

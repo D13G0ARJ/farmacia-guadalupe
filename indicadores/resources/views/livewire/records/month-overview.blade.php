@@ -15,7 +15,9 @@
             @if ($canReopen)
                 <x-btn variant="secondary" icon="unlock" data-tour="month-reopen" x-on:click="reopenOpen = true">Reabrir</x-btn>
             @endif
-            <x-btn variant="secondary" icon="download" data-tour="month-export" :href="route('exports.month', ['period' => $view->period->key()])">Exportar a Excel</x-btn>
+            @can('reports.export')
+                <x-btn variant="secondary" icon="download" data-tour="month-export" :href="route('exports.month', ['period' => $view->period->key()])">Exportar a Excel</x-btn>
+            @endcan
             <x-btn variant="secondary" icon="printer" data-tour="month-print" x-on:click="window.print()">Imprimir</x-btn>
         </div>
     </div>

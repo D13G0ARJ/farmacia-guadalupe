@@ -19,5 +19,6 @@ final readonly class ImportContext
         public ?string $alreadyImportedAt,
         public int $salesDeviationPct = 35,
         public int $rateDeviationPct = 10,
+        public bool $duplicatePeriodInBatch = false,
     ) {}
 }

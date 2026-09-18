@@ -61,8 +61,13 @@ class AdminPage extends Component
         'admin' => 'Todo lo anterior y esta pantalla: usuarios, sedes y parámetros.',
     ];
 
+    /**
+     * Sin tipo: `?tab[]=x` no debe reventar al hidratar; `normalizeTab()` la deja siempre válida (M23).
+     *
+     * @var string|array<mixed>
+     */
     #[Url]
-    public string $tab = 'usuarios';
+    public $tab = 'usuarios';
 
     public UserForm $userForm;
 
@@ -83,11 +88,13 @@ class AdminPage extends Component
     /** @var array{name: string, email: string, password: string}|null credenciales recién emitidas, para entregarlas */
     public ?array $issued = null;
 
+    /** @var string|array<mixed> */
     #[Url(as: 'tipo')]
-    public string $logType = 'all';
+    public $logType = 'all';
 
+    /** @var string|array<mixed> */
     #[Url(as: 'buscar')]
-    public string $logSearch = '';
+    public $logSearch = '';
 
     public int $logLimit = 50;
 
@@ -95,6 +102,7 @@ class AdminPage extends Component
     {
         abort_unless(auth()->user()->can(Permission::AdminManage->value), 403);
         $this->normalizeTab();
+        $this->normalizeLog();
         $this->settingsForm->fillFromSettings();
     }
 
@@ -137,7 +145,8 @@ class AdminPage extends Component
                 'name' => $this->userForm->name,
                 'email' => $this->userForm->email,
                 'role' => $this->userForm->roleEnum(),
-                'branch_ids' => $this->userForm->needsBranches() ? array_map('intval', $this->userForm->branch_ids) : array_map('intval', $this->userForm->branch_ids),
+                // Dirección y administración ven todas las sedes: no se les asigna ninguna (B18).
+                'branch_ids' => $this->userForm->needsBranches() ? array_map('intval', $this->userForm->branch_ids) : [],
                 'password' => $this->userForm->password !== '' ? $this->userForm->password : null,
             ], auth()->user(), $user);
         } catch (AdminException $e) {
@@ -251,14 +260,13 @@ class AdminPage extends Component
     public function updatedLogType(): void
     {
         $this->logLimit = 50;
-        if (! array_key_exists($this->logType, self::LOG_TYPES)) {
-            $this->logType = 'all';
-        }
+        $this->normalizeLog();
     }
 
     public function updatedLogSearch(): void
     {
         $this->logLimit = 50;
+        $this->normalizeLog();
     }
 
     public function render(ActivityDescriber $describer): View
@@ -308,7 +316,7 @@ class AdminPage extends Component
             $query->where('event', 'settings_updated');
         }
 
-        $search = trim($this->logSearch);
+        $search = trim(is_string($this->logSearch) ? $this->logSearch : '');
         if ($search !== '') {
             $query->whereHas('causer', fn ($q) => $q->where('name', 'like', "%{$search}%"));
         }
@@ -321,8 +329,13 @@ class AdminPage extends Component
 
     private function normalizeTab(): void
     {
-        if (! array_key_exists($this->tab, self::TABS)) {
-            $this->tab = 'usuarios';
-        }
+        $this->tab = is_string($this->tab) && array_key_exists($this->tab, self::TABS) ? $this->tab : 'usuarios';
+    }
+
+    /** Filtros de la bitácora: lo que venga de la URL se queda en valores conocidos (M23). */
+    private function normalizeLog(): void
+    {
+        $this->logType = is_string($this->logType) && array_key_exists($this->logType, self::LOG_TYPES) ? $this->logType : 'all';
+        $this->logSearch = is_string($this->logSearch) ? $this->logSearch : '';
     }
 }

@@ -1,9 +1,10 @@
 @php
-    // Borrador por fecha en el navegador (§13.8): clave por sede y fecha; el día recién guardado limpia el suyo.
-    $savedDate = session()->pull('saved_date'); $draftClear = $savedDate ? 'draft:'.$branchId.':'.$savedDate : '';
+    // Borrador por fecha en el navegador (§13.8): clave por usuario, sede y fecha (M13); el día recién guardado limpia el suyo.
+    $userId = auth()->id();
+    $savedDate = session()->pull('saved_date'); $draftClear = $savedDate ? 'draft:'.$userId.':'.$branchId.':'.$savedDate : '';
 @endphp
 <div class="space-y-6"
-     x-data="dailyPreview($wire, { branch: {{ $branchId }}, edit: {{ $isEdit ? 'true' : 'false' }}, clear: '{{ $draftClear }}' })">
+     x-data="dailyPreview($wire, { branch: {{ $branchId }}, edit: {{ $isEdit ? 'true' : 'false' }}, user: {{ $userId }}, clear: '{{ $draftClear }}' })">
 
     {{-- Título: la fecha con su día de la semana, derivado (RN-02) --}}
     <div class="flex flex-wrap items-end justify-between gap-3">
@@ -51,7 +52,7 @@
             <x-lucide name="lock" class="mt-0.5 h-5 w-5 text-ink-600" />
             <div>
                 <p class="font-medium">{{ $period->label() }} está cerrado{{ $closedSince ? ' desde el '.$closedSince : '' }}.</p>
-                <p class="text-ink-600">Nadie puede editarlo sin reabrirlo. <a href="{{ route('month', ['period' => $period->key()]) }}" wire:navigate class="text-brand-700 hover:underline">{{ auth()->user()->can('reopen', \App\Models\Branch::query()->findOrFail($branchId)) ? 'Reabrir desde el mes' : 'Pedir reapertura a dirección' }}</a></p>
+                <p class="text-ink-600">Nadie puede editarlo sin reabrirlo. <a href="{{ route('month', ['period' => $period->key()]) }}" wire:navigate class="text-brand-700 hover:underline">{{ $canReopen ? 'Reabrir desde el mes' : 'Pedir reapertura a dirección' }}</a></p>
             </div>
         </div>
     @elseif ($readOnly)
@@ -60,6 +61,17 @@
             <div>
                 <p class="font-medium">Este día es de solo lectura.</p>
                 <p class="text-ink-600">{{ $readOnlyReason }}</p>
+            </div>
+        </div>
+    @endif
+
+    {{-- Día cerrado (RN-12): editarlo no lo vuelve normal, y el motivo sigue a la vista --}}
+    @if ($form->closed)
+        <div class="flex items-start gap-3 rounded-card border border-line bg-panel p-4" role="status" data-tour="form-closed-state">
+            <x-lucide name="power" class="mt-0.5 h-5 w-5 text-ink-600" />
+            <div>
+                <p class="font-medium">Día cerrado: ese día no operó.</p>
+                <p class="text-ink-600">{{ $form->notes !== '' ? 'Motivo: '.$form->notes : 'Sin motivo registrado.' }} Sigue contando como día del mes, pero no entra en promedios ni en la proyección. Si ese día sí operó, bórralo y cárgalo de nuevo.</p>
             </div>
         </div>
     @endif
@@ -90,7 +102,7 @@
                     </x-field>
                     <x-field label="Tasa BCV (Bs por $)" for="rate" data-tour="form-rate" :error="$errors->first('form.rate')" :warning="collect($warnings)->firstWhere('field', 'rate')['message'] ?? null" :reference="$reference['rate'] ?? null">
                         <div class="space-y-1.5">
-                            <x-input id="rate" numeric wire:model.live.debounce.500ms="form.rate" x-on:input="rate = $event.target.value" x-on:blur="format($event, 'rate', 2)" placeholder="0,00" :invalid="$errors->has('form.rate')" />
+                            <x-input id="rate" numeric wire:model.live.debounce.500ms="form.rate" x-on:input="rate = $event.target.value" x-on:blur="format($event, 'rate', 2, 4)" placeholder="0,00" :invalid="$errors->has('form.rate')" />
                             @if ($rateLabel)
                                 <x-badge :tone="$rateTone" :icon="$rateTone === 'danger' ? 'warning' : null" title="El BCV no publica fines de semana; se usa la última tasa publicada">{{ $rateLabel }}</x-badge>
                             @endif
@@ -141,7 +153,7 @@
 
             {{-- Observación y día atípico (UC-04) --}}
             <section class="space-y-4">
-                <x-field label="Observación del día" for="notes" data-tour="form-notes" :error="$errors->first('form.notes')" help="Opcional. Obligatoria si marcas el día como atípico.">
+                <x-field label="Observación del día" for="notes" data-tour="form-notes" :error="$errors->first('form.notes')" help="Opcional. Obligatoria si marcas el día como atípico: al menos 10 caracteres.">
                     <textarea id="notes" wire:model.live.debounce.500ms="form.notes" x-on:input="notes = $event.target.value" rows="2" maxlength="500" class="block w-full rounded-control border-line bg-surface px-3 py-2.5 text-body focus:border-brand-500 focus:ring-2 focus:ring-brand-500" placeholder="Por ejemplo: corte de luz de 10 a 12, media jornada"></textarea>
                 </x-field>
                 <label class="flex items-start gap-3" data-tour="form-atypical">

@@ -6,7 +6,8 @@
         .($suffix ? ' pr-12' : '');
 @endphp
 <div class="relative">
-    <input {{ $attributes->merge(['class' => $classes]) }} @if ($numeric) inputmode="decimal" autocomplete="off" x-on:focus="$event.target.select()" @endif>
+    {{-- `inputmode` solo si quien usa el componente no trajo el suyo: si no, el atributo salía dos veces (B26) --}}
+    <input {{ $attributes->merge(['class' => $classes]) }} @if ($numeric) @unless ($attributes->has('inputmode')) inputmode="decimal" @endunless autocomplete="off" x-on:focus="$event.target.select()" @endif>
     @if ($suffix)
         <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-label text-ink-400">{{ $suffix }}</span>
     @endif

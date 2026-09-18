@@ -13,17 +13,19 @@ use Livewire\Form;
 /** Parámetros globales (§4.5, UC-17). Cada campo lleva su explicación en la pantalla. */
 class SettingsForm extends Form
 {
-    public int $sales_deviation_pct = 35;
+    // Los numéricos viajan como texto: un campo vacío o con letras debe dar un mensaje de
+    // validación, no un TypeError al hidratar el formulario (A11). Se convierten en `toValues()`.
+    public string $sales_deviation_pct = '35';
 
-    public int $rate_deviation_pct = 10;
+    public string $rate_deviation_pct = '10';
 
-    public int $operator_edit_window_days = 7;
+    public string $operator_edit_window_days = '7';
 
-    public int $goal_growth_pct = 5;
+    public string $goal_growth_pct = '5';
 
-    public int $goal_on_track_pct = 100;
+    public string $goal_on_track_pct = '100';
 
-    public int $goal_at_risk_pct = 90;
+    public string $goal_at_risk_pct = '90';
 
     public string $goal_currency = 'USD';
 
@@ -31,7 +33,7 @@ class SettingsForm extends Form
 
     public string $app_name = '';
 
-    public int $report_email_day = 0;
+    public string $report_email_day = '0';
 
     public string $report_recipients = '';
 
@@ -39,15 +41,15 @@ class SettingsForm extends Form
 
     public function fillFromSettings(): void
     {
-        $this->report_email_day = (int) Setting::get('report_email_day');
+        $this->report_email_day = (string) (int) Setting::get('report_email_day');
         $this->report_recipients = (string) Setting::get('report_recipients');
         $this->close_reminder_enabled = (bool) Setting::get('close_reminder_enabled');
-        $this->sales_deviation_pct = (int) Setting::get('sales_deviation_pct');
-        $this->rate_deviation_pct = (int) Setting::get('rate_deviation_pct');
-        $this->operator_edit_window_days = (int) Setting::get('operator_edit_window_days');
-        $this->goal_growth_pct = (int) Setting::get('goal_growth_pct');
-        $this->goal_on_track_pct = (int) Setting::get('goal_on_track_pct');
-        $this->goal_at_risk_pct = (int) Setting::get('goal_at_risk_pct');
+        $this->sales_deviation_pct = (string) (int) Setting::get('sales_deviation_pct');
+        $this->rate_deviation_pct = (string) (int) Setting::get('rate_deviation_pct');
+        $this->operator_edit_window_days = (string) (int) Setting::get('operator_edit_window_days');
+        $this->goal_growth_pct = (string) (int) Setting::get('goal_growth_pct');
+        $this->goal_on_track_pct = (string) (int) Setting::get('goal_on_track_pct');
+        $this->goal_at_risk_pct = (string) (int) Setting::get('goal_at_risk_pct');
         $this->goal_currency = (string) Setting::get('goal_currency');
         $margin = Setting::get('gross_margin_pct');
         $this->gross_margin_pct = $margin === null ? '' : (string) $margin;
@@ -95,16 +97,16 @@ class SettingsForm extends Form
     public function toValues(): array
     {
         return [
-            'sales_deviation_pct' => $this->sales_deviation_pct,
-            'rate_deviation_pct' => $this->rate_deviation_pct,
-            'operator_edit_window_days' => $this->operator_edit_window_days,
-            'goal_growth_pct' => $this->goal_growth_pct,
-            'goal_on_track_pct' => $this->goal_on_track_pct,
-            'goal_at_risk_pct' => $this->goal_at_risk_pct,
+            'sales_deviation_pct' => (int) $this->sales_deviation_pct,
+            'rate_deviation_pct' => (int) $this->rate_deviation_pct,
+            'operator_edit_window_days' => (int) $this->operator_edit_window_days,
+            'goal_growth_pct' => (int) $this->goal_growth_pct,
+            'goal_on_track_pct' => (int) $this->goal_on_track_pct,
+            'goal_at_risk_pct' => (int) $this->goal_at_risk_pct,
             'goal_currency' => $this->goal_currency,
             'gross_margin_pct' => $this->gross_margin_pct === '' ? null : (float) $this->gross_margin_pct,
             'app_name' => trim($this->app_name),
-            'report_email_day' => $this->report_email_day,
+            'report_email_day' => (int) $this->report_email_day,
             'report_recipients' => implode(', ', SendMonthlyReport::recipients($this->report_recipients)),
             'close_reminder_enabled' => $this->close_reminder_enabled,
         ];

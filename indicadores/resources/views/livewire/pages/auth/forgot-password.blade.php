@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Support\Facades\Password;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -16,7 +17,27 @@ new #[Layout('layouts.guest')] #[Title('Recuperar contraseña')] class extends C
             'email' => ['required', 'string', 'email'],
         ]);
 
-        $status = Password::sendResetLink($this->only('email'));
+        $email = mb_strtolower(trim($this->email));
+
+        // A quien tiene el acceso desactivado no se le manda enlace, y se le responde lo mismo que a
+        // los demás para no delatar quién existe ni quién está activo (B21).
+        $user = User::query()->where('email', $email)->first();
+        if ($user !== null && ! $user->is_active) {
+            $this->reset('email');
+            session()->flash('status', __(Password::RESET_LINK_SENT));
+
+            return;
+        }
+
+        try {
+            $status = Password::sendResetLink(['email' => $email]);
+        } catch (Throwable $e) {
+            // Correo mal configurado o servidor caído: se dice qué hacer, no una pantalla de error (M27).
+            report($e);
+            $this->addError('email', 'No se pudo enviar el correo. Pide al administrador una contraseña temporal.');
+
+            return;
+        }
 
         if ($status != Password::RESET_LINK_SENT) {
             $this->addError('email', __($status));

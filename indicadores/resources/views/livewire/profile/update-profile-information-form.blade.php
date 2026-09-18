@@ -23,8 +23,19 @@ new class extends Component
             ['name.required' => 'Escribe tu nombre.', 'name.min' => 'El nombre es muy corto.'],
         );
 
+        $old = $user->name;
         $user->fill($validated);
         $user->save();
+
+        // La bitácora cuenta quién es quién: si alguien se cambia el nombre, queda dicho (B19).
+        if ($old !== $user->name) {
+            activity()
+                ->performedOn($user)
+                ->causedBy($user)
+                ->event('name_changed')
+                ->withProperties(['old' => ['name' => $old], 'attributes' => ['name' => $user->name]])
+                ->log('name_changed');
+        }
 
         $this->dispatch('toast', type: 'success', message: 'Nombre guardado.');
     }

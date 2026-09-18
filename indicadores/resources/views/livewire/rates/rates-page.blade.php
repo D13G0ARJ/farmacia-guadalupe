@@ -14,7 +14,8 @@
             @if ($status['automatic'])
                 <x-btn variant="secondary" icon="download" data-tour="rates-backfill" wire:click="$set('backfillDialog', true)">Traer histórico del BCV</x-btn>
             @endif
-            @if ($branch !== null)
+            {{-- Un mes cerrado no se recalcula (RN-13): el botón no está mientras siga cerrado --}}
+            @if ($branch !== null && ! $closed)
                 <x-btn variant="secondary" icon="history" data-tour="rates-recalc" wire:click="$set('recalcDialog', true)">Recalcular el mes</x-btn>
             @endif
         </div>
@@ -45,6 +46,9 @@
             @if ($status['detail'])<p class="text-label text-ink-600">{{ $status['detail'] }}</p>@endif
             @if ($status['error'])<p class="text-label text-warning-600">{{ $status['error'] }}</p>@endif
             <p class="mt-1 text-label text-ink-400">Los fines de semana no hay publicación: se usa la última tasa (arrastrada). Una tasa escrita a mano nunca la pisa la automática.</p>
+            @if ($closed)
+                <p class="mt-1 text-label text-ink-600">{{ $periodLabel }} está cerrado en {{ $branch?->name }}: sus días conservan su tasa y no se pueden recalcular hasta que dirección lo reabra.</p>
+            @endif
         </div>
         <dl class="grid grid-cols-3 gap-4 text-center">
             <div><dt class="text-label text-ink-600">Publicadas</dt><dd class="text-sub tnum font-semibold text-ink-900">{{ $published }}</dd></div>
@@ -65,7 +69,9 @@
         <x-chart-panel :spec="$specs['rate']" wire:key="rate-chart-{{ $period }}" />
     </section>
 
-    <section class="overflow-x-auto rounded-card border border-line bg-surface" aria-label="Tasas del mes" data-tour="rates-table">
+    {{-- `relative` a propósito: sin él, el <span class="sr-only"> del encabezado se posiciona respecto
+         al documento y escapa del scroll horizontal, desbordando la página en móvil. --}}
+    <section class="relative overflow-x-auto rounded-card border border-line bg-surface" aria-label="Tasas del mes" data-tour="rates-table">
         <table class="w-full min-w-[720px] border-collapse text-body">
             <thead class="bg-panel text-label text-ink-600">
                 <tr>
@@ -126,7 +132,7 @@
         </table>
     </section>
 
-    @if ($branch !== null)
+    @if ($branch !== null && ! $closed)
         <x-dialog show="$wire.recalcDialog" id="recalc-dialog" data-tour="dialog-recalc" :title="'Recalcular las tasas de '.mb_strtolower($periodLabel)">
             <p>Cada día cargado guarda la tasa con la que se cargó. Al recalcular, los días de <span class="font-medium text-ink-900">{{ $branch->name }}</span> toman la tasa de esta tabla y sus ventas en dólares cambian.</p>
             <p class="text-ink-900">{{ $pending === 0 ? 'Ningún día necesita cambios.' : ($pending === 1 ? 'Cambiaría 1 día.' : "Cambiarían {$pending} días.") }} Queda en la bitácora.</p>
