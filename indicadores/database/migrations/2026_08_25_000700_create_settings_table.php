@@ -13,7 +13,9 @@ return new class extends Migration
         Schema::create('settings', function (Blueprint $table): void {
             $table->id();
             $table->string('key', 80);
-            $table->foreignId('branch_id')->nullable()->constrained()->cascadeOnDelete(); // null = global
+            // restrictOnDelete (no cascade): MySQL 8 no permite acción en cascada
+            // sobre la columna base de una columna generada almacenada (branch_key).
+            $table->foreignId('branch_id')->nullable()->constrained()->restrictOnDelete(); // null = global
             $table->json('value');
             $table->timestamps();
 

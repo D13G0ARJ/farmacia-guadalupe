@@ -12,7 +12,9 @@ return new class extends Migration
     {
         Schema::create('goals', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('branch_id')->nullable()->constrained()->cascadeOnDelete(); // null = consolidado
+            // restrictOnDelete (no cascade): MySQL 8 no permite acción en cascada
+            // sobre la columna base de una columna generada almacenada (branch_key).
+            $table->foreignId('branch_id')->nullable()->constrained()->restrictOnDelete(); // null = consolidado
             $table->string('indicator', 40); // Indicator enum
             $table->date('period'); // primer día del mes
             $table->string('period_type', 10)->default('month'); // previsto para P10 (semanal), no expuesto
