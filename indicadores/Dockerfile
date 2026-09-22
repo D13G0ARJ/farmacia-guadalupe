@@ -14,7 +14,8 @@ RUN composer install \
       --no-interaction \
       --no-progress \
       --no-scripts \
-      --prefer-dist
+      --prefer-dist \
+      --ignore-platform-reqs
 
 # ---------- Etapa 2: assets de frontend (Vite) ----------
 FROM node:20-bookworm-slim AS assets
