@@ -8,6 +8,7 @@ use App\Enums\RateSource;
 use App\Models\ExchangeRate;
 use App\Models\User;
 use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Carbon\CarbonImmutable;
 
 /**
@@ -24,6 +25,10 @@ final class UpsertExchangeRate
             return $existing;
         }
 
+        if ($source === RateSource::Bcv) {
+            $rate = self::official($rate);
+        }
+
         $attributes = [
             'rate' => $rate,
             'source' => $source,
@@ -38,5 +43,14 @@ final class UpsertExchangeRate
         $existing->fill($attributes)->save();
 
         return $existing;
+    }
+
+    /**
+     * Regla de la farmacia (RN-27): la tasa automática del BCV se toma con dos decimales cortando el
+     * tercero, nunca redondeando. 853,499 se guarda como 853,49, igual que la copiaban a mano.
+     */
+    public static function official(BigDecimal $rate): BigDecimal
+    {
+        return $rate->toScale(2, RoundingMode::Down);
     }
 }

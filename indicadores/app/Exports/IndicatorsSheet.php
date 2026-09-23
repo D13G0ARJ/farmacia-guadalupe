@@ -13,6 +13,7 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
@@ -44,9 +45,12 @@ final class IndicatorsSheet implements FromArray, ShouldAutoSize, WithColumnForm
      */
     public function array(): array
     {
+        // Misma disposición que el cuadro original: título en la fila 2 (B2 mes, C2 razón social) y encabezados
+        // en la 3, así el importador lo vuelve a leer. Una fila vacía se escribe como [null]: un [] la biblioteca
+        // lo descarta y los estilos se correrían una fila.
         $rows = [
+            [null],
             [null, $this->view->period->monthNameUpper(), $this->legalName],
-            [],
             self::HEADINGS,
         ];
 
@@ -54,7 +58,7 @@ final class IndicatorsSheet implements FromArray, ShouldAutoSize, WithColumnForm
             $rows[] = $this->row($m);
         }
 
-        $rows[] = [];
+        $rows[] = [null];
         $rows[] = $this->totals();
 
         return $rows;
@@ -66,6 +70,7 @@ final class IndicatorsSheet implements FromArray, ShouldAutoSize, WithColumnForm
     public function columnFormats(): array
     {
         return [
+            'B' => 'dd/mm/yyyy',
             'C' => '#,##0.00', 'D' => '0', 'E' => '#,##0.00', 'H' => '#,##0', 'I' => '0.0', 'J' => '0.0',
             'K' => '#,##0', 'L' => '#,##0', 'M' => '0',
         ];
@@ -79,7 +84,7 @@ final class IndicatorsSheet implements FromArray, ShouldAutoSize, WithColumnForm
         $lastRow = 3 + count($this->view->rows) + 2;
 
         return [
-            1 => ['font' => ['bold' => true, 'size' => 12]],
+            2 => ['font' => ['bold' => true, 'size' => 12]],
             3 => [
                 'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1D6FE5']],
@@ -96,7 +101,8 @@ final class IndicatorsSheet implements FromArray, ShouldAutoSize, WithColumnForm
     {
         return [
             $this->formatter->weekday($m->data->date),
-            $m->data->date->format('d/m/Y'),
+            // Fecha real de Excel (no texto): se ordena, se filtra y el importador la vuelve a leer.
+            ExcelDate::PHPToExcel($m->data->date),
             self::num($m->data->salesBs),
             self::num($m->salesUsd),
             self::num($m->data->rate),

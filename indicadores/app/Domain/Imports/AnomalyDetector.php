@@ -52,8 +52,9 @@ final class AnomalyDetector
             }
         }
 
+        // Hoy todavía no terminó: solo los días ya pasados pueden faltar (el mes en curso se importa a medias).
         foreach ($period->dates() as $date) {
-            if ($date->lte(CarbonImmutable::today()) && ! isset($byDate[$date->toDateString()])) {
+            if ($date->lt(CarbonImmutable::today()) && ! isset($byDate[$date->toDateString()])) {
                 $anomalies[] = new Anomaly(AnomalyType::MissingDay, 'No hay fila para el '.$this->formatter->date($date, 'weekday').'.', $date->toDateString());
             }
         }
@@ -133,8 +134,9 @@ final class AnomalyDetector
                 $anomalies[] = new Anomaly(AnomalyType::WeekdayMismatch, "El {$label} dice \"{$letter}\" y es ".$this->formatter->weekday($carbon).'. Se usa el día real.', $date, $row->row);
             }
 
+            // El cuadro trae la tasa con 2 decimales y el BCV publica 4: 801,18 y 801,1752 son la misma tasa.
             $existing = $context->existingRates[$date] ?? null;
-            if ($existing !== null && ! BigDecimal::of($existing)->isEqualTo($rate)) {
+            if ($existing !== null && ! BigDecimal::of($existing)->toScale(2, RoundingMode::HalfUp)->isEqualTo($rate->toScale(2, RoundingMode::HalfUp))) {
                 $anomalies[] = new Anomaly(AnomalyType::RateConflict, "El {$label} ya tiene tasa ".$this->formatter->number($existing, 2).' registrada y el archivo trae '.$this->formatter->number($rate, 2).'.', $date, $row->row);
             }
 

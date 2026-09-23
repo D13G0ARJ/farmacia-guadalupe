@@ -45,7 +45,7 @@
             <p class="font-medium text-ink-900">{{ $status['headline'] }}</p>
             @if ($status['detail'])<p class="text-label text-ink-600">{{ $status['detail'] }}</p>@endif
             @if ($status['error'])<p class="text-label text-warning-600">{{ $status['error'] }}</p>@endif
-            <p class="mt-1 text-label text-ink-400">Los fines de semana no hay publicación: se usa la última tasa (arrastrada). Una tasa escrita a mano nunca la pisa la automática.</p>
+            <p class="mt-1 text-label text-ink-400">Sábados, domingos y feriados usan la tasa del siguiente día hábil, que el BCV publica el viernes en la tarde (arrastrada). Una tasa escrita a mano nunca la pisa la automática.</p>
             @if ($closed)
                 <p class="mt-1 text-label text-ink-600">{{ $periodLabel }} está cerrado en {{ $branch?->name }}: sus días conservan su tasa y no se pueden recalcular hasta que dirección lo reabra.</p>
             @endif

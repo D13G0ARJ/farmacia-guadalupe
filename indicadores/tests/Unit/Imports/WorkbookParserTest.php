@@ -62,6 +62,34 @@ it('lee el archivo real: mes, razón social, 30 filas con primarios exactos y s�
         ->and($saturday->inventoryValueUsd)->toBeNull();
 });
 
+it('omite las filas de plantilla del mes en curso: con fecha pero sin cifras del día', function (): void {
+    $path = workbook(['month' => 'SEPTIEMBRE'], [
+        ['M', '2026-09-01', 622156.02, null, 798.33, 155, 300, null, null, null, 13006, 32073.17, null, 3],
+        ['M', '2026-09-02', 535831.11, null, 801.18, 101, 229, null, null, null, 12782, 31622.54, null, 3],
+        ['M', '2026-09-23', null, null, 853.49, null, null, null, null, null, null, null, null, 3],   // solo la tasa y la jornada
+        ['J', '2026-09-24', null, null, null, null, null, null, null, null, null, null, null, 3],     // solo la jornada prellenada
+        ['V', '2026-09-25', 100.5, null, null, null, null, null, null, null, null, null, null, 3],    // sí trae venta: es un día a medias
+    ]);
+    $month = (new WorkbookParser)->parse($path);
+
+    expect(array_map(fn ($r) => $r->date, $month->rows))->toBe(['2026-09-01', '2026-09-02', '2026-09-25'])
+        ->and($month->period)->toBe('2026-09')
+        ->and($month->anomalies)->toBe([]);
+});
+
+it('acepta fechas escritas como texto dd/mm/aaaa y encabezados con espacios distintos', function (): void {
+    $headers = ['Día', 'Fecha', 'Venta Bs', 'Venta en $', 'Tasa $', 'TRN', 'Unidades', 'Ticket promedio', 'Unidades promedio x compra', 'Ticket promedio en $', 'Unidades cargadas (inventario)', 'Valuación de inventario costo', 'Transacciones / jornadas', 'Jornada'];
+    $path = workbook(['month' => 'SEPTIEMBRE', 'headers' => $headers], [
+        ['mar', '01/09/2026', 622156.02, null, 798.33, 155, 300, null, null, null, 13006, 32073.17, null, 3],
+        ['mié', '2/9/2026', 535831.11, null, 801.18, 101, 229, null, null, null, 12782, 31622.54, null, 3],
+        ['x', '31/02/2026', 1, null, 1, 1, 1, null, null, null, null, null, null, 3], // no existe: no es fecha
+    ]);
+    $month = (new WorkbookParser)->parse($path);
+
+    expect(array_map(fn ($r) => $r->date, $month->rows))->toBe(['2026-09-01', '2026-09-02'])
+        ->and($month->anomalies)->toBe([]);
+});
+
 it('toma el mes de las fechas y avisa si el encabezado dice otro', function (): void {
     $path = workbook(['month' => 'OCTUBRE'], [
         ['L', '2025-11-03', 1000, null, 100, 10, 20, null, null, null, 500, 900, null, 3],

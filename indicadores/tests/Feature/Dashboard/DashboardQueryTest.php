@@ -85,7 +85,8 @@ it('avisa de los días faltantes y de la tasa de hoy arrastrada', function (): v
     expect($texts[0])->toBe('Faltan 4 días por cargar: 19, 20, 21, 22.')
         ->and($dashboard->notices[0]['action'])->toBe('Cargar el primero')
         ->and($dashboard->notices[0]['href'])->toBe(route('records.create', ['date' => '2025-09-19']))
-        ->and($texts[1])->toContain('arrastrada del dom 21/09')
+        // Sin tasa del lunes, se usa la del siguiente día publicado (RN-07): el martes 23
+        ->and($texts[1])->toContain('arrastrada del mar 23/09')
         ->and($dashboard->partialDays)->toBe(18);
 });
 

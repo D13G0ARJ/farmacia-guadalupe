@@ -43,6 +43,7 @@ En desarrollo el sistema trae septiembre 2025 real y agosto sintético para que 
 php artisan demo:clear --force                 # borra días, tasas, metas, cierres, importaciones, bitácora y usuarios de demostración
 php artisan rates:backfill --from=2025-01-01   # histórico oficial del BCV desde esa fecha (libros trimestrales)
 php artisan rates:fetch                        # trae la tasa BCV de hoy y del siguiente día hábil
+php artisan rates:normalize                    # una sola vez tras actualizar a la regla RN-27: corta a 2 decimales las tasas BCV ya guardadas (--dry-run para ver cuántas)
 ```
 
 El histórico también se trae desde la pantalla Tasa BCV ("Traer histórico del BCV"). Solo agrega los días que no tienen tasa; hace falta antes de importar cuadros de meses viejos para que los días sin tasa propia se completen con la oficial.

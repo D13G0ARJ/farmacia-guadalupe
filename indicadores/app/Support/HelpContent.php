@@ -33,7 +33,7 @@ final class HelpContent
                 'title' => 'Cargar día',
                 'intro' => 'Se escriben solo los datos primarios; el sistema calcula el resto y lo muestra a la derecha antes de guardar.',
                 'items' => [
-                    'La tasa BCV se propone sola. Si un día no hay publicación (fines de semana), se arrastra la última.',
+                    'La tasa BCV se propone sola. Sábados, domingos y feriados usan la del siguiente día hábil, que el BCV publica el viernes en la tarde.',
                     'Las advertencias en ámbar no bloquean: revisa el dato o guarda de todos modos.',
                     'Lo que escribes queda guardado en este navegador hasta que el día se guarde en el sistema.',
                     'Un día atípico (corte de luz, media jornada) cuenta en los totales, pero no en los promedios ni en la proyección.',

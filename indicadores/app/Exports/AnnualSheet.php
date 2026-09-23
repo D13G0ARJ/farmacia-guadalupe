@@ -52,7 +52,7 @@ final class AnnualSheet implements FromArray, ShouldAutoSize, WithColumnFormatti
     {
         $rows = [
             [null, 'Año '.$this->annual->year],
-            [],
+            [null], // un [] lo descarta la biblioteca y el encabezado se corre de fila
             ['#', 'Mes', ...self::MONTHS, 'Total / Prom. año'],
         ];
 

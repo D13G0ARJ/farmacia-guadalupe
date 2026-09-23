@@ -122,6 +122,22 @@ it('avisa de mes ya importado, mismo archivo ya importado y tasa en conflicto', 
         ->and(array_map(fn (Anomaly $a) => $a->id(), array_filter($conflict, fn (Anomaly $a) => $a->type === AnomalyType::RateConflict)))->toBe(['rate_conflict:2025-09-02']);
 });
 
+it('en el mes en curso el día de hoy no es un faltante, y una tasa igual al céntimo no es conflicto', function (): void {
+    CarbonImmutable::setTestNow('2025-09-16 10:00:00');
+    $detector = new AnomalyDetector(new Formatter);
+    $rows = array_values(array_filter(septemberParsed()->rows, fn (ParsedRow $r) => $r->date < '2025-09-15'));
+
+    $anomalies = $detector->detect(new ParsedMonth('2025-09', 'SEPTIEMBRE', null, $rows), importContext([
+        // El BCV publica 4 decimales y el cuadro trae 2: solo cuenta la diferencia al céntimo.
+        'existingRates' => ['2025-09-01' => '148.4449', '2025-09-02' => '149.4600', '2025-09-03' => '150.7950'],
+    ]));
+    $ids = array_map(fn (Anomaly $a) => $a->id(), $anomalies);
+
+    expect($ids)->toContain('missing_day:2025-09-15')
+        ->and($ids)->not->toContain('missing_day:2025-09-16', 'missing_day:2025-09-17')
+        ->and(array_values(array_filter($ids, fn (string $id) => str_starts_with($id, 'rate_conflict'))))->toBe(['rate_conflict:2025-09-03']);
+});
+
 it('marca la fórmula rota del archivo como informativa', function (): void {
     $base = septemberParsed();
     $rows = $base->rows;

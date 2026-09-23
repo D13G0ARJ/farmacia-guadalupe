@@ -11,6 +11,7 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
@@ -33,7 +34,7 @@ final class RatesSheet implements FromArray, ShouldAutoSize, WithColumnFormattin
         $rows = [['Fecha', 'Tasa (Bs por $)', 'Fuente', 'Fijada por']];
         foreach ($this->rates as $rate) {
             $rows[] = [
-                $rate->date->format('d/m/Y'),
+                ExcelDate::PHPToExcel($rate->date),
                 IndicatorsSheet::num($rate->rate),
                 $rate->source->label(),
                 $rate->setter !== null ? $rate->setter->name : ($rate->source->value === 'bcv' ? 'BCV (automática)' : null),
@@ -48,7 +49,7 @@ final class RatesSheet implements FromArray, ShouldAutoSize, WithColumnFormattin
      */
     public function columnFormats(): array
     {
-        return ['B' => '#,##0.0000'];
+        return ['A' => 'dd/mm/yyyy', 'B' => '#,##0.0000'];
     }
 
     /**

@@ -7,6 +7,7 @@ namespace App\Domain\Imports;
 use App\Enums\AnomalyType;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -23,7 +24,7 @@ final class WorkbookParser
     private const HEADERS = [
         '#', 'fecha', 'venta bs', 'venta en $', 'tasa $', 'trn', 'unidades', 'ticket promedio',
         'unidades promedio x compra', 'ticket promedio en $', 'unidades cargadas (inventario)',
-        'valuacion de inventario costo', 'transacciones/ jornadas', 'jornada',
+        'valuacion de inventario costo', 'transacciones/jornadas', 'jornada',
     ];
 
     /** Columnas primarias (índice 0 = A): B, C, E, F, G, N. */
@@ -88,6 +89,13 @@ final class WorkbookParser
                 continue;
             }
             $blankStreak = 0;
+            // El cuadro del mes en curso trae la plantilla completa: fechas y "Jornada 3" ya escritos para los
+            // días que aún no llegan. Una fila con fecha pero sin ninguna cifra del día no es un dato, es plantilla.
+            if (self::isTemplateRow($sheet, $r)) {
+                $r++;
+
+                continue;
+            }
             $rows[] = new ParsedRow(
                 row: $r,
                 date: $date->toDateString(),
@@ -185,6 +193,21 @@ final class WorkbookParser
     }
 
     /**
+     * Fila de plantilla: tiene fecha (y quizá la tasa o las jornadas prellenadas) pero ninguna cifra del día.
+     * Así viene el cuadro del mes en curso para los días que aún no se han trabajado.
+     */
+    private static function isTemplateRow(Worksheet $sheet, int $row): bool
+    {
+        foreach ([3, 6, 7, 11, 12] as $column) {
+            if (self::decimal($sheet->getCell([$column, $row])->getValue()) !== null) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Distingue un día al que le falta la fecha de la fila de totales: la plantilla siempre
      * escribe la letra del día en la columna A, y la de totales la deja vacía.
      */
@@ -229,7 +252,14 @@ final class WorkbookParser
     {
         $value = mb_strtolower(trim($value));
         $value = (string) preg_replace('/\s+/u', ' ', str_replace(["\n", "\r"], ' ', $value));
-        $value = (string) iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+        // Sin acentos de forma portable: iconv en Windows convierte "día" en "d'ia".
+        $value = Str::ascii($value);
+        // "Transacciones / jornadas" y "Transacciones/ Jornadas" son la misma columna.
+        $value = (string) preg_replace('/\s*\/\s*/', '/', $value);
+        // El Excel que exporta el sistema titula "Día" la columna de la letra; el original pone "#".
+        if ($value === 'dia') {
+            $value = '#';
+        }
 
         return trim($value);
     }
@@ -263,6 +293,10 @@ final class WorkbookParser
         }
         if (is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}$/', trim($value)) === 1) {
             return CarbonImmutable::parse(trim($value))->startOfDay();
+        }
+        // Fecha escrita como texto "01/09/2026" (celda con formato de texto o copiada de otro sistema).
+        if (is_string($value) && preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', trim($value), $m) === 1 && checkdate((int) $m[2], (int) $m[1], (int) $m[3])) {
+            return CarbonImmutable::create((int) $m[3], (int) $m[2], (int) $m[1])->startOfDay();
         }
 
         return null;

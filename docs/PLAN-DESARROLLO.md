@@ -163,7 +163,7 @@ Nota: el orden 9/10 está invertido respecto a las columnas diarias (L antes que
 | H1 | La columna A está corrida +4 días en 30/30 registros | Copiada de la plantilla de agosto (agosto 2025 inicia en viernes) | El día de la semana **nunca se captura**; se deriva de la fecha |
 | H2 | La valuación de inventario está en **USD** | `L4 = 21.848,73` con venta diaria de Bs 91.154 (≈ $614); en Bs equivaldría a $147, absurdo | `inventory_value` se captura y almacena en USD; se muestra en Bs convertido si se pide |
 | H3 | No hay conteo de inventario los **sábados**: 4 de 4 sábados sin K ni L | Los domingos **sí** tienen conteo (7/9, 14/9, 21/9, 28/9 con datos) | Config por sede `inventory_days` = todos menos sábado (por defecto); los campos se ocultan en días sin conteo |
-| H4 | La tasa se repite sábado y domingo (8 de 9 repeticiones) y nunca decrece | Comportamiento del BCV, que no publica fines de semana | Regla de **arrastre**: en día sin publicación se usa la última tasa publicada, marcada como `carried` |
+| H4 | La tasa se repite sábado y domingo (8 de 9 repeticiones) y nunca decrece | Comportamiento del BCV, que no publica fines de semana | Regla de **arrastre** (RN-07, corregida el 23-09-2026 con el cliente): en día sin publicación se usa la tasa del siguiente día hábil, que el BCV publica el viernes en la tarde; marcada como `carried` |
 | H5 | Un día atípico (16/9: 28 % de un día normal, 32 TRN, jornadas = 3) sin lugar donde explicarlo | Único outlier por Tukey | Campo `notes` + marca `is_atypical` + exclusión opcional de promedios y proyección |
 | H6 | Jornadas: 3 en 28 días, 4 en 2 días (1/9 y 7/9) | Columna N | Valor por defecto configurable por sede = 3 |
 | H7 | Venta en $ se muestra sin decimales; ticket Bs sin decimales; ratios con 1 decimal | Formatos de número | Tabla de precisión de presentación (2.2), configurable |
@@ -210,7 +210,7 @@ Numeradas para trazabilidad en código, pruebas y casos de uso.
 | RN-04 | Los agregados de período usan ratios ponderados: `Σnumerador / Σdenominador`. Nunca promedio de ratios. |
 | RN-05 | La venta en divisa del período es la suma de las conversiones diarias, cada una a su propia tasa. |
 | RN-06 | Cada registro diario **congela** la tasa aplicada (`exchange_rate` snapshot). Corregir la tabla de tasas después no altera registros existentes salvo acción explícita "recalcular". |
-| RN-07 | La tasa de un día sin publicación BCV es la última publicada anterior (arrastre), con `source = carried`. |
+| RN-07 | La tasa de un día sin publicación BCV (sábado, domingo, feriado) es la del **siguiente** día hábil publicado, porque el BCV publica el viernes en la tarde la que rige el lunes (y si el lunes es feriado, la del martes); se busca hasta 7 días adelante. Si aún no está publicada, la última anterior. En ambos casos `source = carried`. Regla confirmada por el cliente el 23-09-2026 (antes se arrastraba la anterior). |
 | RN-08 | La tasa es global (nacional), no por sede. |
 | RN-09 | Los campos de inventario son opcionales en los días configurados sin conteo (por defecto sábados). En los demás días su ausencia genera **advertencia**, no bloqueo. |
 | RN-10 | La valuación de inventario se captura en USD. |
@@ -230,6 +230,7 @@ Numeradas para trazabilidad en código, pruebas y casos de uso.
 | RN-24 | Un día cerrado (sin operación) también almacena la tasa resuelta para esa fecha, para que la serie de tasas del mes sea continua. |
 | RN-25 | "Hoy" y "fecha futura" se evalúan en `America/Caracas`, no en la zona del servidor ni del navegador. |
 | RN-26 | La vista previa de derivados en el formulario se calcula en el navegador; el servidor recalcula al guardar y es la única fuente de verdad. Ambas implementaciones deben coincidir (prueba de paridad). |
+| RN-27 | La tasa automática del BCV se guarda con dos decimales **cortando** el tercero, nunca redondeando (853,499 → 853,49), como la copiaba la farmacia a mano. Regla del cliente (23-09-2026). Las tasas escritas a mano se guardan tal cual. `rates:normalize` corrige las ya guardadas. |
 
 ---
 
@@ -944,7 +945,7 @@ Contraste verificado: `brand-600` sobre blanco 4,7:1; `ink-600` sobre blanco 7,4
 | **Tabla del mes** | Dos filas de encabezado: grupos (Fecha · Ventas · Operación · Promedios · Inventario) y columnas. Columna de fecha fija a la izquierda; fila de totales fija al pie con etiqueta "Total del mes (ponderado)". Filas 40 px, cebra `brand-50` cada 2, hairlines, números a la derecha, unidades en el encabezado no en las celdas. En < 1280 px se ocultan las 5 columnas calculadas tras "Mostrar cálculos". Clic en fila = editar; badge de estado junto a la fecha |
 | **Formulario del día** | Tres grupos con título: **Ventas del día** (venta en Bs, tasa BCV), **Operación** (transacciones, unidades vendidas, jornadas), **Inventario** (unidades en inventario, valuación en $; plegado en días sin conteo). Etiquetas con la unidad dentro: "Venta del día (Bs)", "Tasa BCV (Bs por $)", "Jornadas (turnos)". Bajo cada campo, en 13 px `ink-400`, la referencia del último día cargado: "Ayer: 149,46". Panel derecho "Se calculará" fijo, con los cinco derivados en 22 px tabulares. Borrador guardado en el navegador por fecha (si se cierra la pestaña, se recupera). Dos columnas en ≥ 1024 px; una en móvil con el panel calculado al final |
 | **Input numérico** | `inputmode=decimal`; acepta `,` y `.`; formatea es-VE al perder foco; selecciona todo al enfocar; sin spinners; unidad como sufijo visual dentro del campo cuando ayuda ("Bs", "$") |
-| **Insignia de tasa** | Píldora junto al campo: `brand-100` "BCV 25/08", `ink-100` "Arrastrada del viernes 22/08", `warning-100` "Manual". Tooltip: "El BCV no publica fines de semana; se usa la última tasa" |
+| **Insignia de tasa** | Píldora junto al campo: `brand-100` "BCV 25/08", `ink-100` "Arrastrada del viernes 22/08", `warning-100` "Manual". Tooltip: "El BCV no publica fines de semana; se usa la del siguiente día hábil" |
 | **Advertencias en línea** | Aparecen bajo el campo mientras se escribe, en ámbar, con la comparación concreta: "Es 90 % menor que ayer (149,46)". **Sin modal**: al pulsar Guardar con advertencias, sobre el botón aparece una franja ámbar "2 advertencias sin revisar" con dos acciones, **Revisar** (lleva al primer campo) y **Guardar de todos modos**; el foco pasa a la franja. Los guardados con advertencia quedan marcados para revisión del supervisor |
 | **Calendario del mes** | 7 columnas lun→dom, semanas etiquetadas "1–7", "8–14"…; celda: número del día + estado; en ≥ 1024 px además la venta en $ corta. Colores: cargado `brand-100`, faltante `warning-100` con borde punteado, atípico `accent-100`, cerrado `ink-100`, futuro atenuado. Tap en faltante abre el formulario con esa fecha |
 | **Gráfica** | Sin marco. Título 17 px, subtítulo con período en `ink-600`, menú discreto (ampliar, PNG, ver datos). Leyenda clicable; tooltip con "mié 24/09 · $ 854 · 161 transacciones". Altura 280 px en escritorio, 220 en móvil |
@@ -1155,7 +1156,7 @@ Cambiar período, sede o moneda no toca JavaScript: cambia el JSON.
 | `WeekdayDerivationTest` | 2025-09-01 → lunes; los 30 días del fixture |
 | `WeekdayPatternTest` | con el fixture: miércoles peso máximo, martes mínimo |
 | `GoalProjectorTest` | lineal y por patrón; estados en umbrales 100/90; ratios no acumulan |
-| `RateResolverTest` | sábado 06/09 → arrastre del viernes 05/09 (152,82), `source=carried` |
+| `RateResolverTest` | sábado 06/09 → tasa del lunes 08/09 (154,01), `source=carried`; si el lunes aún no está publicado, la del viernes 05/09 |
 | `FormatterTest` | `91154.02` → `Bs 91.154,02`; `0.1965` → `+19,7 %` |
 | `WorkbookParserTest` | parsea el archivo real: 30 filas, mes `SEPTIEMBRE`, 5 nulos en K/L, 30 `weekday_mismatch`, 0 `derived_mismatch` |
 | `AnomalyDetectorTest` | fixture modificado: duplicado, faltante, salto de tasa, negativo, conflicto de tasa entre sedes |
@@ -1740,6 +1741,19 @@ Resultado: 368 pruebas en verde (79 nuevas en archivos `Robustez*`), Larastan 0,
 Lo verificado como correcto y que no se tocó: parseo es-VE, fecha futura bloqueada en tres capas, bloqueo optimista con nombre y hora, franja de advertencias sin bucle, políticas en servidor (no solo en la interfaz), invalidación de caché al guardar, escape de HTML en bitácora, último administrador protegido, BCV caído no rompe, tareas programadas con zona horaria y sin solape, `demo:clear` exige `--force` en producción.
 
 Pendiente conocido (no bloquea la entrega): la tasa escrita a mano en Cargar día sigue publicándose como tasa global de esa fecha (diseño de una sola sede); revisar si se activa la Fase 8 multi-sede. Rendimiento: Metas › Este mes y la tabla anual hacen decenas de consultas por render; aceptable con una sede y 24 meses, optimizar si crece.
+
+#### 19.b — Prueba con el cuadro real de septiembre 2026 (23-09-2026)
+
+El cliente envió su cuadro del mes en curso (22 días cargados, del 1 al 22). Se importó por pantalla y se contrastó día por día con el Excel: **cero diferencias** en los 22 días y en los totales (Bs 12.877.315,51 · $ 15.504 · 2.705 transacciones · 5.464 unidades); panel, gráficas, exportación y PDF de septiembre 2026 correctos. Lo que el archivo real destapó y se corrigió:
+
+| # | Hallazgo | Corrección |
+|---|---|---|
+| 19.14 | El cuadro del mes en curso trae la plantilla completa (fechas y "Jornada 3" prellenados hasta el 30): el importador leía 30 filas y marcaba 8 anomalías bloqueantes "sin venta" | Una fila con fecha pero sin ninguna cifra del día es plantilla y se omite; el día de hoy tampoco cuenta como faltante |
+| 19.15 | Las tasas se comparaban con 4 decimales: 801,18 del cuadro contra 801,1752 del BCV salía como "tasa distinta" | El conflicto se decide al céntimo; solo se avisa cuando la diferencia es real (03/09 y 07/09 en este archivo) |
+| 19.16 | El Excel exportado perdía la fila en blanco (la biblioteca descarta `[]`): el encabezado azul caía sobre el primer día, los totales no iban en negrita y la fecha salía como texto | Filas vacías como `[null]`, título en la fila 2 y encabezados en la 3 como el original, fechas reales con formato `dd/mm/yyyy` (también en la hoja Tasas) |
+| 19.17 | El Excel exportado no se podía volver a importar ("no se encontraron filas con fecha") | El lector acepta fechas escritas como texto `dd/mm/aaaa`, normaliza acentos de forma portable (`iconv` en Windows convertía "día" en "d'ia") y tolera espacios alrededor de "/" en los encabezados; prueba de ida y vuelta |
+
+Sobre las tasas "una milésima hacia arriba": el sistema no redondea hacia arriba. Guarda la tasa oficial del BCV con 4 decimales (el BCV publica 8) y la muestra redondeada al céntimo por la regla normal; el cuadro del cliente tiene la tasa tecleada a mano y en 9 de los 21 días hábiles de septiembre 2025 quien la copió cortó el tercer decimal (150,7952 → 150,79), y en 4 días la cifra del cuadro no coincide con el BCV (161,44 frente a 161,888; 168,48 frente a 168,4157; 169,77 frente a 169,9761; 165,4 frente a 165,4101). Los cálculos del sistema usan la tasa exacta, que es más fiel que la del cuadro.
 
 ### Estado final
 
